@@ -199,7 +199,7 @@ rough order of severity:
     detection used a single `window.lastTap` shared across every counter
     input on the page instead of one per instance.
 11. **Admin pages (`AdminSettings.tsx`, `AdminDashboard.tsx`) could get stuck
-    on their loading spinner forever.** Both had their own separate
+    on their loading spinner forever.** Both had their own separate  
     hardcoded-email admin check inside a `useEffect`, duplicating the
     DB-backed `role === 'admin'` check `<ProtectedRoute requiredRole="admin">`
     already enforces upstream. When the two disagreed, the effect called
