@@ -1,0 +1,502 @@
+import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useQuery } from '@tanstack/react-query';
+import { useSearchParams } from 'react-router-dom';
+import { SlidersHorizontal, Map, List, X, Search as SearchIcon } from 'lucide-react';
+import { Header } from '@/components/layout/Header';
+import { SearchBar } from '@/components/search/SearchBar';
+import { ListingGrid } from '@/components/listings/ListingGrid';
+import { ListingCard } from '@/components/listings/ListingCard';
+import { listingService } from '@/services/listingService';
+import { Button } from '@/components/ui/button';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
+import { Slider } from '@/components/ui/slider';
+import { Checkbox } from '@/components/ui/checkbox';
+import { SearchFilters, SearchResult, CancellationPolicy, PropertyType, Listing } from '@/types';
+import { formatINR } from '@/lib/utils';
+import { amenitiesList } from '@/data/amenities';
+
+// Simple Skeleton for Carousels
+const CarouselSkeleton = () => (
+  <div className="flex gap-4 overflow-hidden pb-4">
+    {[1, 2, 3, 4].map((i) => (
+      <div key={i} className="min-w-[280px] w-[280px] flex-shrink-0 animate-pulse">
+        <div className="aspect-[4/3] bg-surface-2 rounded-xl mb-3"></div>
+        <div className="h-4 bg-surface-2 rounded w-3/4 mb-2"></div>
+        <div className="h-4 bg-surface-2 rounded w-1/2 mb-2"></div>
+        <div className="h-4 bg-surface-2 rounded w-1/4"></div>
+      </div>
+    ))}
+  </div>
+);
+
+export default function Search() {
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
+  const [showFilters, setShowFilters] = useState(false);
+
+  // Sync state from URL
+  const getParam = useCallback((key: string) => searchParams.get(key), [searchParams]);
+  const getArrayParam = (key: string) => getParam(key)?.split(',').filter(Boolean) || [];
+
+  const priceRange: [number, number] = useMemo(() => [
+    parseInt(getParam('minPrice') || '0'),
+    parseInt(getParam('maxPrice') || '1000')
+  ], [getParam]);
+
+  const selectedPropertyTypes = getArrayParam('propertyTypes') as PropertyType[];
+  const selectedAmenities = getArrayParam('amenities');
+  const minRating = parseFloat(getParam('minRating') || '0');
+  const selectedCancellationPolicies = getArrayParam('cancellationPolicy') as CancellationPolicy[];
+  const page = parseInt(getParam('page') || '1');
+
+  // Update URL function
+  const updateFilter = useCallback((key: string, value: string | null) => {
+    setSearchParams(prev => {
+      const newParams = new URLSearchParams(prev);
+      if (value === null || value === '' || value === '0') {
+        newParams.delete(key);
+      } else {
+        newParams.set(key, value);
+      }
+      // Reset to page 1 on any filter change
+      if (key !== 'page') newParams.delete('page');
+      return newParams;
+    });
+  }, [setSearchParams]);
+
+  const updateArrayFilter = useCallback((key: string, values: string[]) => {
+    updateFilter(key, values.length > 0 ? values.join(',') : null);
+  }, [updateFilter]);
+
+  const filters: SearchFilters = useMemo(() => ({
+    location: getParam('location') || undefined,
+    guests: getParam('guests') ? parseInt(getParam('guests')!) : undefined,
+    checkIn: getParam('checkIn') ? new Date(getParam('checkIn')!) : undefined,
+    checkOut: getParam('checkOut') ? new Date(getParam('checkOut')!) : undefined,
+    minPrice: priceRange[0] > 0 ? priceRange[0] : undefined,
+    maxPrice: priceRange[1] < 1000 ? priceRange[1] : undefined,
+    propertyTypes: selectedPropertyTypes.length > 0 ? selectedPropertyTypes : undefined,
+    amenities: selectedAmenities.length > 0 ? selectedAmenities : undefined,
+    minRating: minRating > 0 ? minRating : undefined,
+    cancellationPolicy: selectedCancellationPolicies.length > 0 ? selectedCancellationPolicies : undefined,
+  }), [
+    getParam,
+    priceRange,
+    selectedPropertyTypes,
+    selectedAmenities,
+    minRating,
+    selectedCancellationPolicies,
+  ]);
+
+  // Determine if user has actively searched or is just "exploring"
+  const isExploring = !filters.location && !filters.checkIn && !filters.guests;
+
+  const carouselsQuery = useQuery({
+    queryKey: ['explore-carousels'],
+    queryFn: async () => {
+      const [featured, popular] = await Promise.all([
+        listingService.getFeatured(8),
+        listingService.getPopularListings(8)
+      ]);
+      return { featured, popular };
+    },
+    enabled: isExploring,
+  });
+
+  const featuredStays = carouselsQuery.data?.featured ?? [];
+  const popularStays = carouselsQuery.data?.popular ?? [];
+  const loadingCarousels = isExploring && carouselsQuery.isPending;
+
+  const emptySearchResult: SearchResult = { listings: [], total: 0, page: 1, pageSize: 20 };
+
+  const searchQuery = useQuery({
+    queryKey: ['search-listings', filters, page],
+    queryFn: () => listingService.searchListings(filters, page, 20), // 20 per page
+  });
+
+  const searchResults = searchQuery.data ?? emptySearchResult;
+  const loading = searchQuery.isPending || searchQuery.isFetching;
+
+  if (searchQuery.error) {
+    console.error('Search error:', searchQuery.error);
+  }
+
+  useEffect(() => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  }, [filters, page]);
+
+  const locationDisplay = getParam('location') || (isExploring ? 'Explore all destinations' : 'All destinations');
+
+  const clearFilters = () => {
+    setSearchParams(new URLSearchParams());
+  };
+
+  const activeFilterCount = [
+    priceRange[0] > 0 || priceRange[1] < 1000,
+    selectedPropertyTypes.length > 0,
+    selectedAmenities.length > 0,
+    minRating > 0,
+    selectedCancellationPolicies.length > 0,
+  ].filter(Boolean).length;
+
+  const propertyTypeOptions: { value: PropertyType; label: string }[] = [
+    { value: 'entire_place', label: 'Entire place' },
+    { value: 'private_room', label: 'Private room' },
+    { value: 'shared_room', label: 'Shared room' },
+    { value: 'hotel_room', label: 'Hotel room' },
+  ];
+
+  const cancellationOptions: { value: CancellationPolicy; label: string }[] = [
+    { value: 'flexible', label: 'Flexible' },
+    { value: 'moderate', label: 'Moderate' },
+    { value: 'strict', label: 'Strict' },
+  ];
+
+  return (
+    <div className="min-h-screen bg-background pb-12">
+      <Header />
+
+      {/* Sticky Search Header */}
+      <div className="sticky top-0 z-40 border-b border-border bg-surface-0 shadow-sm transition-all duration-300">
+        <div className="container py-4">
+          <div className="flex flex-col md:flex-row items-center gap-4">
+            <div className="flex-1 w-full max-w-3xl">
+              <SearchBar variant="compact" />
+            </div>
+
+            <div className="flex w-full md:w-auto items-center justify-between md:justify-end gap-2">
+              {/* View Toggle */}
+              <div className="hidden md:flex items-center gap-1 bg-surface-2 rounded-lg p-1">
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`px-3 ${viewMode === 'grid' ? 'bg-surface-0 shadow-sm' : 'text-text-secondary hover:text-foreground'}`}
+                  onClick={() => setViewMode('grid')}
+                >
+                  <List className="h-4 w-4 mr-2" />
+                  Grid
+                </Button>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className={`px-3 ${viewMode === 'map' ? 'bg-surface-0 shadow-sm' : 'text-text-secondary hover:text-foreground'}`}
+                  onClick={() => setViewMode('map')}
+                >
+                  <Map className="h-4 w-4 mr-2" />
+                  Map
+                </Button>
+              </div>
+
+              {/* Filters Button */}
+              <Sheet open={showFilters} onOpenChange={setShowFilters}>
+                <SheetTrigger asChild>
+                  <Button variant="outline" className="gap-2">
+                    <SlidersHorizontal className="h-4 w-4" />
+                    Filters
+                    {activeFilterCount > 0 && (
+                      <span className="h-5 w-5 rounded-full bg-foreground text-background text-xs flex items-center justify-center font-medium">
+                        {activeFilterCount}
+                      </span>
+                    )}
+                  </Button>
+                </SheetTrigger>
+                <SheetContent className="w-full sm:max-w-md bg-surface-0 overflow-y-auto">
+                  <SheetHeader className="mb-6">
+                    <SheetTitle className="flex items-center justify-between">
+                      Filters
+                      {activeFilterCount > 0 && (
+                        <Button variant="ghost" size="sm" onClick={() => {
+                          clearFilters();
+                          setShowFilters(false);
+                        }}>
+                          Clear all
+                        </Button>
+                      )}
+                    </SheetTitle>
+                  </SheetHeader>
+
+                  <div className="space-y-8">
+                    {/* Price Range */}
+                    <div>
+                      <h4 className="font-medium mb-4">Price range</h4>
+                      <Slider
+                        value={priceRange}
+                        onValueChange={(value) => {
+                          updateFilter('minPrice', value[0] === 0 ? null : value[0].toString());
+                          updateFilter('maxPrice', value[1] === 1000 ? null : value[1].toString());
+                        }}
+                        min={0}
+                        max={1000}
+                        step={25}
+                        className="mb-4"
+                      />
+                      <div className="flex items-center justify-between text-sm text-text-secondary">
+                        <span>{formatINR(priceRange[0])}</span>
+                        <span>{priceRange[1] >= 1000 ? `${formatINR(1000)}+` : formatINR(priceRange[1])}</span>
+                      </div>
+                    </div>
+
+                    {/* Property Type */}
+                    <div>
+                      <h4 className="font-medium mb-4">Property type</h4>
+                      <div className="space-y-3">
+                        {propertyTypeOptions.map((type) => (
+                          <label key={type.value} className="flex items-center gap-3 cursor-pointer group">
+                            <Checkbox
+                              checked={selectedPropertyTypes.includes(type.value)}
+                              onCheckedChange={(checked) => {
+                                const newTypes = checked
+                                  ? [...selectedPropertyTypes, type.value]
+                                  : selectedPropertyTypes.filter(t => t !== type.value);
+                                updateArrayFilter('propertyTypes', newTypes);
+                              }}
+                            />
+                            <span className="text-sm group-hover:text-foreground transition-colors">{type.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Minimum Rating */}
+                    <div>
+                      <h4 className="font-medium mb-4">Minimum rating</h4>
+                      <div className="flex gap-2">
+                        {[0, 4.0, 4.5, 4.8].map((rating) => (
+                          <Button
+                            key={rating}
+                            variant={minRating === rating ? 'default' : 'outline'}
+                            size="sm"
+                            onClick={() => updateFilter('minRating', rating === 0 ? null : rating.toString())}
+                            className={minRating === rating ? 'bg-foreground text-background hover:bg-foreground/90' : ''}
+                          >
+                            {rating === 0 ? 'Any' : `${rating}+`}
+                          </Button>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Cancellation Policy */}
+                    <div>
+                      <h4 className="font-medium mb-4">Cancellation policy</h4>
+                      <div className="space-y-3">
+                        {cancellationOptions.map((policy) => (
+                          <label key={policy.value} className="flex items-center gap-3 cursor-pointer group">
+                            <Checkbox
+                              checked={selectedCancellationPolicies.includes(policy.value)}
+                              onCheckedChange={(checked) => {
+                                const newPolicies = checked
+                                  ? [...selectedCancellationPolicies, policy.value]
+                                  : selectedCancellationPolicies.filter(p => p !== policy.value);
+                                updateArrayFilter('cancellationPolicy', newPolicies);
+                              }}
+                            />
+                            <span className="text-sm group-hover:text-foreground transition-colors">{policy.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Amenities */}
+                    <div>
+                      <h4 className="font-medium mb-4">Amenities</h4>
+                      <div className="grid grid-cols-2 gap-3">
+                        {amenitiesList.slice(0, 10).map((amenity) => (
+                          <label key={amenity.id} className="flex items-center gap-3 cursor-pointer group">
+                            <Checkbox
+                              checked={selectedAmenities.includes(amenity.id)}
+                              onCheckedChange={(checked) => {
+                                const newAm = checked
+                                  ? [...selectedAmenities, amenity.id]
+                                  : selectedAmenities.filter(a => a !== amenity.id);
+                                updateArrayFilter('amenities', newAm);
+                              }}
+                            />
+                            <span className="text-sm truncate group-hover:text-foreground transition-colors">{amenity.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+
+                  <div className="sticky bottom-0 pt-6 pb-4 bg-surface-0 border-t border-border mt-8">
+                    <Button
+                      className="w-full bg-foreground text-background hover:bg-foreground/90"
+                      onClick={() => setShowFilters(false)}
+                    >
+                      Show {searchResults.total} {searchResults.total === 1 ? 'result' : 'results'}
+                    </Button>
+                  </div>
+                </SheetContent>
+              </Sheet>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <div className="container py-8 space-y-12">
+        {/* EXPLORE SECTIONS (Only show if no active query constraints) */}
+        {isExploring && (
+          <div className="space-y-12">
+            {/* Section A: Featured Stays */}
+            <section>
+              <h2 className="text-2xl font-display font-medium mb-1">Featured Stays</h2>
+              <p className="text-text-secondary mb-6">Handpicked premium properties with exceptional ratings.</p>
+
+              {loadingCarousels ? (
+                <CarouselSkeleton />
+              ) : featuredStays.length > 0 ? (
+                <div className="flex gap-4 overflow-x-auto pb-6 snap-x snap-mandatory scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+                  {featuredStays.map(listing => (
+                    <div key={`featured-${listing.id}`} className="min-w-[280px] w-[280px] md:min-w-[320px] md:w-[320px] flex-shrink-0 snap-start">
+                      <ListingCard listing={listing} />
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </section>
+
+            {/* Section B: Popular Stays */}
+            <section>
+              <h2 className="text-2xl font-display font-medium mb-1">Popular right now</h2>
+              <p className="text-text-secondary mb-6">The most booked and reviewed destinations this week.</p>
+
+              {loadingCarousels ? (
+                <CarouselSkeleton />
+              ) : popularStays.length > 0 ? (
+                <div className="flex gap-4 overflow-x-auto pb-6 snap-x snap-mandatory scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+                  {popularStays.map(listing => (
+                    <div key={`popular-${listing.id}`} className="min-w-[280px] w-[280px] md:min-w-[320px] md:w-[320px] flex-shrink-0 snap-start">
+                      <ListingCard listing={listing} />
+                    </div>
+                  ))}
+                </div>
+              ) : null}
+            </section>
+
+            <hr className="border-border" />
+          </div>
+        )}
+
+        {/* Section C: All Results */}
+        <section>
+          {/* Results Header */}
+          <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
+            <div>
+              <h1 className="text-2xl font-display font-medium mb-1">{locationDisplay}</h1>
+              {!loading && (
+                <p className="text-text-secondary">
+                  {searchResults.total > 200 ? '200+' : searchResults.total} {searchResults.total === 1 ? 'stay' : 'stays'} available
+                </p>
+              )}
+            </div>
+          </div>
+
+          {/* Empty State / Error Layout */}
+          {!loading && searchResults.listings.length === 0 ? (
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-surface-1 rounded-2xl border border-border/50">
+              <div className="h-16 w-16 bg-surface-2 rounded-full flex items-center justify-center mb-6">
+                <SearchIcon className="h-8 w-8 text-text-tertiary" />
+              </div>
+              <h3 className="text-xl font-medium mb-2">No exact matches found</h3>
+              <p className="text-text-secondary max-w-md mb-8">
+                Try changing or removing some of your filters or adjusting your search area.
+              </p>
+              <Button onClick={clearFilters} className="bg-foreground text-background hover:bg-foreground/90">
+                Clear all filters
+              </Button>
+            </div>
+          ) : viewMode === 'grid' ? (
+            <ListingGrid
+              listings={searchResults.listings}
+              isLoading={loading}
+              emptyMessage="" // Handled by custom empty state above
+            />
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+              {/* Listings Sidebar (Map Mode) */}
+              <div className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto scrollbar-hide pr-2">
+                {loading ? (
+                  [1, 2, 3].map((i) => (
+                    <div key={i} className="flex gap-4 p-4 rounded-xl border border-border animate-pulse">
+                      <div className="w-48 h-32 bg-surface-2 rounded-lg flex-shrink-0"></div>
+                      <div className="flex-1 space-y-3 py-2">
+                        <div className="h-4 bg-surface-2 rounded w-1/3"></div>
+                        <div className="h-5 bg-surface-2 rounded w-3/4"></div>
+                        <div className="h-4 bg-surface-2 rounded w-1/2"></div>
+                      </div>
+                    </div>
+                  ))
+                ) : searchResults.listings.map((listing: Listing) => (
+                  <div key={listing.id} className="flex flex-col sm:flex-row gap-4 p-4 rounded-xl border border-transparent hover:border-border hover:bg-surface-1 transition-all group">
+                    <div className="w-full sm:w-48 h-48 sm:h-32 rounded-lg overflow-hidden flex-shrink-0 relative">
+                      <img
+                        src={listing.photos[0]}
+                        alt={listing.title}
+                        className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
+                      />
+                    </div>
+                    <div className="flex-1 min-w-0 flex flex-col justify-between">
+                      <div>
+                        <p className="text-xs text-text-meta mb-1 capitalize">
+                          {listing.propertyType.replace('_', ' ')} · {listing.location.city}
+                        </p>
+                        <h3 className="font-medium line-clamp-1 mb-1">{listing.title}</h3>
+                        <p className="text-sm text-text-secondary line-clamp-1 mb-2">
+                          {listing.bedrooms} bed{listing.bedrooms > 1 ? 's' : ''} · {listing.bathrooms} bath{listing.bathrooms > 1 ? 's' : ''}
+                        </p>
+                      </div>
+                      <div className="flex items-center justify-between mt-2 pt-2 border-t border-border/50">
+                        <span className="text-sm">
+                          <span className="font-semibold">{formatINR(listing.pricePerNight)}</span> night
+                        </span>
+                        <span className="text-sm font-medium flex items-center gap-1">
+                          ★ {listing.rating.toFixed(2)} <span className="text-text-tertiary font-normal">({listing.reviewCount})</span>
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+
+              {/* Map Placeholder */}
+              <div className="hidden lg:block sticky top-36 h-[calc(100vh-200px)] rounded-xl bg-surface-1 border border-border overflow-hidden">
+                <div className="w-full h-full flex flex-col items-center justify-center text-center p-6">
+                  <div className="h-16 w-16 bg-surface-0 rounded-full flex items-center justify-center mb-4 shadow-sm border border-border">
+                    <Map className="h-8 w-8 text-foreground" />
+                  </div>
+                  <h3 className="font-medium text-lg mb-1">Map View</h3>
+                  <p className="text-sm text-text-secondary max-w-[250px]">
+                    Interactive map plotting is currently disabled in this environment.
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Simple Pagination Footer */}
+          {!loading && searchResults.total > searchResults.pageSize && (
+            <div className="mt-12 flex justify-center items-center gap-4 border-t border-border pt-8">
+              <Button
+                variant="outline"
+                onClick={() => updateFilter('page', (page - 1).toString())}
+                disabled={page <= 1}
+              >
+                Previous
+              </Button>
+              <span className="text-sm font-medium">
+                Page {page} of {Math.ceil(searchResults.total / searchResults.pageSize)}
+              </span>
+              <Button
+                variant="outline"
+                onClick={() => updateFilter('page', (page + 1).toString())}
+                disabled={page >= Math.ceil(searchResults.total / searchResults.pageSize)}
+              >
+                Next
+              </Button>
+            </div>
+          )}
+        </section>
+      </div>
+    </div>
+  );
+}

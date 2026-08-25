@@ -1,0 +1,543 @@
+import { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Calendar, MapPin, Star, Loader2, Home, X } from 'lucide-react';
+import { Header } from '@/components/layout/Header';
+import { Button } from '@/components/ui/button';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { AlertDialog, AlertDialogTrigger, AlertDialogContent, AlertDialogHeader, AlertDialogTitle, AlertDialogDescription, AlertDialogFooter, AlertDialogCancel, AlertDialogAction } from '@/components/ui/alert-dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { bookingService } from '@/services/bookingService';
+import { listingService } from '@/services/listingService';
+import { reviewService } from '@/services/reviewService';
+import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/hooks/useAuth';
+import { formatINR } from '@/lib/utils';
+import { getErrorMessage } from '@/lib/errors';
+
+interface BookingWithListing {
+  booking: {
+    id: string;
+    listingId: string;
+    guestId: string;
+    hostId: string;
+    checkIn: Date;
+    checkOut: Date;
+    guests: number;
+    totalPrice: number;
+    status: string;
+    createdAt: Date;
+    updatedAt: Date;
+  };
+  listing?: {
+    id: string;
+    title: string;
+    location?: {
+      city?: string;
+      state?: string;
+    };
+    photos?: string[];
+  };
+}
+
+interface ReviewModalProps {
+  booking: BookingWithListing['booking'];
+  listing: BookingWithListing['listing'];
+  onClose: () => void;
+  onSubmit: (bookingId: string, rating: number, comment?: string) => Promise<void>;
+  submitting: boolean;
+}
+
+function ReviewModal({ booking, listing, onClose, onSubmit, submitting }: ReviewModalProps) {
+  const [rating, setRating] = useState(0);
+  const [comment, setComment] = useState('');
+  const [hoveredRating, setHoveredRating] = useState(0);
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (rating === 0) return;
+    await onSubmit(booking.id, rating, comment || undefined);
+  };
+
+  return (
+    <Dialog open={true} onOpenChange={onClose}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>Leave a review</DialogTitle>
+        </DialogHeader>
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="text-sm text-text-secondary mb-4">
+            How was your stay at {listing?.title || 'this property'}?
+          </div>
+          
+          {/* Star Rating */}
+          <div className="flex gap-2 justify-center mb-4">
+            {[1, 2, 3, 4, 5].map((star) => (
+              <button
+                key={star}
+                type="button"
+                className="focus:outline-none transition-transform hover:scale-110"
+                onMouseEnter={() => setHoveredRating(star)}
+                onMouseLeave={() => setHoveredRating(0)}
+                onClick={() => setRating(star)}
+              >
+                <Star
+                  className={`h-8 w-8 ${
+                    star <= (hoveredRating || rating)
+                      ? 'fill-yellow-400 text-yellow-400'
+                      : 'text-text-secondary'
+                  }`}
+                />
+              </button>
+            ))}
+          </div>
+          
+          {/* Comment */}
+          <Textarea
+            placeholder="Share your experience (optional)"
+            value={comment}
+            onChange={(e) => setComment(e.target.value)}
+            className="min-h-[100px] bg-surface-2 border-border"
+          />
+          
+          {/* Actions */}
+          <div className="flex gap-3 justify-end">
+            <Button
+              type="button"
+              variant="outline"
+              onClick={onClose}
+              disabled={submitting}
+            >
+              Cancel
+            </Button>
+            <Button
+              type="submit"
+              disabled={rating === 0 || submitting}
+              className="bg-accent text-accent-foreground hover:bg-accent-hover"
+            >
+              {submitting ? (
+                <>
+                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                  Submitting...
+                </>
+              ) : (
+                'Submit Review'
+              )}
+            </Button>
+          </div>
+        </form>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+export default function Trips() {
+  const { toast } = useToast();
+  const { user } = useAuth();
+  const navigate = useNavigate();
+  const [reviewingBooking, setReviewingBooking] = useState<BookingWithListing['booking'] | null>(null);
+  const [reviewingListing, setReviewingListing] = useState<BookingWithListing['listing'] | null>(null);
+  const [reviewedBookings, setReviewedBookings] = useState<Set<string>>(new Set());
+  const [cancellingBookingId, setCancellingBookingId] = useState<string | null>(null);
+  const [submittingReview, setSubmittingReview] = useState(false);
+  
+  const [upcomingBookings, setUpcomingBookings] = useState<BookingWithListing[]>([]);
+  const [pastBookings, setPastBookings] = useState<BookingWithListing[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchBookings = async () => {
+      if (!user?.id) return;
+      
+      try {
+        setLoading(true);
+
+        // Past bookings are now flipped to 'completed' by a server-side
+        // scheduled job (see supabase/migrations) rather than client-triggered
+        // here on every page load.
+
+        // Fetch upcoming bookings
+        const upcoming = await bookingService.getUpcomingByGuestId(user.id);
+        const upcomingWithListings = await Promise.all(
+          upcoming.map(async (booking) => {
+            const listing = await listingService.getById(booking.listingId);
+            return { booking, listing };
+          })
+        );
+        setUpcomingBookings(upcomingWithListings);
+
+        // Fetch past bookings
+        const past = await bookingService.getPastByGuestId(user.id);
+        
+        // Check which bookings have been reviewed
+        const reviewedIds = new Set<string>();
+        for (const booking of past) {
+          const hasReviewed = await reviewService.hasReviewedBooking(booking.id);
+          if (hasReviewed) {
+            reviewedIds.add(booking.id);
+          }
+        }
+        setReviewedBookings(reviewedIds);
+
+        const pastWithListings = await Promise.all(
+          past.map(async (booking) => {
+            const listing = await listingService.getById(booking.listingId);
+            return { booking, listing };
+          })
+        );
+        setPastBookings(pastWithListings);
+
+      } catch (error) {
+        console.error('Error fetching bookings:', error);
+        toast({
+          title: 'Error',
+          description: 'Failed to load your trips. Please try again.',
+          variant: 'destructive',
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchBookings();
+  }, [user?.id, toast]);
+
+  const handleReviewSubmit = async (bookingId: string, rating: number, comment?: string) => {
+    setSubmittingReview(true);
+    try {
+      await reviewService.createReview(bookingId, rating, comment);
+      toast({
+        title: 'Review submitted',
+        description: 'Thank you for your review!',
+      });
+      setReviewedBookings(prev => new Set([...Array.from(prev), bookingId]));
+      setReviewingBooking(null);
+      setReviewingListing(null);
+    } catch (error: unknown) {
+      console.error('Error submitting review:', error);
+      toast({
+        title: 'Error',
+        description: getErrorMessage(error, 'Failed to submit review. Please try again.'),
+        variant: 'destructive',
+      });
+    } finally {
+      setSubmittingReview(false);
+    }
+  };
+
+  const openReviewModal = (booking: BookingWithListing['booking'], listing?: BookingWithListing['listing']) => {
+    setReviewingBooking(booking);
+    setReviewingListing(listing || null);
+  };
+
+  const handleCancelBooking = async (bookingId: string) => {
+    setCancellingBookingId(bookingId);
+    try {
+      const result = await bookingService.cancelBooking(bookingId);
+      if (result.success) {
+        toast({
+          title: 'Booking cancelled',
+          description: result.refunded
+            ? 'Your booking has been cancelled, your payment was refunded, and the dates are now available.'
+            : 'Your booking has been cancelled and the dates are now available.',
+        });
+        // Remove the cancelled booking from the UI
+        setUpcomingBookings(prev => prev.filter(({ booking }) => booking.id !== bookingId));
+      } else {
+        toast({
+          title: 'Cancellation failed',
+          description: result.error || 'Could not cancel the booking. Please try again.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error) {
+      console.error('Error cancelling booking:', error);
+      toast({
+        title: 'Error',
+        description: 'An error occurred while cancelling the booking.',
+        variant: 'destructive',
+      });
+    } finally {
+      setCancellingBookingId(null);
+    }
+  };
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-accent" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    navigate('/login');
+    return null;
+  }
+
+  return (
+    <div className="min-h-screen bg-background">
+      <Header />
+      
+      <div className="container mx-auto px-4 py-8 max-w-6xl">
+        <div className="mb-8">
+          <h1 className="text-3xl font-display font-medium text-foreground mb-2">
+            Your Trips
+          </h1>
+          <p className="text-text-secondary">
+            Manage your upcoming and past stays
+          </p>
+        </div>
+
+        <Tabs defaultValue="upcoming" className="w-full">
+          <TabsList className="grid w-full grid-cols-2 mb-8">
+            <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+            <TabsTrigger value="past">Past</TabsTrigger>
+          </TabsList>
+
+          <TabsContent value="upcoming">
+            {upcomingBookings.length > 0 ? (
+              <div className="grid gap-6">
+                {upcomingBookings.map(({ booking, listing }) => (
+                  <div key={booking.id} className="bg-card rounded-xl overflow-hidden">
+                    <div className="grid grid-cols-1 md:grid-cols-3">
+                      <div className="aspect-video md:aspect-[4/3]">
+                        {listing?.photos && listing.photos[0] ? (
+                          <img 
+                            src={listing.photos[0]} 
+                            alt={listing.title}
+                            className="w-full h-full object-cover"
+                          />
+                        ) : (
+                          <div className="w-full h-full bg-surface-2 flex items-center justify-center">
+                            <Home className="h-12 w-12 text-text-secondary" />
+                          </div>
+                        )}
+                      </div>
+                      <div className="md:col-span-2 p-6">
+                        <div className="flex items-start justify-between mb-4">
+                          <div>
+                            <h3 className="text-xl font-medium mb-1">{listing?.title}</h3>
+                            <p className="text-text-secondary flex items-center gap-1">
+                              <MapPin className="h-4 w-4" />
+                              {listing?.location?.city}, {listing?.location?.state}
+                            </p>
+                          </div>
+                          <span className={`px-3 py-1 rounded-full text-sm ${
+                            booking.status === 'confirmed' 
+                              ? 'bg-accent/20 text-accent-foreground' 
+                              : booking.status === 'completed'
+                                ? 'bg-surface-3 text-foreground'
+                                : 'bg-destructive/20 text-destructive-foreground'
+                          }`}>
+                            {booking.status}
+                          </span>
+                        </div>
+                        
+                        <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
+                          <div>
+                            <p className="text-text-secondary">Check-in</p>
+                            <p className="font-medium">{new Date(booking.checkIn).toLocaleDateString()}</p>
+                          </div>
+                          <div>
+                            <p className="text-text-secondary">Check-out</p>
+                            <p className="font-medium">{new Date(booking.checkOut).toLocaleDateString()}</p>
+                          </div>
+                          <div>
+                            <p className="text-text-secondary">Guests</p>
+                            <p className="font-medium">{booking.guests} {booking.guests === 1 ? 'guest' : 'guests'}</p>
+                          </div>
+                          <div>
+                            <p className="text-text-secondary">Total paid</p>
+                            <p className="font-medium">{formatINR(booking.totalPrice)}</p>
+                          </div>
+                        </div>
+
+                        <div className="flex gap-3 flex-wrap">
+                          <Button 
+                            variant="outline" 
+                            onClick={() => navigate(`/listing/${listing?.id}`)}
+                          >
+                            View listing
+                          </Button>
+                          {booking.status === 'confirmed' && new Date() < new Date(booking.checkIn) && (
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button 
+                                  variant="outline"
+                                  className="border-destructive text-destructive hover:bg-destructive/10"
+                                  disabled={cancellingBookingId === booking.id}
+                                >
+                                  {cancellingBookingId === booking.id ? (
+                                    <>
+                                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                      Cancelling...
+                                    </>
+                                  ) : (
+                                    'Cancel booking'
+                                  )}
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Cancel this booking?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Are you sure you want to cancel your booking for {listing?.title}?
+                                    Your payment will be refunded and the dates will be released for other guests.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Keep booking</AlertDialogCancel>
+                                  <AlertDialogAction 
+                                    onClick={() => handleCancelBooking(booking.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Yes, cancel
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Calendar className="h-12 w-12 text-text-secondary mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">No upcoming trips</h3>
+                <p className="text-text-secondary mb-6">Start planning your next adventure</p>
+                <Button onClick={() => navigate('/search')}>
+                  Explore listings
+                </Button>
+              </div>
+            )}
+          </TabsContent>
+
+          <TabsContent value="past">
+            {pastBookings.length > 0 ? (
+              <div className="grid gap-6">
+                {pastBookings.map(({ booking, listing }) => {
+                  const canReview = booking.status === 'completed' && !reviewedBookings.has(booking.id);
+                  
+                  return (
+                    <div key={booking.id} className="bg-card rounded-xl overflow-hidden">
+                      <div className="grid grid-cols-1 md:grid-cols-3">
+                        <div className="aspect-video md:aspect-[4/3]">
+                          {listing?.photos && listing.photos[0] ? (
+                            <img 
+                              src={listing.photos[0]} 
+                              alt={listing.title}
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            <div className="w-full h-full bg-surface-2 flex items-center justify-center">
+                              <Home className="h-12 w-12 text-text-secondary" />
+                            </div>
+                          )}
+                        </div>
+                        <div className="md:col-span-2 p-6">
+                          <div className="flex items-start justify-between mb-4">
+                            <div>
+                              <h3 className="text-xl font-medium mb-1">{listing?.title}</h3>
+                              <p className="text-text-secondary flex items-center gap-1">
+                                <MapPin className="h-4 w-4" />
+                                {listing?.location?.city}, {listing?.location?.state}
+                              </p>
+                            </div>
+                            <span className={`px-3 py-1 rounded-full text-sm ${
+                              booking.status === 'completed'
+                                ? 'bg-surface-3 text-foreground'
+                                : 'bg-destructive/20 text-destructive-foreground'
+                            }`}>
+                              {booking.status}
+                            </span>
+                          </div>
+                          
+                          <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
+                            <div>
+                              <p className="text-text-secondary">Stayed</p>
+                              <p className="font-medium">
+                                {new Date(booking.checkIn).toLocaleDateString()} - {new Date(booking.checkOut).toLocaleDateString()}
+                              </p>
+                            </div>
+                            <div>
+                              <p className="text-text-secondary">Guests</p>
+                              <p className="font-medium">{booking.guests} {booking.guests === 1 ? 'guest' : 'guests'}</p>
+                            </div>
+                            <div>
+                              <p className="text-text-secondary">Total paid</p>
+                              <p className="font-medium">{formatINR(booking.totalPrice)}</p>
+                            </div>
+                          </div>
+
+                          <div className="flex gap-3">
+                            <Button 
+                              variant="outline" 
+                              onClick={() => navigate(`/listing/${listing?.id}`)}
+                            >
+                              View listing
+                            </Button>
+                            {canReview ? (
+                              <Button
+                                variant="outline"
+                                onClick={() => openReviewModal(booking, listing)}
+                              >
+                                <Star className="h-4 w-4 mr-2" />
+                                Leave a review
+                              </Button>
+                            ) : reviewedBookings.has(booking.id) ? (
+                              <Button
+                                variant="outline"
+                                disabled
+                                className="text-text-secondary"
+                              >
+                                <Star className="h-4 w-4 mr-2 fill-yellow-400 text-yellow-400" />
+                                Reviewed
+                              </Button>
+                            ) : null}
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ) : (
+              <div className="text-center py-12">
+                <Calendar className="h-12 w-12 text-text-secondary mx-auto mb-4" />
+                <h3 className="text-lg font-medium text-foreground mb-2">No past trips yet</h3>
+                <p className="text-text-secondary mb-6">Your trip history will appear here</p>
+                <Button onClick={() => navigate('/search')}>
+                  Start exploring
+                </Button>
+              </div>
+            )}
+          </TabsContent>
+        </Tabs>
+
+        {/* Review Modal */}
+        {reviewingBooking && (
+          <ReviewModal
+            booking={reviewingBooking}
+            listing={reviewingListing || undefined}
+            onClose={() => {
+              setReviewingBooking(null);
+              setReviewingListing(null);
+            }}
+            onSubmit={handleReviewSubmit}
+            submitting={submittingReview}
+          />
+        )}
+      </div>
+    </div>
+  );
+}
+
