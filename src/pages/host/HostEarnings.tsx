@@ -1,3 +1,4 @@
+import { Navigate } from 'react-router-dom';
 import { Header } from '@/components/layout/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
@@ -47,7 +48,7 @@ async function fetchEarningsData(hostId: string) {
 }
 
 export default function HostEarnings() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
   const queryClient = useQueryClient();
 
@@ -88,6 +89,27 @@ export default function HostEarnings() {
     return e.status === 'pending' && !isRequested;
   });
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="flex justify-center items-center h-64">
+          <Loader2 className="h-8 w-8 animate-spin text-accent" />
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // This page is already wrapped in <ProtectedRoute>, so `user` should always
+  // be set by the time we get here - but gating on authLoading/!user first
+  // (rather than trusting the query alone) matters because react-query's
+  // `isPending` stays true forever for a *disabled* query (enabled: !!user?.id
+  // false), so without this a missing user would show this spinner forever
+  // instead of ever resolving.
   if (earningsQuery.isPending) {
     return (
       <div className="min-h-screen bg-background">

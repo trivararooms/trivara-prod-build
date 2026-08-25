@@ -1,5 +1,5 @@
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Menu, User, Home, X } from 'lucide-react';
+import { Search, Menu, User, Home, X, ShieldCheck } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -10,8 +10,6 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { useAuth } from '@/hooks/useAuth';
-import { profileService } from '@/services/profileService';
-import { useEffect, useState } from 'react';
 
 interface HeaderProps {
   variant?: 'default' | 'transparent';
@@ -19,27 +17,14 @@ interface HeaderProps {
 
 export function Header({ variant = 'default' }: HeaderProps) {
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
-  const [isHost, setIsHost] = useState(false);
-
-  // Check if user is host
-  useEffect(() => {
-    const checkHostStatus = async () => {
-      if (user?.id) {
-        try {
-          const profile = await profileService.getByUserId(user.id);
-          setIsHost(profile?.is_host || false);
-        } catch (error) {
-          console.error('Error checking host status:', error);
-          setIsHost(false);
-        }
-      } else {
-        setIsHost(false);
-      }
-    };
-
-    checkHostStatus();
-  }, [user?.id]);
+  // AuthContext already fetches this user's own profile row (role, is_host)
+  // once on login - reading it here instead of doing a second, separate
+  // profileService.getByUserId() fetch on every single page (Header renders
+  // everywhere) avoids a redundant network round-trip and a second source of
+  // truth that could drift out of sync with the one AuthContext already has.
+  const { user, profile, signOut } = useAuth();
+  const isHost = profile?.is_host ?? false;
+  const isAdmin = profile?.role === 'admin';
 
   const handleLogout = async () => {
     await signOut();
@@ -108,6 +93,18 @@ export function Header({ variant = 'default' }: HeaderProps) {
                       </DropdownMenuItem>
                       <DropdownMenuItem onClick={() => navigate('/host/listings/new')}>
                         Create listing
+                      </DropdownMenuItem>
+                      <DropdownMenuSeparator />
+                    </>
+                  )}
+                  {isAdmin && (
+                    <>
+                      <DropdownMenuItem onClick={() => navigate('/admin/dashboard')}>
+                        Admin dashboard
+                      </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => navigate('/admin/dashboard/settings')}>
+                        <ShieldCheck className="h-4 w-4 mr-2" />
+                        Admin settings
                       </DropdownMenuItem>
                       <DropdownMenuSeparator />
                     </>

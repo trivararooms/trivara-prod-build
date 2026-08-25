@@ -64,7 +64,13 @@ export default function ListingDetail() {
 
   useEffect(() => {
     const fetchListing = async () => {
-      if (!id) return;
+      if (!id) {
+        // No id in the URL - nothing to fetch. Without this, `loading` (which
+        // starts true) would never clear, and the page would show its
+        // spinner forever instead of falling through to "Listing not found".
+        setLoading(false);
+        return;
+      }
 
       try {
         setLoading(true);

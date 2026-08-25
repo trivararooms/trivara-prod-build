@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import { Calendar, MapPin, Star, Loader2, Home, X } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
@@ -133,7 +133,7 @@ function ReviewModal({ booking, listing, onClose, onSubmit, submitting }: Review
 
 export default function Trips() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [reviewingBooking, setReviewingBooking] = useState<BookingWithListing['booking'] | null>(null);
   const [reviewingListing, setReviewingListing] = useState<BookingWithListing['listing'] | null>(null);
@@ -146,9 +146,15 @@ export default function Trips() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // If auth hasn't resolved yet, or there's no logged-in user, don't fetch
+    // - the render logic below shows an auth spinner / redirects to /login
+    // in those cases without ever consulting `loading`. Without this guard,
+    // a logged-out visitor would never reach that redirect: `loading` starts
+    // `true`, nothing here would ever call setLoading(false), and the page
+    // would show its own spinner forever instead.
+    if (authLoading || !user?.id) return;
+
     const fetchBookings = async () => {
-      if (!user?.id) return;
-      
       try {
         setLoading(true);
 
@@ -200,7 +206,7 @@ export default function Trips() {
     };
 
     fetchBookings();
-  }, [user?.id, toast]);
+  }, [authLoading, user?.id, toast]);
 
   const handleReviewSubmit = async (bookingId: string, rating: number, comment?: string) => {
     setSubmittingReview(true);
@@ -262,7 +268,7 @@ export default function Trips() {
     }
   };
 
-  if (loading) {
+  if (authLoading) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -276,8 +282,20 @@ export default function Trips() {
   }
 
   if (!user) {
-    navigate('/login');
-    return null;
+    return <Navigate to="/login" replace />;
+  }
+
+  if (loading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-accent" />
+          </div>
+        </div>
+      </div>
+    );
   }
 
   return (

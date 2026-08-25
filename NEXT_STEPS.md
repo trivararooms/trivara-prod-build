@@ -228,6 +228,84 @@ rough order of severity:
     `update_app_setting` + `is_admin()` + seed rows) and has been run. See
     "Admin access" in `README.md` for where to actually enter Razorpay keys
     now that the table exists.
+14. **The same "stuck on loading forever" bug, audited across every page and
+    fixed everywhere it actually occurred.** Two distinct root causes,
+    both now a settled pattern (`authLoading` spinner → `!user` →
+    `<Navigate>` → data-loading spinner → content, top to bottom, in that
+    order, on every page that gates on auth):
+    - A data-fetching `useEffect` early-returning (`if (!user?.id) return;`)
+      *before* ever setting `loading`/calling the function whose `finally`
+      clears it, on a route not wrapped in `<ProtectedRoute>`. Confirmed
+      reachable (not just theoretical) on **`Trips.tsx`** - a logged-out
+      visitor hitting `/trips` directly got stuck forever, because the
+      `if (!user)` redirect further down the render was unreachable: the
+      `if (loading)` spinner check above it never resolved. Also hardened
+      `host/HostDashboard.tsx` the same way even though it's
+      `<ProtectedRoute>`-wrapped (defense in depth), and `ListingDetail.tsx`
+      for the `!id` case (same shape, different guard).
+    - A react-query `useQuery` with `enabled: !!user?.id`, gated on
+      `.isPending` with no `authLoading`/`!user` check first. `isPending`
+      stays `true` forever for a *disabled* query - it never runs, so it
+      never settles to success/error. Fixed on **`PaymentMethods.tsx`**
+      (also removed a now-redundant imperative `navigate('/login')` effect
+      in favor of a declarative `<Navigate>`, same as the pattern below) and
+      defensively on `host/HostEarnings.tsx`. `Account.tsx`/`Saved.tsx`
+      already had the correct order from an earlier pass;
+      `admin/AdminSettings.tsx`/`AdminDashboard.tsx` were fixed in the
+      previous pass (a *different* root cause - a duplicate hardcoded-email
+      check disagreeing with `<ProtectedRoute>`, not this one).
+    Audited and confirmed clean (no gated `loading`/`isPending` full-page
+    return without a preceding auth check): `Index.tsx` (unconditional
+    fetch, no auth), `Search.tsx` (no `enabled` gate; the one query that
+    does use `enabled` correctly guards it: `isExploring && isPending`),
+    `Login.tsx` (never gates the page, redirect is a background effect only).
+    `host/CreateListing.tsx`'s `isLoading` never gets permanently stuck
+    (unconditional `finally`), so it wasn't touched.
+15. **The loading issue kept recurring after #14 - on reload, on browser
+    back, and on direct links - because #14 fixed how pages react to
+    `authLoading`, not why `authLoading` itself could get stuck.** Two
+    causes at the root, both underneath every page at once (which is why it
+    wasn't isolated to one page):
+    - `AuthContext`'s `getInitialSession()` calls `supabase.auth.getSession()`
+      once on every mount - i.e. on every hard reload. `supabase-js` v2
+      coordinates token refresh across tabs via the Web Locks API; if that
+      lock is left in a bad state (a crashed/throttled tab, certain private-
+      browsing restrictions), `getSession()` can hang instead of rejecting,
+      which left `loading` (and therefore every page gated on it) stuck
+      forever. Now raced against an 8s timeout - if it fires, the app
+      proceeds as logged-out immediately, and the independent
+      `onAuthStateChange` subscription still corrects `user`/`session`/
+      `profile` on its own once the real auth state comes through.
+    - `nginx.conf` had no explicit cache header on `index.html`. Its default
+      caching meant a browser could hold onto an old `index.html` across a
+      Docker rebuild, which references that old build's content-hashed JS
+      filenames - files that no longer exist in the new image once rebuilt,
+      so they 404 and React never mounts. Looks identical to "stuck
+      loading" from the outside, worse on reload/back (more likely to hit
+      the cached copy) and on direct links (no in-app navigation to trigger
+      a fresh fetch of anything). Fixed: `index.html` is now
+      `no-cache, no-store, must-revalidate`; the hashed asset files
+      underneath keep their long-lived immutable cache, since their
+      filename is exactly what changes when their content does.
+
+16. **`/admin` 404'd, and there was no in-app way to reach the admin pages
+    short of typing the URL.** Added `<Route path="/admin" element={<Navigate
+    to="/admin/dashboard" replace />} />` in `App.tsx`. Added "Admin
+    dashboard"/"Admin settings" items to the user menu in `Header.tsx`,
+    shown whenever `profile?.role === 'admin'` - and while touching that
+    file, removed a redundant second `profileService.getByUserId()` fetch
+    Header was doing on every single render just to read `is_host`, since
+    `AuthContext`'s own `profile` already has both `is_host` and `role`.
+17. **`vercel.json` had no cache headers - only `nginx.conf` (used by the
+    local Docker build) got the `index.html` no-cache fix in #15.** The
+    production site on Vercel is a completely separate deploy path from the
+    Docker/nginx setup used for local testing, so it needed the equivalent
+    fix independently. Added the same "index.html always revalidates,
+    hashed assets cache forever" split to `vercel.json`'s `headers`.
+    **Important: none of this session's fixes (this one included) are live
+    on the production domain yet** - the app auto-deploys from `main` on
+    push, and nothing has been pushed. Everything so far has only been
+    verified in the local Docker build.
 
 Everything above was verified with `npx tsc --noEmit`, `npm run lint`
 (0 errors), `npm run build` (succeeds), and `npm test` (16/16 passing) after

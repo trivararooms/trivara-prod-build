@@ -1,4 +1,4 @@
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, Navigate, useNavigate } from 'react-router-dom';
 import {
   Home,
   Calendar,
@@ -31,7 +31,7 @@ type EnrichedBooking = Booking & { guestName: string; property: string; dates: s
 
 export default function HostDashboard() {
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const [stats, setStats] = useState<{totalBookings: number, confirmedBookings: number, completedBookings: number, totalEarnings: number, pendingEarnings: number} | null>(null);
   const [listings, setListings] = useState<Listing[]>([]);
@@ -41,9 +41,13 @@ export default function HostDashboard() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    // This page is already wrapped in <ProtectedRoute>, but guard here too:
+    // without it, if this ever ran before `user` was populated, `loading`
+    // (which starts true) would never clear since nothing below would run,
+    // leaving the page stuck on its spinner forever.
+    if (authLoading || !user?.id) return;
+
     const fetchData = async () => {
-      if (!user?.id) return;
-      
       try {
         setLoading(true);
 
@@ -104,7 +108,7 @@ export default function HostDashboard() {
     };
 
     fetchData();
-  }, [user?.id]);
+  }, [authLoading, user?.id]);
 
   const handleCancelBooking = async (bookingId: string) => {
     setCancellingBookingId(bookingId);
@@ -187,6 +191,23 @@ export default function HostDashboard() {
         return 'secondary';
     }
   };
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-8 max-w-7xl">
+          <div className="flex items-center justify-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-accent" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
 
   if (loading) {
     return (

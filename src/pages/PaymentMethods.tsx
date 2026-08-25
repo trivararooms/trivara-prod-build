@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { Navigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Header } from '@/components/layout/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,9 +39,8 @@ async function fetchBankDetails(hostId: string): Promise<BankDetails | null> {
 }
 
 export default function PaymentMethods() {
-  const { user } = useAuth();
+  const { user, loading: authLoading } = useAuth();
   const { toast } = useToast();
-  const navigate = useNavigate();
   const queryClient = useQueryClient();
   const [formData, setFormData] = useState(emptyForm);
 
@@ -50,12 +49,6 @@ export default function PaymentMethods() {
     queryFn: () => fetchBankDetails(user!.id),
     enabled: !!user?.id,
   });
-
-  useEffect(() => {
-    if (!user?.id) {
-      navigate('/login');
-    }
-  }, [user?.id, navigate]);
 
   // Keep the editable form in sync whenever fresh bank details come back
   // from the server (initial load, or after a successful save).
@@ -138,6 +131,29 @@ export default function PaymentMethods() {
     saveMutation.mutate();
   };
 
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-8 max-w-4xl">
+          <div className="flex justify-center items-center h-64">
+            <Loader2 className="h-8 w-8 animate-spin text-accent" />
+          </div>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Navigate to="/login" replace />;
+  }
+
+  // react-query's `isPending` stays true forever for a *disabled* query (i.e.
+  // enabled: !!user?.id being false) - it never runs, so it never settles to
+  // success/error. That's exactly the "stuck on the spinner forever" bug the
+  // authLoading/!user checks above exist to avoid: by the time we reach this
+  // check, `user` is guaranteed truthy, so the query is guaranteed enabled
+  // and isPending will actually resolve once the fetch completes.
   if (bankDetailsQuery.isPending) {
     return (
       <div className="min-h-screen bg-background">
