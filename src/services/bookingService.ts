@@ -133,6 +133,20 @@ class BookingService {
       if (rpcError) console.error('get_app_setting RPC error:', rpcError);
       const isRazorpayEnabled = razorpayEnabled === 'true';
 
+      // Booking used to confirm immediately (no payment step at all) when
+      // Razorpay was disabled - but nothing downstream is built for that
+      // path: no confirmation email ever sends for it (that only fires from
+      // inside the Razorpay webhook), and a "confirmed" booking with no
+      // payment behind it is a real gap, not a feature. Refusing to create
+      // the booking at all until a payment provider is actually configured
+      // closes that gap instead of papering over it.
+      if (!isRazorpayEnabled) {
+        return {
+          success: false,
+          error: 'Booking is not possible right now: the payment provider is not configured.',
+        };
+      }
+
       // end_date is exclusive (checkout date) - see availabilityService for
       // the overlap logic this depends on.
       const bookingPayload: Record<string, unknown> = {
@@ -143,7 +157,7 @@ class BookingService {
         end_date: toDateOnly(checkOut),
         guests,
         total_price: pricing.total,
-        status: isRazorpayEnabled ? 'pending_payment' : 'confirmed',
+        status: 'pending_payment',
         payment_status: 'pending',
       };
 

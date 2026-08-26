@@ -172,66 +172,61 @@ export default function ListingDetail() {
       if (bookingResult.success && bookingResult.booking) {
         const booking = bookingResult.booking;
 
-        // 1. If status is pending_payment, initiate Razorpay
-        if (booking.status === 'pending_payment') {
-          const orderResult = await bookingService.createRazorpayOrder(booking.id);
+        // bookingService.create() now refuses to create a booking at all
+        // when Razorpay isn't configured (it returns success:false instead)
+        // rather than confirming one with no payment behind it - so a
+        // successful result here always means 'pending_payment', and
+        // initiating Razorpay checkout is the only remaining step.
+        const orderResult = await bookingService.createRazorpayOrder(booking.id);
 
-          if (!orderResult.success || !orderResult.order) {
-            throw new Error(orderResult.error || 'Failed to initialize payment');
-          }
-
-          // Checkout.js is no longer loaded on every page - fetch it now,
-          // right before we actually need it.
-          const scriptLoaded = await loadRazorpayScript();
-          if (!scriptLoaded) {
-            throw new Error('Could not load the payment gateway. Check your connection and try again.');
-          }
-
-          const options = {
-            key: orderResult.order.key_id,
-            amount: orderResult.order.amount,
-            currency: orderResult.order.currency,
-            name: "TRIVARA",
-            description: `Booking for ${listing.title}`,
-            order_id: orderResult.order.id,
-            handler: function () {
-              // Webhook will handle the confirmation, but we can proactively notify
-              toast({
-                title: 'Payment successful',
-                description: 'Your booking is being confirmed. Redirecting...',
-              });
-              navigate('/trips');
-            },
-            prefill: {
-              name: `${user.user_metadata?.first_name || ''} ${user.user_metadata?.last_name || ''}`,
-              email: user.email,
-            },
-            theme: {
-              color: "#4f46e5",
-            },
-            modal: {
-              ondismiss: function () {
-                setIsBooking(false);
-                toast({
-                  title: 'Payment cancelled',
-                  description: 'You can try paying again from your trips page.',
-                  variant: 'default',
-                });
-              }
-            }
-          };
-
-          const rzp = new window.Razorpay(options);
-          rzp.open();
-          return; // Don't navigate yet, wait for handler or modal close
+        if (!orderResult.success || !orderResult.order) {
+          throw new Error(orderResult.error || 'Failed to initialize payment');
         }
 
-        // 2. If status is confirmed (Razorpay disabled), proceed normally
-        toast({
-          title: 'Booking confirmed',
-          description: `Your stay at ${listing.title} has been booked.`,
-        });
-        navigate('/trips');
+        // Checkout.js is no longer loaded on every page - fetch it now,
+        // right before we actually need it.
+        const scriptLoaded = await loadRazorpayScript();
+        if (!scriptLoaded) {
+          throw new Error('Could not load the payment gateway. Check your connection and try again.');
+        }
+
+        const options = {
+          key: orderResult.order.key_id,
+          amount: orderResult.order.amount,
+          currency: orderResult.order.currency,
+          name: "TRIVARA",
+          description: `Booking for ${listing.title}`,
+          order_id: orderResult.order.id,
+          handler: function () {
+            // Webhook will handle the confirmation, but we can proactively notify
+            toast({
+              title: 'Payment successful',
+              description: 'Your booking is being confirmed. Redirecting...',
+            });
+            navigate('/trips');
+          },
+          prefill: {
+            name: `${user.user_metadata?.first_name || ''} ${user.user_metadata?.last_name || ''}`,
+            email: user.email,
+          },
+          theme: {
+            color: "#4f46e5",
+          },
+          modal: {
+            ondismiss: function () {
+              setIsBooking(false);
+              toast({
+                title: 'Payment cancelled',
+                description: 'You can try paying again from your trips page.',
+                variant: 'default',
+              });
+            }
+          }
+        };
+
+        const rzp = new window.Razorpay(options);
+        rzp.open();
+        return; // Don't navigate yet, wait for handler or modal close
       } else {
         toast({
           title: 'Booking failed',

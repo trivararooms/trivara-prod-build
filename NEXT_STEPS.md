@@ -359,6 +359,23 @@ rough order of severity:
     profile/incognito) resolves it. While investigating, also changed both
     `handleLogout`s to `navigate('/')` instead of `navigate('/login')` -
     logging out now lands on the home page rather than the login form.
+20. **Two intentional behavior changes, from the user-flow mapping done
+    this session.** (a) `ProtectedRoute.tsx`: a signed-in user without the
+    required role (e.g. a non-admin hitting `/admin/dashboard`) used to be
+    silently `<Navigate to="/">`'d with no explanation - now shows an actual
+    "You don't have access to this page" warning screen in place, so a
+    denied page doesn't look identical to a broken link. (b)
+    `bookingService.create()`: a booking used to confirm immediately with no
+    payment step at all when Razorpay was disabled - since nothing
+    downstream is actually built for that path (no confirmation email ever
+    sends for it either, since that only fires from inside the Razorpay
+    webhook), `create()` now refuses outright with `"Booking is not
+    possible right now: the payment provider is not configured."` instead
+    of creating an unpaid "confirmed" booking. `ListingDetail.tsx`'s
+    `handleBook` was simplified accordingly - a successful `create()` call
+    now always means Razorpay checkout is the next step, so the old
+    dead "else, treat as already confirmed" branch was removed rather than
+    left unreachable.
 
 Everything above was verified with `npx tsc --noEmit`, `npm run lint`
 (0 errors), `npm run build` (succeeds), and `npm test` (16/16 passing) after
