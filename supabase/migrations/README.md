@@ -9,6 +9,16 @@ promotion, booking → completion → earnings, review → rating aggregation,
 payout request/approval RPCs, and RLS/security enforcement) against a local
 Postgres 16 instance with a stub `auth` schema.
 
+`00000000000002_saved_listings_and_scheduled_jobs.sql` (saved listings +
+the pg_cron auto-complete job) and `00000000000003_storage_bucket.sql` (the
+`listing-photos` storage bucket + its RLS policies, previously only ever
+created by hand in the dashboard) build on top of it. **To stand up a brand
+new project from zero** — e.g. after a project is deleted — run all three,
+in order, in the new project's SQL editor; nothing else needs to be created
+by hand in the database. Razorpay/SMTP config still needs to be entered
+through the Admin Settings page (or `update_app_setting`) afterward — the
+baseline only seeds disabled, blank placeholder rows for those.
+
 Every other `*.sql` file in this repo — now moved into `deprecated/` and
 `deprecated/migrations/` — is **historical and superseded**. They are kept
 for reference/audit purposes but should not be run against a new project,

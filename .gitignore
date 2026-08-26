@@ -27,3 +27,10 @@ dist-ssr
 .env
 .env.production
 
+# This project uses npm (package-lock.json) exclusively - a bun.lockb
+# previously sat in the repo unused (this scaffold's origin default) and
+# risked someone running `bun install` and silently diverging from
+# package-lock.json. Ignored so it can't come back the same way.
+bun.lockb
+bun.lock
+
