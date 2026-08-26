@@ -28,7 +28,7 @@ export function Header({ variant = 'default' }: HeaderProps) {
 
   const handleLogout = async () => {
     await signOut();
-    navigate('/login');
+    navigate('/');
   };
 
   return (

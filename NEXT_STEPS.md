@@ -340,6 +340,25 @@ rough order of severity:
     then check the browser console/network tab on the live site for the
     actual error, since this session did not have a working live-browser
     connection to confirm it directly.
+19. **The stuck-loading/redirect-loop symptom turned out to be per-browser-
+    profile, not a code or deployment bug** - confirmed by the same
+    production deployment working perfectly in a fresh incognito window.
+    The leading explanation: `supabase-js` coordinates session/token
+    operations across tabs using the browser's Web Locks API, scoped per
+    origin across *every* tab of that profile. A lock left acquired-but-
+    never-released (a background tab throttled by the browser mid-refresh,
+    a crashed tab, stale `sb-<project-ref>-auth-token` data in localStorage
+    from earlier testing against a different project) makes every
+    subsequent auth call in that browser profile - `getSession()`,
+    `signOut()`, token refresh - queue forever behind it. This is also why
+    logout did nothing while stuck: `Header.tsx`'s and `Account.tsx`'s
+    `handleLogout` both do `await signOut(); navigate(...)`, so a hung
+    `supabase.auth.signOut()` means the `navigate(...)` line is never
+    reached. No code fix needed for this one - clearing the affected
+    browser profile's site data (or just using a different
+    profile/incognito) resolves it. While investigating, also changed both
+    `handleLogout`s to `navigate('/')` instead of `navigate('/login')` -
+    logging out now lands on the home page rather than the login form.
 
 Everything above was verified with `npx tsc --noEmit`, `npm run lint`
 (0 errors), `npm run build` (succeeds), and `npm test` (16/16 passing) after
