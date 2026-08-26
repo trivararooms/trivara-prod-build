@@ -2,39 +2,39 @@ import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
-import { isAdminEmail } from '@/lib/adminAccess';
 
 const Login = () => {
   const navigate = useNavigate();
   const location = useLocation();
+  const { user, profile, loading: authLoading } = useAuth();
 
   const from = location.state?.from?.pathname || '/account';
 
+  // Redirect away from the login page reactively, once AuthContext resolves
+  // to a logged-in user - not as a one-shot check on mount. The previous
+  // version ran its own separate supabase.auth.getSession() call exactly
+  // once when this component mounted, and only navigated away if that one
+  // call happened to already see a session. If the session wasn't
+  // established yet at that exact instant - e.g. right after landing back
+  // from the Google OAuth redirect, or while AuthContext's own
+  // getSession()/onAuthStateChange handling was still in flight - the check
+  // found nothing, did nothing, and (having an empty-ish dependency array)
+  // never re-ran. The user would then sit on the login page even though
+  // they were, or were about to be, actually authenticated, and the next
+  // protected link they clicked would bounce them back to /login again -
+  // reported as "goes to signup/login again and again". Depending on
+  // `user`/`profile`/`authLoading` (AuthContext's own reactive state, the
+  // same single source of truth ProtectedRoute uses) instead of a private
+  // one-shot query fixes that, and also drops the duplicate admin-role
+  // lookup this used to run separately from AuthContext's own profile fetch.
   useEffect(() => {
-    const checkAuthState = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // Check if user is admin and redirect accordingly
-        const userEmail = session.user.email;
-        if (isAdminEmail(userEmail)) {
-          // Check if user has admin role in profiles table
-          const { data: profileData, error } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('email', userEmail)
-            .single();
-
-          if (!error && profileData?.role === 'admin') {
-            navigate('/admin/dashboard');
-            return;
-          }
-        }
-        navigate(from);
-      }
-    };
-
-    checkAuthState();
-  }, [navigate, from]);
+    if (authLoading || !user) return;
+    if (profile?.role === 'admin') {
+      navigate('/admin/dashboard', { replace: true });
+    } else {
+      navigate(from, { replace: true });
+    }
+  }, [authLoading, user, profile, from, navigate]);
 
   const handleGoogleSignIn = async () => {
     try {

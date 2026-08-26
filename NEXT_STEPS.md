@@ -199,7 +199,7 @@ rough order of severity:
     detection used a single `window.lastTap` shared across every counter
     input on the page instead of one per instance.
 11. **Admin pages (`AdminSettings.tsx`, `AdminDashboard.tsx`) could get stuck
-    on their loading spinner forever.** Both had their own separate  
+    on their loading spinner forever.** Both had their own separate
     hardcoded-email admin check inside a `useEffect`, duplicating the
     DB-backed `role === 'admin'` check `<ProtectedRoute requiredRole="admin">`
     already enforces upstream. When the two disagreed, the effect called
@@ -306,6 +306,40 @@ rough order of severity:
     on the production domain yet** - the app auto-deploys from `main` on
     push, and nothing has been pushed. Everything so far has only been
     verified in the local Docker build.
+18. **After deploying, login started bouncing back to /login repeatedly
+    ("goes to signup again and again").** Root cause: `Login.tsx` ran its
+    own one-shot `supabase.auth.getSession()` check in a `useEffect` with an
+    empty-ish dependency array, completely separate from `AuthContext`. If a
+    session wasn't established yet at the exact instant that effect ran -
+    very plausible right after landing back from the Google OAuth redirect,
+    or while `AuthContext`'s own `getSession()`/`onAuthStateChange` handling
+    was still catching up - the check saw nothing, did nothing, and (having
+    already run once) never re-checked. The user would then sit on the
+    login page despite being (or about to be) genuinely authenticated, and
+    the next protected link they clicked would send them straight back to
+    `/login` via `ProtectedRoute` - repeating for as long as they kept
+    retrying. It also duplicated `AdminDashboard`/`AdminSettings`'s old
+    pattern of a second, separate admin-role lookup instead of trusting
+    `AuthContext`'s `profile` (the same bug class fixed in #11 and in
+    `Header.tsx` in #16). Fixed by making the redirect reactive to
+    `AuthContext`'s own `user`/`profile`/`loading` (the single source of
+    truth `ProtectedRoute` already uses) instead of a private one-shot
+    query, and using `navigate(..., { replace: true })` so an already-
+    logged-in user can't land back on `/login` via the browser back button.
+    `isAdminEmail`/`adminAccess.ts` is no longer imported anywhere in
+    `src/` as a result - left in place rather than deleted since
+    `VITE_ADMIN_EMAIL` is still a real, documented build-time env var (see
+    `README.md`), but it's now dead code if nothing ends up needing it.
+    **If the redirect loop persists after this fix ships**, the next most
+    likely cause is `AuthContext`'s own `getSession()` genuinely failing (not
+    just racing) in production specifically - check that Vercel's Project
+    Settings → Environment Variables has the *exact* same
+    `VITE_SUPABASE_URL` (bare project URL, no `/rest/v1` suffix) and
+    `VITE_SUPABASE_ANON_KEY` as the working local `.env`, and that the
+    production domain is in Supabase's Google OAuth allowed redirect URLs -
+    then check the browser console/network tab on the live site for the
+    actual error, since this session did not have a working live-browser
+    connection to confirm it directly.
 
 Everything above was verified with `npx tsc --noEmit`, `npm run lint`
 (0 errors), `npm run build` (succeeds), and `npm test` (16/16 passing) after
