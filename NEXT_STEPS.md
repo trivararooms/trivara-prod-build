@@ -376,6 +376,34 @@ rough order of severity:
     now always means Razorpay checkout is the next step, so the old
     dead "else, treat as already confirmed" branch was removed rather than
     left unreachable.
+21. **The stuck-loading bug came back specifically after a tab sat open for
+    a while and was then reloaded** - a real, reproducible pattern, not just
+    a one-off polluted browser profile like the earlier incognito-works
+    finding suggested. Root cause, more precisely understood now: the
+    Web Locks coordination issue described in `AuthContext.tsx` doesn't only
+    threaten the one `getSession()` call that already has an 8-second
+    timeout race - it can wedge **any** request made through the shared
+    `supabase` client (REST queries, RPCs, storage calls), since they all go
+    through the same session/token-refresh machinery underneath. A tab
+    that's been open long enough for its access token to need a refresh,
+    then reloaded, is exactly the situation most likely to hit this - and
+    none of the individual page-level loading states (`Index.tsx` fetching
+    featured listings, `ListingDetail.tsx` fetching a listing, etc.) had any
+    timeout of their own, so whichever call got wedged just spun forever,
+    on whatever page happened to trigger it. This is why patching
+    `AuthContext` alone didn't fully fix it, and why it kept resurfacing on
+    different pages.
+
+    Fixed at the root instead of per-page: `src/lib/supabase.ts` now passes
+    a custom `fetch` (via `global.fetch` in `createClient`'s options) that
+    wraps every request this client makes in a 15-second hard timeout via
+    `AbortController`. A wedged call now fails cleanly after 15s instead of
+    hanging forever, and the try/catch/finally blocks already present
+    throughout the service layer take it from there - same recovery path as
+    any other network error. This doesn't fix the underlying Web Locks
+    quirk itself (a browser/library-level issue, not something this app's
+    code controls), it just guarantees no page can be stuck spinning
+    indefinitely because of it.
 
 Everything above was verified with `npx tsc --noEmit`, `npm run lint`
 (0 errors), `npm run build` (succeeds), and `npm test` (16/16 passing) after
