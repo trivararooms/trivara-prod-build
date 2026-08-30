@@ -465,20 +465,24 @@ Roughly in priority order:
    (`vite.config.ts`'s `manualChunks`) brought the single ~780KB entry chunk
    down to ~160KB, with React/Supabase/Radix/forms/query each in their own
    cacheable chunk. No more chunk-size warning from the build.
-7. **React Query — partially adopted.** `PaymentMethods.tsx`,
-   `HostEarnings.tsx`, `Account.tsx`, and `Search.tsx` now use
-   `useQuery`/`useMutation` instead of hand-rolled `useState`/`useEffect`
-   fetching. Still hand-rolled: `Trips.tsx`, `host/HostDashboard.tsx`,
-   `admin/AdminSettings.tsx`, and `host/CreateListing.tsx`'s data-loading
-   effect (its autosave logic is intentionally left alone). `ListingDetail.tsx`
-   (drives the live booking/payment flow) and `AdminDashboard.tsx` (real-time
-   Supabase subscriptions) were deliberately left as-is — converting either
-   carries real regression risk for comparatively little payoff.
-8. **Testing beyond the basics added here.** The new Vitest suite covers
-   pure utility/mapper functions only. The service layer (`bookingService`,
-   `listingService`, etc.) talks directly to the Supabase client and would
-   need either a mocked Supabase client or an integration test against a
-   local Supabase instance to test meaningfully.
+7. **React Query — done everywhere it's safe to convert.** `PaymentMethods.tsx`,
+   `HostEarnings.tsx`, `Account.tsx`, `Search.tsx`, `Trips.tsx`,
+   `host/HostDashboard.tsx`, `admin/AdminSettings.tsx`, and
+   `host/CreateListing.tsx`'s data-loading effect (its autosave logic was left
+   alone, as planned) all now use `useQuery`/`useMutation` instead of
+   hand-rolled `useState`/`useEffect` fetching. `ListingDetail.tsx` (drives the
+   live booking/payment flow) and `AdminDashboard.tsx` (real-time Supabase
+   subscriptions) remain deliberately hand-rolled — converting either carries
+   real regression risk for comparatively little payoff.
+8. **Testing beyond the basics — extended to the service layer.**
+   `bookingService` and `listingService` now have Vitest coverage
+   (`src/services/*.test.ts`) using a mocked Supabase client — booking
+   creation (conflict/guest-limit/Razorpay-disabled refusals, the happy path),
+   cancellation (unpaid vs. paid-with-refund vs. refund-failure), stats, and
+   listing search/publish/delete. Still not covered: the other services
+   (`earningsService`, `payoutService`, `profileService`, `reviewService`,
+   `savedListingsService`, `availabilityService`) and anything that would need
+   a live/local Supabase instance for true integration testing.
 
 ## Security note
 
