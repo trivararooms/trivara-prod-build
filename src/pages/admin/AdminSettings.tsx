@@ -1,5 +1,6 @@
-import { useCallback, useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation } from '@tanstack/react-query';
 import { Header } from '@/components/layout/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,43 +30,50 @@ interface AppSetting {
     is_secret: boolean;
 }
 
+async function fetchAppSettings(): Promise<AppSetting[]> {
+    const { data, error } = await supabase
+        .from('app_settings')
+        .select('*')
+        .order('category', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+}
+
 export default function AdminSettings() {
     const { user, loading: authLoading } = useAuth();
     const navigate = useNavigate();
     const { toast } = useToast();
-    const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
     const [settings, setSettings] = useState<AppSetting[]>([]);
 
-    const fetchSettings = useCallback(async () => {
-        setLoading(true);
-        try {
-            const { data, error } = await supabase
-                .from('app_settings')
-                .select('*')
-                .order('category', { ascending: true });
+    const settingsQuery = useQuery({
+        queryKey: ['admin-settings'],
+        queryFn: fetchAppSettings,
+        // Admin access is already enforced by <ProtectedRoute requiredRole="admin">
+        // (backed by the DB `role` column + RLS) - this just needs to wait for
+        // auth to resolve before loading the settings.
+        enabled: !authLoading && !!user,
+    });
 
-            if (error) throw error;
-            setSettings(data || []);
-        } catch (error: unknown) {
-            console.error('Error fetching settings:', error);
+    // Keep the editable settings list in sync whenever fresh data comes back
+    // from the server (initial load). Edits made via handleUpdateSetting below
+    // are local-only until saveSettingsMutation persists them.
+    useEffect(() => {
+        if (settingsQuery.data) {
+            setSettings(settingsQuery.data);
+        }
+    }, [settingsQuery.data]);
+
+    useEffect(() => {
+        if (settingsQuery.error) {
+            console.error('Error fetching settings:', settingsQuery.error);
             toast({
                 title: 'Error',
                 description: 'Failed to load settings',
                 variant: 'destructive',
             });
-        } finally {
-            setLoading(false);
         }
-    }, [toast]);
-
-    useEffect(() => {
-        // Admin access is already enforced by <ProtectedRoute requiredRole="admin">
-        // (backed by the DB `role` column + RLS) - this effect just needs to
-        // wait for auth to resolve, then load the settings.
-        if (authLoading || !user) return;
-        fetchSettings();
-    }, [authLoading, user, fetchSettings]);
+    }, [settingsQuery.error, toast]);
 
     const handleUpdateSetting = (key: string, value: string) => {
         setSettings(prev => prev.map(s => s.key === key ? { ...s, value } : s));
@@ -75,9 +83,8 @@ export default function AdminSettings() {
         handleUpdateSetting(key, enabled.toString());
     };
 
-    const saveSettings = async (category: string) => {
-        setSaving(true);
-        try {
+    const saveSettingsMutation = useMutation({
+        mutationFn: async (category: string) => {
             const categorySettings = settings.filter(s => s.category === category);
 
             for (const setting of categorySettings) {
@@ -88,21 +95,23 @@ export default function AdminSettings() {
                 if (error) throw error;
             }
 
+            return category;
+        },
+        onSuccess: (category) => {
             toast({
                 title: 'Settings Saved',
                 description: `${category.toUpperCase()} settings updated successfully.`,
             });
-        } catch (error: unknown) {
+        },
+        onError: (error: unknown) => {
             console.error('Error saving settings:', error);
             toast({
                 title: 'Error',
                 description: getErrorMessage(error, 'Failed to save settings'),
                 variant: 'destructive',
             });
-        } finally {
-            setSaving(false);
-        }
-    };
+        },
+    });
 
     const renderSettingInput = (setting: AppSetting) => {
         if (setting.key.endsWith('_enabled')) {
@@ -154,7 +163,10 @@ export default function AdminSettings() {
         return <Navigate to="/login" replace />;
     }
 
-    if (loading) {
+    // Auth is resolved and we have a user - `enabled` above is guaranteed true
+    // by this point, so `isPending` will actually resolve instead of staying
+    // true forever the way it would for a permanently-disabled query.
+    if (settingsQuery.isPending) {
         return (
             <div className="min-h-screen bg-background">
                 <Header />
@@ -205,10 +217,10 @@ export default function AdminSettings() {
                                 <div className="pt-4">
                                     <Button
                                         className="w-full sm:w-auto"
-                                        onClick={() => saveSettings('razorpay')}
-                                        disabled={saving}
+                                        onClick={() => saveSettingsMutation.mutate('razorpay')}
+                                        disabled={saveSettingsMutation.isPending}
                                     >
-                                        {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                                        {saveSettingsMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
                                         Save Razorpay Settings
                                     </Button>
                                 </div>
@@ -229,10 +241,10 @@ export default function AdminSettings() {
                                 <div className="pt-4">
                                     <Button
                                         className="w-full sm:w-auto"
-                                        onClick={() => saveSettings('smtp')}
-                                        disabled={saving}
+                                        onClick={() => saveSettingsMutation.mutate('smtp')}
+                                        disabled={saveSettingsMutation.isPending}
                                     >
-                                        {saving ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
+                                        {saveSettingsMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin mr-2" /> : <Save className="h-4 w-4 mr-2" />}
                                         Save SMTP Settings
                                     </Button>
                                 </div>
