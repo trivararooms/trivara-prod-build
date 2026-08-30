@@ -437,11 +437,14 @@ Roughly in priority order:
    refund-razorpay-payment` to go live — until then, cancelling a *paid*
    booking returns an error asking the guest to contact support instead of
    silently skipping the refund (cancelling an unpaid/pending booking is
-   unaffected and works immediately). Still open: whether the admin
-   dashboard should use the bank-detail-masking RPC instead of reading raw
-   account numbers, whether payout rejection needs a workflow (currently only
-   pending → paid exists), and whether booking completions/cancellations
-   should be audit-logged alongside payout approvals.
+   unaffected and works immediately). The other three open questions are now
+   resolved: `AdminDashboard.tsx` reads bank details through the
+   bank-detail-masking RPC instead of the raw table; payout requests have a
+   real rejection workflow (`reject_payout_request()`, with an optional reason
+   shown to both the admin and the host); and booking completions/
+   cancellations are audit-logged the same way payout approvals are — see
+   `supabase/migrations/00000000000004_payout_rejection_and_audit.sql` and
+   `supabase/migrations/README.md`.
 3. **"Saved listings" — done.** `supabase/migrations/00000000000002_saved_listings_and_scheduled_jobs.sql`
    adds a `saved_listings` table with RLS (a user can only see/insert/delete
    their own rows). `src/services/savedListingsService.ts` +

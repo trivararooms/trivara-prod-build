@@ -5,6 +5,18 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
+import { Textarea } from '@/components/ui/textarea';
+import {
+  AlertDialog,
+  AlertDialogTrigger,
+  AlertDialogContent,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogCancel,
+  AlertDialogAction,
+} from '@/components/ui/alert-dialog';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { formatINR } from '@/lib/utils';
@@ -30,6 +42,7 @@ type PayoutRequest = {
   status: string;
   requested_at: string;
   paid_at: string | null;
+  notes: string | null;
   bookings?: {
     id: string;
     listings?: { title: string } | null;
@@ -42,10 +55,26 @@ type PayoutRequest = {
   host_bank_account?: {
     account_holder_name: string;
     bank_name: string;
-    account_number: string;
+    account_last_four: string;
     ifsc_code: string;
   } | null;
 };
+
+// Admins only ever see a masked account number - get_bank_details_for_payout()
+// is admin-only (checked inside the function) and returns just the last 4
+// digits, never the full account_number column.
+async function fetchMaskedBankDetails(hostIds: string[]) {
+  const results = await Promise.all(
+    hostIds.map(async (hostId) => {
+      const { data, error } = await supabase.rpc('get_bank_details_for_payout', {
+        p_host_id: hostId,
+      });
+      if (error || !data?.[0]) return null;
+      return { host_id: hostId, ...data[0] };
+    })
+  );
+  return results.filter((r): r is NonNullable<typeof r> => r !== null);
+}
 
 export default function AdminDashboard() {
   const { user, loading: authLoading } = useAuth();
@@ -55,6 +84,8 @@ export default function AdminDashboard() {
   const [payoutRequests, setPayoutRequests] = useState<PayoutRequest[]>([]);
   const [loading, setLoading] = useState(true);
   const [approvingId, setApprovingId] = useState<string | null>(null);
+  const [rejectingId, setRejectingId] = useState<string | null>(null);
+  const [rejectReasons, setRejectReasons] = useState<Record<string, string>>({});
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
   // Refs for cleanup
@@ -102,16 +133,13 @@ export default function AdminDashboard() {
             .select('id, full_name, role')
             .in('id', hostIds);
 
-          // Fetch bank account details for each payout request
-          const { data: bankAccountsData, error: bankAccountsError } = await supabase
-            .from('host_bank_accounts')
-            .select('host_id, account_holder_name, bank_name, account_number, ifsc_code')
-            .in('host_id', hostIds);
+          // Fetch masked bank account details for each payout request
+          const bankAccountsData = await fetchMaskedBankDetails(hostIds);
 
           // Combine the data manually
           const enrichedPayoutsData = payoutsData.map(payout => {
             const profile = profilesData?.find(p => p.id === payout.host_id);
-            const bankAccount = bankAccountsData?.find(b => b.host_id === payout.host_id);
+            const bankAccount = bankAccountsData.find(b => b.host_id === payout.host_id);
 
             return {
               ...payout,
@@ -258,16 +286,13 @@ export default function AdminDashboard() {
           .select('id, full_name, role')
           .in('id', hostIds);
 
-        // Fetch bank account details for each payout request
-        const { data: bankAccountsData, error: bankAccountsError } = await supabase
-          .from('host_bank_accounts')
-          .select('host_id, account_holder_name, bank_name, account_number, ifsc_code')
-          .in('host_id', hostIds);
+        // Fetch masked bank account details for each payout request
+        const bankAccountsData = await fetchMaskedBankDetails(hostIds);
 
         // Combine the data manually
         const enrichedPayoutsData = payoutsData.map(payout => {
           const profile = profilesData?.find(p => p.id === payout.host_id);
-          const bankAccount = bankAccountsData?.find(b => b.host_id === payout.host_id);
+          const bankAccount = bankAccountsData.find(b => b.host_id === payout.host_id);
 
           return {
             ...payout,
@@ -374,6 +399,44 @@ export default function AdminDashboard() {
       });
     } finally {
       setApprovingId(null);
+    }
+  };
+
+  const handleRejectPayout = async (payoutId: string) => {
+    setRejectingId(payoutId);
+    try {
+      const { data, error } = await supabase.rpc('reject_payout_request', {
+        p_payout_id: payoutId,
+        p_reason: rejectReasons[payoutId] || null,
+      });
+
+      if (error) throw error;
+
+      if (data && data.success === false) {
+        throw new Error(data.error || 'Failed to reject payout');
+      }
+
+      toast({
+        title: 'Payout rejected',
+        description: data?.message || 'The payout request has been rejected.',
+      });
+
+      setRejectReasons(prev => {
+        const next = { ...prev };
+        delete next[payoutId];
+        return next;
+      });
+
+      await Promise.all([refreshStats(), refreshPayoutRequests()]);
+    } catch (error: unknown) {
+      console.error('Error rejecting payout:', error);
+      toast({
+        title: 'Error',
+        description: getErrorMessage(error, 'Failed to reject payout. Check if you have admin permissions.'),
+        variant: 'destructive',
+      });
+    } finally {
+      setRejectingId(null);
     }
   };
 
@@ -533,7 +596,7 @@ export default function AdminDashboard() {
                           <span className="font-medium">Bank Name:</span> {request.host_bank_account?.bank_name || 'N/A'}
                         </p>
                         <p className="text-sm mb-1">
-                          <span className="font-medium">Account Number:</span> {request.host_bank_account?.account_number || 'N/A'}
+                          <span className="font-medium">Account Number:</span> {request.host_bank_account?.account_last_four ? `••••${request.host_bank_account.account_last_four}` : 'N/A'}
                         </p>
                         <p className="text-sm mb-4">
                           <span className="font-medium">IFSC Code:</span> {request.host_bank_account?.ifsc_code || 'N/A'}
@@ -545,7 +608,7 @@ export default function AdminDashboard() {
                       <div className="flex items-center space-x-4">
                         <p className="text-sm">
                           <span className="font-medium">Status:</span>
-                          <Badge variant={request.status === 'paid' ? 'secondary' : 'default'}>
+                          <Badge variant={request.status === 'paid' ? 'secondary' : request.status === 'rejected' ? 'destructive' : 'default'}>
                             {request.status}
                           </Badge>
                         </p>
@@ -558,21 +621,68 @@ export default function AdminDashboard() {
                             : '-'
                           }
                         </p>
+                        {request.status === 'rejected' && request.notes && (
+                          <p className="text-sm text-muted-foreground">
+                            <span className="font-medium">Reason:</span> {request.notes}
+                          </p>
+                        )}
                       </div>
 
-                      <div className="pt-2 md:pt-0">
+                      <div className="pt-2 md:pt-0 flex items-center gap-2">
                         {request.status === 'pending' && (
-                          <Button
-                            size="sm"
-                            disabled={approvingId === request.id}
-                            onClick={() => handleApprovePayout(request.id)}
-                          >
-                            {approvingId === request.id ? (
-                              <Loader2 className="h-4 w-4 animate-spin" />
-                            ) : (
-                              'Mark as Paid'
-                            )}
-                          </Button>
+                          <>
+                            <Button
+                              size="sm"
+                              disabled={approvingId === request.id || rejectingId === request.id}
+                              onClick={() => handleApprovePayout(request.id)}
+                            >
+                              {approvingId === request.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                'Mark as Paid'
+                              )}
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button
+                                  size="sm"
+                                  variant="outline"
+                                  className="border-destructive text-destructive hover:bg-destructive/10"
+                                  disabled={approvingId === request.id || rejectingId === request.id}
+                                >
+                                  {rejectingId === request.id ? (
+                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                  ) : (
+                                    'Reject'
+                                  )}
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Reject this payout request?</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    The host will be able to request a payout again later. Optionally give a reason -
+                                    it's stored on the request and shown to you here, not to the host.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <Textarea
+                                  placeholder="Reason (optional)"
+                                  value={rejectReasons[request.id] || ''}
+                                  onChange={(e) => setRejectReasons(prev => ({ ...prev, [request.id]: e.target.value }))}
+                                  className="min-h-[80px]"
+                                />
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction
+                                    onClick={() => handleRejectPayout(request.id)}
+                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                  >
+                                    Reject payout
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </>
                         )}
                       </div>
                     </div>
