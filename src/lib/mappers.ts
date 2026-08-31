@@ -32,6 +32,7 @@ export interface ListingRow {
   cleaning_fee: number | null;
   service_fee: number | null;
   house_rules: string[] | null;
+  instant_book: boolean | null;
   created_at: string;
   updated_at: string | null;
 }
@@ -55,6 +56,7 @@ export function mapListing(row: ListingRow): Listing {
     bathrooms: row.bathrooms || 1,
     houseRules: row.house_rules || [],
     cancellationPolicy: row.cancellation_policy || 'flexible',
+    instantBook: row.instant_book ?? true,
     status: row.status,
     rating: row.rating || 0,
     reviewCount: row.review_count || 0,
@@ -101,12 +103,12 @@ export function mapBooking(row: BookingRow): Booking {
 }
 
 /**
- * Raw shape of a `reviews` row. The table only ever had a single 1-5 rating
- * + comment (see database_schema.sql / final_database_schema.sql) -
- * `reviewer_id` is the guest who wrote it, `reviewee_id` is the host it's
- * about. There is no per-category (cleanliness/accuracy/...) breakdown in
- * the database; an earlier, never-shipped review form assumed there was and
- * has been removed (see ReviewForm.tsx removal in this refactor).
+ * Raw shape of a `reviews` row. `reviewer_id` is the guest who wrote it,
+ * `reviewee_id` is the host it's about. `rating` is the single overall score
+ * (the source of truth for refresh_listing_rating() / listings.rating);
+ * the `*_rating` columns are optional 1-5 per-category breakdowns added in
+ * 00000000000004_messaging_and_review_categories.sql - display-only, never
+ * averaged back into `rating`.
  */
 export interface ReviewRow {
   id: string;
@@ -116,6 +118,11 @@ export interface ReviewRow {
   reviewee_id: string;
   rating: number;
   comment: string | null;
+  cleanliness_rating: number | null;
+  accuracy_rating: number | null;
+  communication_rating: number | null;
+  value_rating: number | null;
+  location_rating: number | null;
   created_at: string;
 }
 
@@ -128,6 +135,13 @@ export function mapReview(row: ReviewRow): Review {
     revieweeId: row.reviewee_id,
     rating: row.rating,
     comment: row.comment || '',
+    categories: {
+      cleanliness: row.cleanliness_rating ?? undefined,
+      accuracy: row.accuracy_rating ?? undefined,
+      communication: row.communication_rating ?? undefined,
+      value: row.value_rating ?? undefined,
+      location: row.location_rating ?? undefined,
+    },
     createdAt: new Date(row.created_at),
   };
 }

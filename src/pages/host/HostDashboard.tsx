@@ -8,7 +8,8 @@ import {
   Eye,
   Edit,
   MapPin,
-  Loader2
+  Loader2,
+  MessageCircle
 } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
@@ -21,6 +22,7 @@ import { listingService } from '@/services/listingService';
 import { bookingService } from '@/services/bookingService';
 import { earningsService } from '@/services/earningsService';
 import { profileService } from '@/services/profileService';
+import { messageService } from '@/services/messageService';
 import { useToast } from '@/hooks/use-toast';
 import { useState, useEffect } from 'react';
 import { formatINR } from '@/lib/utils';
@@ -37,6 +39,8 @@ export default function HostDashboard() {
   const [listings, setListings] = useState<Listing[]>([]);
   const [bookings, setBookings] = useState<EnrichedBooking[]>([]);
   const [cancellingBookingId, setCancellingBookingId] = useState<string | null>(null);
+  const [messagingBookingId, setMessagingBookingId] = useState<string | null>(null);
+  const [approvingBookingId, setApprovingBookingId] = useState<string | null>(null);
   const [publishingListingId, setPublishingListingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
@@ -76,14 +80,23 @@ export default function HostDashboard() {
         // Fetch all host bookings
         const allBookings = await bookingService.getByHostId(user.id);
         
-        // Enrich bookings with listing info
+        // Enrich bookings with listing info and the guest's real name (hosts
+        // used to see the literal word "Guest" for every booking here - the
+        // guest's profile is visible to the host once a booking exists, same
+        // as the listing/host info a guest sees on the listing page).
         const enrichedBookings = await Promise.all(
           allBookings.map(async (booking) => {
             try {
-              const listing = await listingService.getById(booking.listingId);
+              const [listing, guestProfile] = await Promise.all([
+                listingService.getById(booking.listingId),
+                profileService.getByUserId(booking.guestId),
+              ]);
+              const guestName = guestProfile
+                ? `${guestProfile.first_name} ${guestProfile.last_name}`.trim() || 'Guest'
+                : 'Guest';
               return {
                 ...booking,
-                guestName: 'Guest', // Would need user service for actual name
+                guestName,
                 property: listing?.title || 'Unknown Property',
                 dates: `${new Date(booking.checkIn).toLocaleDateString()} - ${new Date(booking.checkOut).toLocaleDateString()}`,
               };
@@ -139,6 +152,57 @@ export default function HostDashboard() {
       });
     } finally {
       setCancellingBookingId(null);
+    }
+  };
+
+  const handleApproveRequest = async (bookingId: string) => {
+    setApprovingBookingId(bookingId);
+    try {
+      const result = await bookingService.approveBookingRequest(bookingId);
+      if (result.success) {
+        toast({
+          title: 'Request approved',
+          description: 'The guest can now complete payment from their trips page.',
+        });
+        setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'pending_payment' } : b));
+      } else {
+        toast({
+          title: 'Could not approve request',
+          description: result.error || 'Please try again.',
+          variant: 'destructive',
+        });
+      }
+    } catch (error: unknown) {
+      console.error('Error approving booking request:', error);
+      toast({
+        title: 'Error',
+        description: getErrorMessage(error, 'An error occurred while approving the request.'),
+        variant: 'destructive',
+      });
+    } finally {
+      setApprovingBookingId(null);
+    }
+  };
+
+  const handleMessageGuest = async (booking: EnrichedBooking) => {
+    if (!user?.id) return;
+    setMessagingBookingId(booking.id);
+    try {
+      const conversation = await messageService.findOrCreateConversation(
+        booking.listingId,
+        booking.guestId,
+        user.id
+      );
+      navigate(`/messages?c=${conversation.id}`);
+    } catch (error: unknown) {
+      console.error('Error opening conversation with guest:', error);
+      toast({
+        title: 'Error',
+        description: getErrorMessage(error, 'Could not open a conversation with this guest.'),
+        variant: 'destructive',
+      });
+    } finally {
+      setMessagingBookingId(null);
     }
   };
 
@@ -408,9 +472,15 @@ export default function HostDashboard() {
                               >
                                 <Edit className="h-4 w-4" />
                               </Button>
-                              {/* Calendar management isn't built yet (see CreateListing's
-                                  "availability" step) - removed the button that linked to
-                                  /host/manage-calendar/:id, a route that doesn't exist. */}
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-8 w-8 p-0 hover:bg-surface-3"
+                                onClick={() => navigate(`/host/listings/${listing.id}/calendar`)}
+                                title="Manage calendar"
+                              >
+                                <Calendar className="h-4 w-4" />
+                              </Button>
                             </div>
                           </TableCell>
                         </TableRow>
@@ -455,10 +525,67 @@ export default function HostDashboard() {
                           <Badge variant={getStatusBadgeVariant(booking.status)}>
                             {booking.status}
                           </Badge>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 text-xs gap-1"
+                            disabled={messagingBookingId === booking.id}
+                            onClick={() => handleMessageGuest(booking)}
+                          >
+                            {messagingBookingId === booking.id ? (
+                              <Loader2 className="h-3 w-3 animate-spin" />
+                            ) : (
+                              <>
+                                <MessageCircle className="h-3 w-3" />
+                                Message
+                              </>
+                            )}
+                          </Button>
+                          {booking.status === 'pending' && (
+                            <div className="flex gap-1">
+                              <Button
+                                size="sm"
+                                className="h-6 text-xs bg-accent text-accent-foreground hover:bg-accent-hover"
+                                disabled={approvingBookingId === booking.id || cancellingBookingId === booking.id}
+                                onClick={() => handleApproveRequest(booking.id)}
+                              >
+                                {approvingBookingId === booking.id ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Approve'}
+                              </Button>
+                              <AlertDialog>
+                                <AlertDialogTrigger asChild>
+                                  <Button
+                                    variant="ghost"
+                                    size="sm"
+                                    className="h-6 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
+                                    disabled={cancellingBookingId === booking.id || approvingBookingId === booking.id}
+                                  >
+                                    {cancellingBookingId === booking.id ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Decline'}
+                                  </Button>
+                                </AlertDialogTrigger>
+                                <AlertDialogContent>
+                                  <AlertDialogHeader>
+                                    <AlertDialogTitle>Decline this request?</AlertDialogTitle>
+                                    <AlertDialogDescription>
+                                      The guest will be notified that their request for {booking.property} wasn't approved.
+                                    </AlertDialogDescription>
+                                  </AlertDialogHeader>
+                                  <AlertDialogFooter>
+                                    <AlertDialogCancel>Keep pending</AlertDialogCancel>
+                                    <AlertDialogAction
+                                      onClick={() => handleCancelBooking(booking.id)}
+                                      className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                    >
+                                      Yes, decline
+                                    </AlertDialogAction>
+                                  </AlertDialogFooter>
+                                </AlertDialogContent>
+                              </AlertDialog>
+                            </div>
+                          )}
                           {booking.status === 'confirmed' && new Date() < new Date(booking.checkIn) && (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button 
+                                <Button
                                   variant="ghost"
                                   size="sm"
                                   className="h-6 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
@@ -509,7 +636,7 @@ export default function HostDashboard() {
         {/* Footer Note */}
         <div className="mt-12 pt-8 border-t border-border text-center">
           <p className="text-sm text-text-secondary">
-            Publish your drafts to make them visible to guests. Payouts and booking management coming soon.
+            Publish your drafts to make them visible to guests.
           </p>
         </div>
       </div>

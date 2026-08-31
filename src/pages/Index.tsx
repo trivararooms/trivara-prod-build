@@ -141,39 +141,39 @@ export default function Index() {
             <div>
               <h4 className="font-medium mb-4 text-sm">Support</h4>
               <ul className="space-y-3 text-sm text-text-secondary">
-                <li><Link to="#" className="hover:text-foreground trivara-transition">Help Center</Link></li>
-                <li><Link to="#" className="hover:text-foreground trivara-transition">Safety information</Link></li>
-                <li><Link to="#" className="hover:text-foreground trivara-transition">Cancellation options</Link></li>
+                <li><Link to="/help" className="hover:text-foreground trivara-transition">Help Center</Link></li>
+                <li><Link to="/safety" className="hover:text-foreground trivara-transition">Safety information</Link></li>
+                <li><Link to="/cancellation-options" className="hover:text-foreground trivara-transition">Cancellation options</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="font-medium mb-4 text-sm">Hosting</h4>
               <ul className="space-y-3 text-sm text-text-secondary">
                 <li><Link to="/host" className="hover:text-foreground trivara-transition">Become a Host</Link></li>
-                <li><Link to="#" className="hover:text-foreground trivara-transition">Resources</Link></li>
-                <li><Link to="#" className="hover:text-foreground trivara-transition">Community</Link></li>
+                <li><Link to="/resources" className="hover:text-foreground trivara-transition">Resources</Link></li>
+                <li><Link to="/community" className="hover:text-foreground trivara-transition">Community</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="font-medium mb-4 text-sm">Trivara</h4>
               <ul className="space-y-3 text-sm text-text-secondary">
-                <li><Link to="#" className="hover:text-foreground trivara-transition">About</Link></li>
-                <li><Link to="#" className="hover:text-foreground trivara-transition">Careers</Link></li>
-                <li><Link to="#" className="hover:text-foreground trivara-transition">Press</Link></li>
+                <li><Link to="/about" className="hover:text-foreground trivara-transition">About</Link></li>
+                <li><Link to="/careers" className="hover:text-foreground trivara-transition">Careers</Link></li>
+                <li><Link to="/press" className="hover:text-foreground trivara-transition">Press</Link></li>
               </ul>
             </div>
             <div>
               <h4 className="font-medium mb-4 text-sm">Legal</h4>
               <ul className="space-y-3 text-sm text-text-secondary">
-                <li><Link to="#" className="hover:text-foreground trivara-transition">Privacy</Link></li>
-                <li><Link to="#" className="hover:text-foreground trivara-transition">Terms</Link></li>
+                <li><Link to="/privacy" className="hover:text-foreground trivara-transition">Privacy</Link></li>
+                <li><Link to="/terms" className="hover:text-foreground trivara-transition">Terms</Link></li>
               </ul>
             </div>
           </div>
 
           <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-border">
             <span className="font-display text-xl font-semibold mb-4 md:mb-0">Trivara</span>
-            <p className="text-sm text-text-meta">© 2024 Trivara. All rights reserved.</p>
+            <p className="text-sm text-text-meta">© {new Date().getFullYear()} Trivara. All rights reserved.</p>
           </div>
         </div>
       </footer>

@@ -1,4 +1,4 @@
-import { Review } from '@/types';
+import { Review, ReviewCategoryRatings } from '@/types';
 import { supabase } from '../lib/supabase';
 import { mapReview, ReviewRow } from '../lib/mappers';
 import { bookingService } from './bookingService';
@@ -95,10 +95,17 @@ class ReviewService {
 
   /**
    * Creates a review for a completed booking. `reviewer_id` is always the
-   * guest, `reviewee_id` the host - matching the actual `reviews` table
-   * columns (there is no per-category rating breakdown in the database).
+   * guest, `reviewee_id` the host. `categories` are optional per-category
+   * 1-5 scores (cleanliness/accuracy/communication/value/location) - purely
+   * a display breakdown alongside `rating`, which stays the single overall
+   * score everything else (refresh_listing_rating(), ListingCard) reads.
    */
-  async createReview(bookingId: string, rating: number, comment?: string): Promise<Review> {
+  async createReview(
+    bookingId: string,
+    rating: number,
+    comment?: string,
+    categories?: ReviewCategoryRatings
+  ): Promise<Review> {
     const booking = await bookingService.getById(bookingId);
     if (!booking) {
       throw new Error('Booking not found');
@@ -121,6 +128,11 @@ class ReviewService {
         reviewee_id: booking.hostId,
         rating,
         comment: comment || null,
+        cleanliness_rating: categories?.cleanliness ?? null,
+        accuracy_rating: categories?.accuracy ?? null,
+        communication_rating: categories?.communication ?? null,
+        value_rating: categories?.value ?? null,
+        location_rating: categories?.location ?? null,
       }])
       .select('*')
       .single();

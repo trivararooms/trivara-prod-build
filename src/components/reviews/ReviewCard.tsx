@@ -69,7 +69,19 @@ export function ReviewCard({ review }: ReviewCardProps) {
       </div>
 
       {review.comment && (
-        <p className="text-text-secondary leading-relaxed">{review.comment}</p>
+        <p className="text-text-secondary leading-relaxed mb-3">{review.comment}</p>
+      )}
+
+      {Object.values(review.categories).some((v) => v !== undefined) && (
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-text-meta">
+          {Object.entries(review.categories)
+            .filter(([, v]) => v !== undefined)
+            .map(([key, v]) => (
+              <span key={key} className="capitalize">
+                {key}: {v}/5
+              </span>
+            ))}
+        </div>
       )}
     </div>
   );

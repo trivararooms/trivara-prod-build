@@ -1,6 +1,9 @@
 import { Listing, SearchFilters, SearchResult, ListingStatus } from '@/types';
 import { supabase } from '../lib/supabase';
 import { mapListing, ListingRow } from '../lib/mappers';
+import { toDateOnly } from '../lib/utils';
+
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
 
 class ListingService {
 
@@ -97,15 +100,36 @@ class ListingService {
         query = query.gte('rating', filters.minRating);
       }
 
+      switch (filters.sort) {
+        case 'price_asc':
+          query = query.order('price_per_night', { ascending: true });
+          break;
+        case 'price_desc':
+          query = query.order('price_per_night', { ascending: false });
+          break;
+        case 'rating':
+          query = query.order('rating', { ascending: false, nullsFirst: false });
+          break;
+        case 'newest':
+          query = query.order('created_at', { ascending: false });
+          break;
+        default:
+          break;
+      }
+
       // Text search on location/title and JSON-array filters (amenities,
       // property types, cancellation policy) can't be expressed as simple
       // PostgREST filters against JSONB/array columns, so they're applied in
-      // JS below. To avoid pulling the whole table when that's needed, the
-      // DB query is capped at 200 rows instead of paginated in that case.
+      // JS below. Date-availability (checking each candidate listing against
+      // its bookings) is the same story. To avoid pulling the whole table
+      // when that's needed, the DB query is capped at 200 rows instead of
+      // paginated in that case.
+      const hasDateFilter = !!filters.checkIn && !!filters.checkOut;
       const hasComplexFilters = !!filters.location
         || (filters.amenities && filters.amenities.length > 0)
         || (filters.propertyTypes && filters.propertyTypes.length > 0)
-        || (filters.cancellationPolicy && filters.cancellationPolicy.length > 0);
+        || (filters.cancellationPolicy && filters.cancellationPolicy.length > 0)
+        || hasDateFilter;
 
       if (!hasComplexFilters) {
         const startIndex = (page - 1) * pageSize;
@@ -146,6 +170,15 @@ class ListingService {
         );
       }
 
+      if (hasDateFilter) {
+        results = await this.filterByAvailability(
+          results,
+          filters.checkIn!,
+          filters.checkOut!,
+          filters.flexibleDays || 0
+        );
+      }
+
       let total = count || results.length;
       let finalResults = results;
 
@@ -171,6 +204,71 @@ class ListingService {
   // Kept for backwards compatibility with any callers still using the old name.
   async search(filters: SearchFilters, page = 1, pageSize = 20): Promise<SearchResult> {
     return this.searchListings(filters, page, pageSize);
+  }
+
+  /**
+   * Excludes listings with no free stretch of `nights` (checkOut - checkIn)
+   * somewhere in [checkIn - flexibleDays, checkOut + flexibleDays]. With
+   * flexibleDays=0 this is exact-date filtering: a listing is excluded only
+   * if it has a confirmed/completed booking overlapping the exact requested
+   * range. Search previously ignored checkIn/checkOut entirely - a "search"
+   * that can return a listing which is actually booked solid for the dates
+   * you asked for isn't real date search, so this closes that gap rather
+   * than just adding a flexible-dates toggle on top of nothing.
+   */
+  private async filterByAvailability(
+    rows: ListingRow[],
+    checkIn: Date,
+    checkOut: Date,
+    flexibleDays: number
+  ): Promise<ListingRow[]> {
+    if (rows.length === 0) return rows;
+
+    const nights = Math.round((checkOut.getTime() - checkIn.getTime()) / MS_PER_DAY);
+    if (nights <= 0) return rows;
+
+    const windowStart = new Date(checkIn.getTime() - flexibleDays * MS_PER_DAY);
+    const windowEnd = new Date(checkOut.getTime() + flexibleDays * MS_PER_DAY);
+
+    const { data: bookings, error } = await supabase
+      .from('bookings')
+      .select('listing_id, start_date, end_date')
+      .in('listing_id', rows.map(r => r.id))
+      .in('status', ['confirmed', 'completed'])
+      .lt('start_date', toDateOnly(windowEnd))
+      .gt('end_date', toDateOnly(windowStart));
+
+    if (error) {
+      console.error('Error checking availability during search:', error);
+      return rows; // Fail open rather than hiding every result
+    }
+
+    const bookedRangesByListing = new Map<string, { start: number; end: number }[]>();
+    for (const b of bookings || []) {
+      const list = bookedRangesByListing.get(b.listing_id) || [];
+      list.push({
+        start: new Date(b.start_date + 'T00:00:00').getTime(),
+        end: new Date(b.end_date + 'T00:00:00').getTime(),
+      });
+      bookedRangesByListing.set(b.listing_id, list);
+    }
+
+    const hasFreeSlot = (listingId: string): boolean => {
+      const booked = bookedRangesByListing.get(listingId);
+      if (!booked || booked.length === 0) return true;
+
+      // Try every candidate start date within the flexible window and see if
+      // any of them gives `nights` consecutive free nights.
+      for (let offset = -flexibleDays; offset <= flexibleDays; offset++) {
+        const candidateStart = checkIn.getTime() + offset * MS_PER_DAY;
+        const candidateEnd = candidateStart + nights * MS_PER_DAY;
+        const conflicts = booked.some(r => r.start < candidateEnd && r.end > candidateStart);
+        if (!conflicts) return true;
+      }
+      return false;
+    };
+
+    return rows.filter(r => hasFreeSlot(r.id));
   }
 
   async getPopularListings(limit = 8): Promise<Listing[]> {
@@ -213,6 +311,56 @@ class ListingService {
       return (data as ListingRow[] | null)?.map(mapListing) || [];
     } catch (err) {
       console.error('Unexpected error in getFeatured:', err);
+      return [];
+    }
+  }
+
+  /** Other published listings in the same city, for a listing page's "Similar stays" section. */
+  async getSimilar(listing: Listing, limit = 4): Promise<Listing[]> {
+    try {
+      let query = supabase
+        .from('listings')
+        .select('*')
+        .eq('published', true)
+        .eq('status', 'published')
+        .neq('id', listing.id)
+        .limit(limit);
+
+      // details->>city is stored inside the `details` JSONB column (see
+      // ListingRow) - filtering on a JSON field needs the ->> text operator
+      // rather than a plain column filter.
+      if (listing.location?.city) {
+        query = query.eq('details->>city', listing.location.city);
+      } else {
+        query = query.eq('property_type', listing.propertyType);
+      }
+
+      const { data, error } = await query;
+      if (error) {
+        console.error('Error fetching similar listings:', error);
+        return [];
+      }
+
+      let results = (data as ListingRow[] | null) || [];
+
+      // Same-city search can come back empty for a city with only one
+      // listing - fall back to same property type so the section isn't just
+      // silently missing.
+      if (results.length === 0 && listing.location?.city) {
+        const fallback = await supabase
+          .from('listings')
+          .select('*')
+          .eq('published', true)
+          .eq('status', 'published')
+          .neq('id', listing.id)
+          .eq('property_type', listing.propertyType)
+          .limit(limit);
+        results = (fallback.data as ListingRow[] | null) || [];
+      }
+
+      return results.map(mapListing);
+    } catch (error) {
+      console.error('Unexpected error in getSimilar:', error);
       return [];
     }
   }
@@ -302,6 +450,7 @@ class ListingService {
       cancellation_policy: listing.cancellationPolicy || 'flexible',
       cleaning_fee: listing.cleaningFee || 0,
       service_fee: listing.serviceFee || 0,
+      instant_book: listing.instantBook ?? true,
     };
 
     const { data, error } = await supabase
@@ -343,6 +492,7 @@ class ListingService {
     if (updates.serviceFee !== undefined) payload.service_fee = updates.serviceFee;
     if (updates.houseRules !== undefined) payload.house_rules = updates.houseRules;
     if (updates.status !== undefined) payload.status = updates.status;
+    if (updates.instantBook !== undefined) payload.instant_book = updates.instantBook;
 
     if (updates.location) {
       payload.details = updates.location;

@@ -2,7 +2,26 @@ import { useEffect, useState } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { ReviewCard } from './ReviewCard';
 import { reviewService } from '@/services/reviewService';
-import { Review } from '@/types';
+import { Review, ReviewCategoryRatings } from '@/types';
+
+const CATEGORY_LABELS: Record<keyof ReviewCategoryRatings, string> = {
+  cleanliness: 'Cleanliness',
+  accuracy: 'Accuracy',
+  communication: 'Communication',
+  value: 'Value',
+  location: 'Location',
+};
+
+function categoryAverages(reviews: Review[]): { label: string; average: number }[] {
+  const keys = Object.keys(CATEGORY_LABELS) as (keyof ReviewCategoryRatings)[];
+  return keys
+    .map((key) => {
+      const values = reviews.map((r) => r.categories[key]).filter((v): v is number => v !== undefined);
+      if (values.length === 0) return null;
+      return { label: CATEGORY_LABELS[key], average: values.reduce((a, b) => a + b, 0) / values.length };
+    })
+    .filter((v): v is { label: string; average: number } => v !== null);
+}
 
 interface ReviewsListProps {
   listingId: string;
@@ -52,14 +71,22 @@ export function ReviewsList({ listingId }: ReviewsListProps) {
 
   return (
     <div>
-      <div className="flex items-baseline gap-2 mb-6">
+      <div className="flex items-baseline gap-2 mb-2">
         <h2 className="text-lg font-medium">Reviews</h2>
         <span className="text-text-secondary">
           {averages ? `${averages.overall.toFixed(2)} · ${averages.count} reviews` : ''}
         </span>
       </div>
 
-      <Separator className="bg-border" />
+      {categoryAverages(reviews).length > 0 && (
+        <div className="flex flex-wrap gap-x-4 gap-y-1 text-sm text-text-secondary mb-6">
+          {categoryAverages(reviews).map(({ label, average }) => (
+            <span key={label}>{label}: {average.toFixed(1)}</span>
+          ))}
+        </div>
+      )}
+
+      <Separator className="bg-border mb-0" />
 
       <div className="divide-y divide-border">
         {reviews.map((review) => (

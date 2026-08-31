@@ -77,6 +77,15 @@ serve(async (req) => {
 
     if (!guest || !host) throw new Error('Guest or Host profile not found');
 
+    // Respect each recipient's notification preference (defaults to true
+    // when no row exists yet - see notification_preferences table).
+    const { data: prefRows } = await supabaseClient
+      .from('notification_preferences')
+      .select('user_id, email_booking_updates')
+      .in('user_id', [booking.guest_id, booking.host_id]);
+    const wantsBookingEmails = (userId: string) =>
+      prefRows?.find((p) => p.user_id === userId)?.email_booking_updates ?? true;
+
     // ... (Formatting logic remains similar to previous implementation)
     // Format dates
     const checkInDate = new Date(booking.start_date).toLocaleDateString('en-IN', {
@@ -167,22 +176,26 @@ serve(async (req) => {
       });
 
       // Send Guest Email
-      await client.send({
-        from: `"${smtpFromName}" <${smtpFromEmail}>`,
-        to: guest.email,
-        subject: `Booking Confirmed: ${booking.listing?.title}`,
-        content: guestEmailHtml,
-        html: guestEmailHtml,
-      });
+      if (wantsBookingEmails(booking.guest_id)) {
+        await client.send({
+          from: `"${smtpFromName}" <${smtpFromEmail}>`,
+          to: guest.email,
+          subject: `Booking Confirmed: ${booking.listing?.title}`,
+          content: guestEmailHtml,
+          html: guestEmailHtml,
+        });
+      }
 
       // Send Host Email
-      await client.send({
-        from: `"${smtpFromName}" <${smtpFromEmail}>`,
-        to: host.email,
-        subject: `New Booking: ${booking.listing?.title}`,
-        content: hostEmailHtml,
-        html: hostEmailHtml,
-      });
+      if (wantsBookingEmails(booking.host_id)) {
+        await client.send({
+          from: `"${smtpFromName}" <${smtpFromEmail}>`,
+          to: host.email,
+          subject: `New Booking: ${booking.listing?.title}`,
+          content: hostEmailHtml,
+          html: hostEmailHtml,
+        });
+      }
 
       await client.close();
 

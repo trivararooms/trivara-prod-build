@@ -1,21 +1,30 @@
 import { useState, useEffect } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Star, Wifi, Car, Snowflake, Tv, Loader2, Home } from 'lucide-react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { Calendar, MapPin, Wifi, Car, Snowflake, Tv, Loader2, Home, BadgeCheck, ShieldCheck, Share2, X, ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { Badge } from '@/components/ui/badge';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Textarea } from '@/components/ui/textarea';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { CounterInput } from '@/components/ui/CounterInput';
+import { Checkbox } from '@/components/ui/checkbox';
+import { ReviewsList } from '@/components/reviews/ReviewsList';
+import { ListingCard } from '@/components/listings/ListingCard';
 import { useToast } from '@/hooks/use-toast';
 import { listingService } from '@/services/listingService';
 import { bookingService } from '@/services/bookingService';
 import { availabilityService } from '@/services/availabilityService';
-import { reviewService } from '@/services/reviewService';
 import { profileService } from '@/services/profileService';
+import { messageService } from '@/services/messageService';
+import { calendarService, PriceOverride } from '@/services/calendarService';
 import { useAuth } from '@/hooks/useAuth';
 import { formatINR } from '@/lib/utils';
 import { getErrorMessage } from '@/lib/errors';
-import { loadRazorpayScript } from '@/lib/loadRazorpayScript';
-import { Listing, Review } from '@/types';
+import { payForBooking } from '@/lib/razorpayCheckout';
+import { Listing } from '@/types';
 
 interface PricingBreakdown {
   nights: number;
@@ -32,6 +41,30 @@ const amenitiesMap = {
   tv: { icon: Tv, label: 'TV' },
 };
 
+/** Collapses adjacent same-price override dates into ranges for display, e.g. Dec 24-26 instead of three separate lines. */
+function groupConsecutivePriceOverrides(overrides: PriceOverride[]): { start: Date; end: Date; price: number }[] {
+  const sorted = [...overrides].sort((a, b) => a.date.getTime() - b.date.getTime());
+  const groups: { start: Date; end: Date; price: number }[] = [];
+
+  for (const override of sorted) {
+    const last = groups[groups.length - 1];
+    const oneDayAfterLast = last ? last.end.getTime() + 24 * 60 * 60 * 1000 : null;
+    if (last && last.price === override.pricePerNight && oneDayAfterLast === override.date.getTime()) {
+      last.end = override.date;
+    } else {
+      groups.push({ start: override.date, end: override.date, price: override.pricePerNight });
+    }
+  }
+
+  return groups;
+}
+
+const cancellationPolicySummary: Record<Listing['cancellationPolicy'], string> = {
+  flexible: 'full refund if you cancel at least 24 hours before check-in; no refund after that.',
+  moderate: 'full refund if you cancel at least 5 days before check-in; 50% refund after that.',
+  strict: '50% refund if you cancel at least 7 days before check-in; no refund after that.',
+};
+
 export default function ListingDetail() {
   const { id } = useParams();
   const navigate = useNavigate();
@@ -42,12 +75,26 @@ export default function ListingDetail() {
   const [loading, setLoading] = useState(true);
   const [checkIn, setCheckIn] = useState<Date>();
   const [checkOut, setCheckOut] = useState<Date>();
-  const [guests, setGuests] = useState(1);
   const [pricing, setPricing] = useState<PricingBreakdown | null>(null);
   const [unavailableDates, setUnavailableDates] = useState<Date[]>([]);
   const [isBooking, setIsBooking] = useState(false);
-  const [reviews, setReviews] = useState<Review[]>([]);
-  const [host, setHost] = useState<{ first_name: string; last_name: string; avatar_url?: string } | null>(null);
+  const [host, setHost] = useState<{ first_name: string; last_name: string; avatar_url?: string; is_verified?: boolean } | null>(null);
+  const [similarListings, setSimilarListings] = useState<Listing[]>([]);
+  const [priceOverrides, setPriceOverrides] = useState<PriceOverride[]>([]);
+  const [galleryOpen, setGalleryOpen] = useState(false);
+  const [galleryIndex, setGalleryIndex] = useState(0);
+  const [messageOpen, setMessageOpen] = useState(false);
+  const [messageDraft, setMessageDraft] = useState('');
+  const [sendingMessage, setSendingMessage] = useState(false);
+  const [adults, setAdults] = useState(1);
+  const [children, setChildren] = useState(0);
+  // Infants don't count against a listing's max-guest capacity (matches how
+  // other OTAs treat them) - only adults + children do. Pets aren't part of
+  // the guest count at all; `bringingPet` is guest-facing info only (there's
+  // no pets_allowed column on bookings to persist it against).
+  const guests = adults + children;
+  const [infants, setInfants] = useState(0);
+  const [bringingPet, setBringingPet] = useState(false);
 
   // Reusable function to fetch unavailable dates
   const fetchUnavailableDates = async (listingId: string) => {
@@ -83,14 +130,6 @@ export default function ListingDetail() {
         if (data) {
           // Fetch unavailable dates for the listing
           await fetchUnavailableDates(data.id);
-          // Fetch reviews for the listing
-          try {
-            const reviewsData = await reviewService.getReviewsByListing(data.id);
-            setReviews(reviewsData);
-          } catch (error) {
-            console.error('Error fetching reviews:', error);
-            setReviews([]); // Set empty reviews on error
-          }
 
           // Fetch host profile information (shown in the "Hosted by" line below)
           try {
@@ -101,6 +140,26 @@ export default function ListingDetail() {
           } catch (error) {
             console.error('Error fetching host profile:', error);
             // Silently handle host profile errors - listing detail should still render
+          }
+
+          // Similar stays in the same city - non-critical, failure shouldn't block the page
+          try {
+            const similar = await listingService.getSimilar(data);
+            setSimilarListings(similar);
+          } catch (error) {
+            console.error('Error fetching similar listings:', error);
+            setSimilarListings([]);
+          }
+
+          // Upcoming custom-priced dates (host-set overrides), for the
+          // calendar-based price view.
+          try {
+            const overrides = await calendarService.getPriceOverrides(data.id);
+            const upcoming = overrides.filter((o) => o.date >= new Date(new Date().setHours(0, 0, 0, 0)));
+            setPriceOverrides(upcoming);
+          } catch (error) {
+            console.error('Error fetching price overrides:', error);
+            setPriceOverrides([]);
           }
         }
       } catch (error) {
@@ -153,6 +212,45 @@ export default function ListingDetail() {
     calculatePricing();
   }, [listing, checkIn, checkOut]);
 
+  const handleShare = async () => {
+    const url = window.location.href;
+    if (navigator.share) {
+      try {
+        await navigator.share({ title: listing?.title, url });
+      } catch {
+        // User cancelled the share sheet - nothing to do.
+      }
+      return;
+    }
+
+    try {
+      await navigator.clipboard.writeText(url);
+      toast({ title: 'Link copied', description: 'Listing link copied to clipboard.' });
+    } catch {
+      toast({ title: 'Could not copy link', description: url, variant: 'destructive' });
+    }
+  };
+
+  const handleSendMessage = async () => {
+    if (!listing || !user?.id || !messageDraft.trim()) return;
+    setSendingMessage(true);
+    try {
+      await messageService.startConversation(listing.id, user.id, listing.hostId, user.id, messageDraft.trim());
+      toast({ title: 'Message sent', description: 'The host will get back to you soon.' });
+      setMessageDraft('');
+      setMessageOpen(false);
+    } catch (error: unknown) {
+      console.error('Error sending message:', error);
+      toast({
+        title: 'Could not send message',
+        description: getErrorMessage(error, 'Please try again.'),
+        variant: 'destructive',
+      });
+    } finally {
+      setSendingMessage(false);
+    }
+  };
+
   const handleBook = async () => {
     if (!listing || !checkIn || !checkOut || !user?.id) return;
 
@@ -172,32 +270,25 @@ export default function ListingDetail() {
       if (bookingResult.success && bookingResult.booking) {
         const booking = bookingResult.booking;
 
-        // bookingService.create() now refuses to create a booking at all
-        // when Razorpay isn't configured (it returns success:false instead)
-        // rather than confirming one with no payment behind it - so a
-        // successful result here always means 'pending_payment', and
-        // initiating Razorpay checkout is the only remaining step.
-        const orderResult = await bookingService.createRazorpayOrder(booking.id);
-
-        if (!orderResult.success || !orderResult.order) {
-          throw new Error(orderResult.error || 'Failed to initialize payment');
+        if (bookingResult.requiresApproval) {
+          // Request to Book: no payment yet - the host has to approve first.
+          toast({
+            title: 'Request sent',
+            description: `${host?.first_name || 'The host'} will review your request. You'll be able to pay once it's approved.`,
+          });
+          navigate('/trips');
+          return;
         }
 
-        // Checkout.js is no longer loaded on every page - fetch it now,
-        // right before we actually need it.
-        const scriptLoaded = await loadRazorpayScript();
-        if (!scriptLoaded) {
-          throw new Error('Could not load the payment gateway. Check your connection and try again.');
-        }
-
-        const options = {
-          key: orderResult.order.key_id,
-          amount: orderResult.order.amount,
-          currency: orderResult.order.currency,
-          name: "TRIVARA",
-          description: `Booking for ${listing.title}`,
-          order_id: orderResult.order.id,
-          handler: function () {
+        // Instant Book: bookingService.create() refuses to create a booking
+        // at all when Razorpay isn't configured, so a successful result here
+        // always means 'pending_payment' and initiating checkout is next.
+        const result = await payForBooking({
+          bookingId: booking.id,
+          listingTitle: listing.title,
+          userEmail: user.email,
+          userName: `${user.user_metadata?.first_name || ''} ${user.user_metadata?.last_name || ''}`,
+          onSuccess: () => {
             // Webhook will handle the confirmation, but we can proactively notify
             toast({
               title: 'Payment successful',
@@ -205,28 +296,20 @@ export default function ListingDetail() {
             });
             navigate('/trips');
           },
-          prefill: {
-            name: `${user.user_metadata?.first_name || ''} ${user.user_metadata?.last_name || ''}`,
-            email: user.email,
+          onDismiss: () => {
+            setIsBooking(false);
+            toast({
+              title: 'Payment cancelled',
+              description: 'You can try paying again from your trips page.',
+              variant: 'default',
+            });
           },
-          theme: {
-            color: "#4f46e5",
-          },
-          modal: {
-            ondismiss: function () {
-              setIsBooking(false);
-              toast({
-                title: 'Payment cancelled',
-                description: 'You can try paying again from your trips page.',
-                variant: 'default',
-              });
-            }
-          }
-        };
+        });
 
-        const rzp = new window.Razorpay(options);
-        rzp.open();
-        return; // Don't navigate yet, wait for handler or modal close
+        if (!result.success) {
+          throw new Error(result.error);
+        }
+        return; // Don't navigate yet, wait for the checkout's handler or modal close
       } else {
         toast({
           title: 'Booking failed',
@@ -279,24 +362,49 @@ export default function ListingDetail() {
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Title and Location */}
-        <div className="mb-6">
-          <h1 className="text-3xl font-display font-medium text-foreground mb-2">
-            {listing.title}
-          </h1>
-          <p className="text-text-secondary flex items-center gap-1">
-            <MapPin className="h-4 w-4" />
-            {listing.location?.city}, {listing.location?.state}, {listing.location?.country}
-          </p>
-          {host && (
-            <p className="text-text-secondary mt-1">
-              Hosted by {host.first_name} {host.last_name}
+        <div className="mb-6 flex items-start justify-between gap-4">
+          <div>
+            <h1 className="text-3xl font-display font-medium text-foreground mb-2">
+              {listing.title}
+            </h1>
+            <p className="text-text-secondary flex items-center gap-1">
+              <MapPin className="h-4 w-4" />
+              {listing.location?.city}, {listing.location?.state}, {listing.location?.country}
             </p>
-          )}
+            {host && (
+              <p className="text-text-secondary mt-1 flex items-center gap-1.5">
+                Hosted by {host.first_name} {host.last_name}
+                {host.is_verified && (
+                  <Badge variant="secondary" className="gap-1 bg-surface-3 text-foreground">
+                    <BadgeCheck className="h-3.5 w-3.5" />
+                    Verified
+                  </Badge>
+                )}
+              </p>
+            )}
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            <Button variant="outline" size="sm" className="gap-2" onClick={handleShare}>
+              <Share2 className="h-4 w-4" />
+              Share
+            </Button>
+            {user && listing.hostId !== user.id && (
+              <Button variant="outline" size="sm" className="gap-2" onClick={() => setMessageOpen(true)}>
+                <MessageCircle className="h-4 w-4" />
+                Message host
+              </Button>
+            )}
+          </div>
         </div>
 
         {/* Image Gallery */}
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-8">
-          <div className="lg:col-span-2 lg:row-span-2">
+        <div className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-8">
+          <button
+            type="button"
+            className="lg:col-span-2 lg:row-span-2 block cursor-pointer"
+            onClick={() => { setGalleryIndex(0); setGalleryOpen(true); }}
+            disabled={!listing.photos?.[0]}
+          >
             {listing.photos && listing.photos[0] ? (
               <img
                 src={listing.photos[0]}
@@ -311,17 +419,89 @@ export default function ListingDetail() {
                 </div>
               </div>
             )}
-          </div>
+          </button>
           {listing.photos && listing.photos.slice(1, 5).map((photo: string, index: number) => (
-            <div key={index} className="aspect-square">
+            <button
+              type="button"
+              key={index}
+              className="aspect-square block cursor-pointer"
+              onClick={() => { setGalleryIndex(index + 1); setGalleryOpen(true); }}
+            >
               <img
                 src={photo}
                 alt={`${listing.title} ${index + 2}`}
                 className="w-full h-full object-cover rounded-lg"
               />
-            </div>
+            </button>
           ))}
+          {listing.photos && listing.photos.length > 1 && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="absolute bottom-3 right-3 bg-background/90"
+              onClick={() => { setGalleryIndex(0); setGalleryOpen(true); }}
+            >
+              Show all {listing.photos.length} photos
+            </Button>
+          )}
         </div>
+
+        {/* Photo Lightbox */}
+        <Dialog open={galleryOpen} onOpenChange={setGalleryOpen}>
+          <DialogContent className="max-w-4xl w-full bg-background p-0 overflow-hidden">
+            {listing.photos && listing.photos.length > 0 && (
+              <div className="relative bg-black/90 flex items-center justify-center h-[70vh]">
+                <img
+                  src={listing.photos[galleryIndex]}
+                  alt={`${listing.title} ${galleryIndex + 1}`}
+                  className="max-h-full max-w-full object-contain"
+                />
+                {listing.photos.length > 1 && (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() => setGalleryIndex((i) => (i - 1 + listing.photos.length) % listing.photos.length)}
+                      className="absolute left-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-background/80 hover:bg-background flex items-center justify-center"
+                    >
+                      <ChevronLeft className="h-5 w-5" />
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setGalleryIndex((i) => (i + 1) % listing.photos.length)}
+                      className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-background/80 hover:bg-background flex items-center justify-center"
+                    >
+                      <ChevronRight className="h-5 w-5" />
+                    </button>
+                    <span className="absolute bottom-3 left-1/2 -translate-x-1/2 text-xs text-white bg-black/60 px-2 py-1 rounded-full">
+                      {galleryIndex + 1} / {listing.photos.length}
+                    </span>
+                  </>
+                )}
+              </div>
+            )}
+          </DialogContent>
+        </Dialog>
+
+        {/* Message host */}
+        <Dialog open={messageOpen} onOpenChange={setMessageOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>Message {host ? host.first_name : 'the host'}</DialogTitle>
+            </DialogHeader>
+            <Textarea
+              value={messageDraft}
+              onChange={(e) => setMessageDraft(e.target.value)}
+              placeholder={`Hi${host ? ' ' + host.first_name : ''}, I have a question about ${listing.title}...`}
+              className="min-h-32"
+            />
+            <DialogFooter>
+              <Button onClick={handleSendMessage} disabled={sendingMessage || !messageDraft.trim()}>
+                {sendingMessage ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
+                Send message
+              </Button>
+            </DialogFooter>
+          </DialogContent>
+        </Dialog>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
@@ -367,57 +547,25 @@ export default function ListingDetail() {
               </div>
             )}
 
+            {/* Cancellation Policy */}
+            <div className="mb-8">
+              <h3 className="text-xl font-medium text-foreground mb-4 flex items-center gap-2">
+                <ShieldCheck className="h-5 w-5 text-accent" />
+                Cancellation policy
+              </h3>
+              <p className="text-text-secondary leading-relaxed">
+                <span className="font-medium text-foreground capitalize">{listing.cancellationPolicy}</span>
+                {': '}
+                {cancellationPolicySummary[listing.cancellationPolicy]}{' '}
+                <Link to="/cancellation-options" className="underline underline-offset-2 hover:text-foreground">
+                  Learn more
+                </Link>
+              </p>
+            </div>
+
             {/* Reviews */}
             <div className="mb-8">
-              <h3 className="text-xl font-medium text-foreground mb-4">Reviews</h3>
-              {reviews.length > 0 ? (
-                <>
-                  {/* Average Rating */}
-                  <div className="flex items-center gap-2 mb-6">
-                    <Star className="h-5 w-5 fill-yellow-400 text-yellow-400" />
-                    <span className="text-lg font-medium text-foreground">
-                      {reviews.length > 0
-                        ? (reviews.reduce((sum, r) => sum + r.rating, 0) / reviews.length).toFixed(1)
-                        : '0.0'}
-                    </span>
-                    <span className="text-text-secondary">
-                      ({reviews.length} {reviews.length === 1 ? 'review' : 'reviews'})
-                    </span>
-                  </div>
-
-                  {/* Review List */}
-                  <div className="space-y-6">
-                    {reviews.map((review) => (
-                      <div key={review.id} className="border-b border-border pb-6 last:border-b-0 last:pb-0">
-                        <div className="flex items-center gap-2 mb-2">
-                          {/* Star rating display */}
-                          <div className="flex gap-1">
-                            {[1, 2, 3, 4, 5].map((star) => (
-                              <Star
-                                key={star}
-                                className={`h-4 w-4 ${star <= review.rating
-                                  ? 'fill-yellow-400 text-yellow-400'
-                                  : 'text-text-secondary'
-                                  }`}
-                              />
-                            ))}
-                          </div>
-                        </div>
-                        {review.comment && (
-                          <p className="text-text-secondary text-sm mb-2">
-                            {review.comment}
-                          </p>
-                        )}
-                        <p className="text-xs text-text-meta">
-                          {review.createdAt ? new Date(review.createdAt).toLocaleDateString() : ''}
-                        </p>
-                      </div>
-                    ))}
-                  </div>
-                </>
-              ) : (
-                <p className="text-text-secondary">No reviews yet</p>
-              )}
+              <ReviewsList listingId={listing.id} />
             </div>
           </div>
 
@@ -452,6 +600,19 @@ export default function ListingDetail() {
                     }}
                     className="rounded-lg border border-border shadow-none"
                   />
+                  {priceOverrides.length > 0 && (
+                    <div className="mt-2 text-xs text-text-meta space-y-0.5">
+                      <p className="font-medium text-text-secondary">Custom pricing on select dates:</p>
+                      {groupConsecutivePriceOverrides(priceOverrides).map((group) => (
+                        <p key={group.start.toISOString()}>
+                          {group.start.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}
+                          {group.end.getTime() !== group.start.getTime()
+                            && ` - ${group.end.toLocaleDateString(undefined, { month: 'short', day: 'numeric' })}`}
+                          : {formatINR(group.price)}/night
+                        </p>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* Guests */}
@@ -459,17 +620,60 @@ export default function ListingDetail() {
                   <label className="block text-sm font-medium text-foreground mb-2">
                     Guests
                   </label>
-                  <select
-                    value={guests}
-                    onChange={(e) => setGuests(Number(e.target.value))}
-                    className="w-full rounded-lg border border-border bg-background px-3 py-2 text-foreground"
-                  >
-                    {[...Array(listing.maxGuests)].map((_, i) => (
-                      <option key={i + 1} value={i + 1}>
-                        {i + 1} {i === 0 ? 'guest' : 'guests'}
-                      </option>
-                    ))}
-                  </select>
+                  <Popover>
+                    <PopoverTrigger asChild>
+                      <button
+                        type="button"
+                        className="w-full text-left rounded-lg border border-border bg-background px-3 py-2 text-foreground hover:bg-surface-2 trivara-transition"
+                      >
+                        {guests} {guests === 1 ? 'guest' : 'guests'}
+                        {infants > 0 && `, ${infants} ${infants === 1 ? 'infant' : 'infants'}`}
+                      </button>
+                    </PopoverTrigger>
+                    <PopoverContent className="w-72 bg-card border-border space-y-4">
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium">Adults</p>
+                          <p className="text-xs text-text-meta">Ages 13+</p>
+                        </div>
+                        <CounterInput
+                          value={adults}
+                          onChange={(v) => setAdults(Math.min(v, listing.maxGuests - children))}
+                          min={1}
+                          max={Math.max(1, listing.maxGuests - children)}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium">Children</p>
+                          <p className="text-xs text-text-meta">Ages 2-12</p>
+                        </div>
+                        <CounterInput
+                          value={children}
+                          onChange={(v) => setChildren(Math.min(v, listing.maxGuests - adults))}
+                          min={0}
+                          max={Math.max(0, listing.maxGuests - adults)}
+                        />
+                      </div>
+                      <div className="flex items-center justify-between">
+                        <div>
+                          <p className="text-sm font-medium">Infants</p>
+                          <p className="text-xs text-text-meta">Under 2 · doesn't count toward capacity</p>
+                        </div>
+                        <CounterInput value={infants} onChange={setInfants} min={0} max={5} />
+                      </div>
+                      <label className="flex items-center justify-between pt-3 border-t border-border cursor-pointer">
+                        <span className="text-sm font-medium">Bringing a pet?</span>
+                        <Checkbox checked={bringingPet} onCheckedChange={(checked) => setBringingPet(!!checked)} />
+                      </label>
+                      {bringingPet && !listing.amenities.includes('pets_allowed') && (
+                        <p className="text-xs text-destructive">
+                          This listing isn't marked pet-friendly - message the host before booking.
+                        </p>
+                      )}
+                    </PopoverContent>
+                  </Popover>
+                  <p className="text-xs text-text-meta mt-1">This place has a maximum of {listing.maxGuests} guests (not counting infants)</p>
                 </div>
 
                 {/* Pricing Breakdown */}
@@ -510,14 +714,19 @@ export default function ListingDetail() {
                   {isBooking ? (
                     <>
                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Booking...
+                      {listing.instantBook ? 'Booking...' : 'Sending request...'}
                     </>
                   ) : user ? (
-                    'Request to book'
+                    listing.instantBook ? 'Reserve' : 'Request to book'
                   ) : (
                     'Sign in to book'
                   )}
                 </Button>
+                <p className="text-xs text-text-meta text-center mt-2">
+                  {listing.instantBook
+                    ? 'Instant Book - pay now, no host approval needed.'
+                    : 'Request to Book - the host reviews your request before you pay.'}
+                </p>
 
                 {!user && (
                   <p className="text-xs text-text-secondary text-center mt-2">
@@ -534,6 +743,18 @@ export default function ListingDetail() {
             </Card>
           </div>
         </div>
+
+        {/* Similar Stays */}
+        {similarListings.length > 0 && (
+          <div className="mt-12 pt-8 border-t border-border">
+            <h2 className="text-2xl font-medium text-foreground mb-6">Similar stays</h2>
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+              {similarListings.map((similar) => (
+                <ListingCard key={similar.id} listing={similar} />
+              ))}
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );

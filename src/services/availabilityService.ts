@@ -1,6 +1,8 @@
 import { supabase } from '../lib/supabase';
 import { toDateOnly } from '../lib/utils';
 
+const MS_PER_DAY = 24 * 60 * 60 * 1000;
+
 // There is no standalone `availability` table - a listing's booked dates are
 // derived entirely from its confirmed/completed bookings. (An earlier
 // version of this file had a `getByListingId()` that queried a table which
@@ -38,18 +40,26 @@ class AvailabilityService {
 
   async getUnavailableDates(listingId: string): Promise<Date[]> {
     try {
-      const { data: bookings, error } = await supabase
-        .from('bookings')
-        .select('start_date, end_date')
-        .eq('listing_id', listingId)
-        .in('status', ['confirmed', 'completed']);
+      const [bookingsResult, blackoutResult] = await Promise.all([
+        supabase
+          .from('bookings')
+          .select('start_date, end_date')
+          .eq('listing_id', listingId)
+          .in('status', ['confirmed', 'completed']),
+        supabase
+          .from('listing_blackout_dates')
+          .select('start_date, end_date')
+          .eq('listing_id', listingId),
+      ]);
 
-      if (error) throw error;
+      if (bookingsResult.error) throw bookingsResult.error;
+      if (blackoutResult.error) throw blackoutResult.error;
 
       const unavailableDates: Date[] = [];
-      for (const booking of bookings || []) {
-        let currentDate = new Date(booking.start_date + 'T00:00:00');
-        const endDate = new Date(booking.end_date + 'T00:00:00');
+      const ranges = [...(bookingsResult.data || []), ...(blackoutResult.data || [])];
+      for (const range of ranges) {
+        let currentDate = new Date(range.start_date + 'T00:00:00');
+        const endDate = new Date(range.end_date + 'T00:00:00');
 
         while (currentDate < endDate) {
           unavailableDates.push(new Date(currentDate));
@@ -64,6 +74,23 @@ class AvailabilityService {
     }
   }
 
+  /** Host-set per-date prices for a listing, keyed by 'YYYY-MM-DD'. */
+  async getPriceOverrides(listingId: string, startDate: Date, endDate: Date): Promise<Map<string, number>> {
+    const { data, error } = await supabase
+      .from('listing_price_overrides')
+      .select('date, price_per_night')
+      .eq('listing_id', listingId)
+      .gte('date', toDateOnly(startDate))
+      .lt('date', toDateOnly(endDate));
+
+    if (error) {
+      console.error('Error fetching price overrides:', error);
+      return new Map();
+    }
+
+    return new Map((data || []).map((row) => [row.date, row.price_per_night]));
+  }
+
   async calculateTotalPrice(
     listingId: string,
     startDate: Date,
@@ -73,7 +100,19 @@ class AvailabilityService {
     serviceFee: number
   ): Promise<{ nights: number; subtotal: number; cleaningFee: number; serviceFee: number; total: number }> {
     const nights = Math.max(0, Math.round((endDate.getTime() - startDate.getTime()) / (24 * 60 * 60 * 1000)));
-    const subtotal = nights * basePrice;
+
+    // Per-date host overrides (listing_price_overrides) take precedence over
+    // the listing's flat basePrice for any date they cover - this is the
+    // real backing for "calendar-based price view": a date range spanning a
+    // holiday/weekend override actually charges that price, not just shows
+    // it cosmetically.
+    const overrides = nights > 0 ? await this.getPriceOverrides(listingId, startDate, endDate) : new Map<string, number>();
+
+    let subtotal = 0;
+    for (let i = 0; i < nights; i++) {
+      const date = toDateOnly(new Date(startDate.getTime() + i * MS_PER_DAY));
+      subtotal += overrides.get(date) ?? basePrice;
+    }
 
     return {
       nights,

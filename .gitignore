@@ -34,3 +34,8 @@ dist-ssr
 bun.lockb
 bun.lock
 
+# Local `supabase start`/`supabase db reset` CLI state - machine-specific,
+# not part of the schema itself (that lives in supabase/migrations).
+supabase/.branches/
+supabase/.temp/start-secrets/
+

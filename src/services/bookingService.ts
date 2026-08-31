@@ -90,7 +90,7 @@ class BookingService {
     checkIn: Date,
     checkOut: Date,
     guests: number
-  ): Promise<{ success: boolean; booking?: Booking; error?: string }> {
+  ): Promise<{ success: boolean; booking?: Booking; error?: string; requiresApproval?: boolean }> {
     try {
       // Guests get a `profiles` row from the handle_new_user trigger on
       // signup, but older accounts (or a trigger that failed once) can be
@@ -148,7 +148,13 @@ class BookingService {
       }
 
       // end_date is exclusive (checkout date) - see availabilityService for
-      // the overlap logic this depends on.
+      // the overlap logic this depends on. A Request-to-Book listing
+      // (instantBook === false) creates a 'pending' row and stops there - no
+      // payment is collected until the host approves it via
+      // approve_booking_request(); an Instant Book listing goes straight to
+      // 'pending_payment' so the caller can open Razorpay checkout right
+      // after this returns, same as before.
+      const requiresApproval = !listing.instantBook;
       const bookingPayload: Record<string, unknown> = {
         listing_id: listingId,
         guest_id: guestId,
@@ -157,7 +163,7 @@ class BookingService {
         end_date: toDateOnly(checkOut),
         guests,
         total_price: pricing.total,
-        status: 'pending_payment',
+        status: requiresApproval ? 'pending' : 'pending_payment',
         payment_status: 'pending',
       };
 
@@ -171,7 +177,7 @@ class BookingService {
         return { success: false, error: `Booking failed: ${insertError.message}` };
       }
 
-      return { success: true, booking: mapBooking(b as BookingRow) };
+      return { success: true, booking: mapBooking(b as BookingRow), requiresApproval };
     } catch (error: unknown) {
       console.error('Booking failed:', error);
       return { success: false, error: getErrorMessage(error) };
@@ -198,6 +204,23 @@ class BookingService {
     }
 
     return (data?.length ?? 0) > 0;
+  }
+
+  /**
+   * Host approves a Request-to-Book: pending -> pending_payment. This is the
+   * one transition the plain "Hosts can update own bookings" RLS policy
+   * doesn't allow (it only permits -> cancelled/completed), so it goes
+   * through the approve_booking_request() SECURITY DEFINER RPC instead.
+   * Declining a request reuses the ordinary cancelBooking() path below - a
+   * 'pending' booking was never paid, so it takes the no-refund-needed
+   * branch there.
+   */
+  async approveBookingRequest(bookingId: string): Promise<{ success: boolean; booking?: Booking; error?: string }> {
+    const { data, error } = await supabase.rpc('approve_booking_request', { p_booking_id: bookingId });
+    if (error || !data) {
+      return { success: false, error: getErrorMessage(error, 'Failed to approve this request') };
+    }
+    return { success: true, booking: mapBooking(data as BookingRow) };
   }
 
   async updateStatus(id: string, status: BookingStatus): Promise<Booking | undefined> {
@@ -317,8 +340,12 @@ class BookingService {
   async getUpcomingByGuestId(guestId: string): Promise<Booking[]> {
     const allBookings = await this.getByGuestId(guestId);
     const now = new Date();
+    // Includes 'pending' (awaiting host approval) and 'pending_payment'
+    // (approved, or Instant Book, but not yet paid) alongside 'confirmed' -
+    // these used to be entirely invisible in Trips, so a guest had no way to
+    // see a pending request, retry an abandoned payment, or withdraw either.
     return allBookings
-      .filter(b => b.status === 'confirmed' && new Date(b.checkIn) > now)
+      .filter(b => ['pending', 'pending_payment', 'confirmed'].includes(b.status) && new Date(b.checkIn) > now)
       .sort((a, b) => new Date(a.checkIn).getTime() - new Date(b.checkIn).getTime());
   }
 
@@ -329,19 +356,25 @@ class BookingService {
       .sort((a, b) => new Date(b.checkOut).getTime() - new Date(a.checkOut).getTime());
   }
 
+  /**
+   * Booking counts only - NOT earnings. This used to also return
+   * `totalEarnings`/`pendingEarnings` computed as `totalPrice * 0.85` (a 15%
+   * platform fee assumption), while the actual platform fee charged via
+   * `create_host_earnings_on_completion()` (see migrations) is 18% - two
+   * different "total earnings" numbers for the same host depending on which
+   * page read them. earningsService.getHostEarningsStats() (real host_earnings
+   * rows, the authoritative 18%-fee numbers) is the only source for earnings
+   * now; every caller of this method gets those separately.
+   */
   async getStats(hostId: string) {
     const hostBookings = await this.getByHostId(hostId);
     const confirmed = hostBookings.filter(b => b.status === 'confirmed');
     const completed = hostBookings.filter(b => b.status === 'completed');
-    const totalEarnings = completed.reduce((sum, b) => sum + b.totalPrice * 0.85, 0);
-    const pendingEarnings = confirmed.reduce((sum, b) => sum + b.totalPrice * 0.85, 0);
 
     return {
       totalBookings: hostBookings.length,
       confirmedBookings: confirmed.length,
       completedBookings: completed.length,
-      totalEarnings,
-      pendingEarnings,
     };
   }
 

@@ -174,10 +174,11 @@ export default function PaymentMethods() {
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">
           <h1 className="text-3xl font-display font-medium text-foreground mb-2">
-            Payment Methods
+            Payout account
           </h1>
           <p className="text-text-secondary">
-            Manage your bank details for payouts
+            Manage the bank account Trivara pays your host earnings into. This isn't where guests
+            manage how they pay for bookings - that happens at checkout.
           </p>
         </div>
 

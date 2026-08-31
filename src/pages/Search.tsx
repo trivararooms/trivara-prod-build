@@ -1,19 +1,21 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
-import { SlidersHorizontal, Map, List, X, Search as SearchIcon } from 'lucide-react';
+import { SlidersHorizontal, Map, List, X, Search as SearchIcon, Loader2 } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { SearchBar } from '@/components/search/SearchBar';
 import { ListingGrid } from '@/components/listings/ListingGrid';
 import { ListingCard } from '@/components/listings/ListingCard';
+import { ListingsMap } from '@/components/search/ListingsMap';
 import { listingService } from '@/services/listingService';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/components/ui/sheet';
 import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
-import { SearchFilters, SearchResult, CancellationPolicy, PropertyType, Listing } from '@/types';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { SearchFilters, SearchResult, CancellationPolicy, PropertyType, Listing, SearchSort } from '@/types';
 import { formatINR } from '@/lib/utils';
-import { amenitiesList } from '@/data/amenities';
+import { amenitiesList, accessibilityList } from '@/data/amenities';
 
 // Simple Skeleton for Carousels
 const CarouselSkeleton = () => (
@@ -47,6 +49,8 @@ export default function Search() {
   const selectedAmenities = getArrayParam('amenities');
   const minRating = parseFloat(getParam('minRating') || '0');
   const selectedCancellationPolicies = getArrayParam('cancellationPolicy') as CancellationPolicy[];
+  const sort = (getParam('sort') || 'recommended') as SearchSort;
+  const flexibleDays = parseInt(getParam('flexibleDays') || '0');
   const page = parseInt(getParam('page') || '1');
 
   // Update URL function
@@ -73,12 +77,14 @@ export default function Search() {
     guests: getParam('guests') ? parseInt(getParam('guests')!) : undefined,
     checkIn: getParam('checkIn') ? new Date(getParam('checkIn')!) : undefined,
     checkOut: getParam('checkOut') ? new Date(getParam('checkOut')!) : undefined,
+    flexibleDays: flexibleDays > 0 ? flexibleDays : undefined,
     minPrice: priceRange[0] > 0 ? priceRange[0] : undefined,
     maxPrice: priceRange[1] < 1000 ? priceRange[1] : undefined,
     propertyTypes: selectedPropertyTypes.length > 0 ? selectedPropertyTypes : undefined,
     amenities: selectedAmenities.length > 0 ? selectedAmenities : undefined,
     minRating: minRating > 0 ? minRating : undefined,
     cancellationPolicy: selectedCancellationPolicies.length > 0 ? selectedCancellationPolicies : undefined,
+    sort: sort !== 'recommended' ? sort : undefined,
   }), [
     getParam,
     priceRange,
@@ -86,6 +92,8 @@ export default function Search() {
     selectedAmenities,
     minRating,
     selectedCancellationPolicies,
+    flexibleDays,
+    sort,
   ]);
 
   // Determine if user has actively searched or is just "exploring"
@@ -165,6 +173,23 @@ export default function Search() {
             </div>
 
             <div className="flex w-full md:w-auto items-center justify-between md:justify-end gap-2">
+              {/* Sort */}
+              <Select
+                value={sort}
+                onValueChange={(value) => updateFilter('sort', value === 'recommended' ? null : value)}
+              >
+                <SelectTrigger className="w-auto gap-2 border-none bg-transparent shadow-none hover:bg-surface-2">
+                  <SelectValue placeholder="Sort" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="recommended">Recommended</SelectItem>
+                  <SelectItem value="price_asc">Price: low to high</SelectItem>
+                  <SelectItem value="price_desc">Price: high to low</SelectItem>
+                  <SelectItem value="rating">Top rated</SelectItem>
+                  <SelectItem value="newest">Newest</SelectItem>
+                </SelectContent>
+              </Select>
+
               {/* View Toggle */}
               <div className="hidden md:flex items-center gap-1 bg-surface-2 rounded-lg p-1">
                 <Button
@@ -216,6 +241,35 @@ export default function Search() {
                   </SheetHeader>
 
                   <div className="space-y-8">
+                    {/* Flexible dates - only meaningful once exact dates are picked in the search bar */}
+                    {filters.checkIn && filters.checkOut && (
+                      <div>
+                        <h4 className="font-medium mb-4">Dates</h4>
+                        <div className="flex gap-2">
+                          {[
+                            { value: 0, label: 'Exact dates' },
+                            { value: 3, label: '± 3 days' },
+                            { value: 7, label: '± 7 days' },
+                          ].map((opt) => (
+                            <Button
+                              key={opt.value}
+                              variant={flexibleDays === opt.value ? 'default' : 'outline'}
+                              size="sm"
+                              onClick={() => updateFilter('flexibleDays', opt.value === 0 ? null : opt.value.toString())}
+                              className={flexibleDays === opt.value ? 'bg-foreground text-background hover:bg-foreground/90' : ''}
+                            >
+                              {opt.label}
+                            </Button>
+                          ))}
+                        </div>
+                        {flexibleDays > 0 && (
+                          <p className="text-xs text-text-meta mt-2">
+                            Showing stays with room for your dates within {flexibleDays} days either side.
+                          </p>
+                        )}
+                      </div>
+                    )}
+
                     {/* Price Range */}
                     <div>
                       <h4 className="font-medium mb-4">Price range</h4>
@@ -300,7 +354,7 @@ export default function Search() {
                     <div>
                       <h4 className="font-medium mb-4">Amenities</h4>
                       <div className="grid grid-cols-2 gap-3">
-                        {amenitiesList.slice(0, 10).map((amenity) => (
+                        {amenitiesList.map((amenity) => (
                           <label key={amenity.id} className="flex items-center gap-3 cursor-pointer group">
                             <Checkbox
                               checked={selectedAmenities.includes(amenity.id)}
@@ -312,6 +366,27 @@ export default function Search() {
                               }}
                             />
                             <span className="text-sm truncate group-hover:text-foreground transition-colors">{amenity.label}</span>
+                          </label>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Accessibility */}
+                    <div>
+                      <h4 className="font-medium mb-4">Accessibility</h4>
+                      <div className="grid grid-cols-2 gap-3">
+                        {accessibilityList.map((feature) => (
+                          <label key={feature.id} className="flex items-center gap-3 cursor-pointer group">
+                            <Checkbox
+                              checked={selectedAmenities.includes(feature.id)}
+                              onCheckedChange={(checked) => {
+                                const newAm = checked
+                                  ? [...selectedAmenities, feature.id]
+                                  : selectedAmenities.filter(a => a !== feature.id);
+                                updateArrayFilter('amenities', newAm);
+                              }}
+                            />
+                            <span className="text-sm truncate group-hover:text-foreground transition-colors">{feature.label}</span>
                           </label>
                         ))}
                       </div>
@@ -458,17 +533,15 @@ export default function Search() {
                 ))}
               </div>
 
-              {/* Map Placeholder */}
+              {/* Map */}
               <div className="hidden lg:block sticky top-36 h-[calc(100vh-200px)] rounded-xl bg-surface-1 border border-border overflow-hidden">
-                <div className="w-full h-full flex flex-col items-center justify-center text-center p-6">
-                  <div className="h-16 w-16 bg-surface-0 rounded-full flex items-center justify-center mb-4 shadow-sm border border-border">
-                    <Map className="h-8 w-8 text-foreground" />
+                {loading ? (
+                  <div className="w-full h-full flex items-center justify-center">
+                    <Loader2 className="h-6 w-6 animate-spin text-text-secondary" />
                   </div>
-                  <h3 className="font-medium text-lg mb-1">Map View</h3>
-                  <p className="text-sm text-text-secondary max-w-[250px]">
-                    Interactive map plotting is currently disabled in this environment.
-                  </p>
-                </div>
+                ) : (
+                  <ListingsMap listings={searchResults.listings} />
+                )}
               </div>
             </div>
           )}

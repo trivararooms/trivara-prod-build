@@ -14,6 +14,8 @@ import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/hooks/useAuth';
 import { formatINR } from '@/lib/utils';
 import { getErrorMessage } from '@/lib/errors';
+import { payForBooking } from '@/lib/razorpayCheckout';
+import { ReviewCategoryRatings } from '@/types';
 
 interface BookingWithListing {
   booking: {
@@ -44,19 +46,48 @@ interface ReviewModalProps {
   booking: BookingWithListing['booking'];
   listing: BookingWithListing['listing'];
   onClose: () => void;
-  onSubmit: (bookingId: string, rating: number, comment?: string) => Promise<void>;
+  onSubmit: (bookingId: string, rating: number, comment?: string, categories?: ReviewCategoryRatings) => Promise<void>;
   submitting: boolean;
+}
+
+const REVIEW_CATEGORIES: { key: keyof ReviewCategoryRatings; label: string }[] = [
+  { key: 'cleanliness', label: 'Cleanliness' },
+  { key: 'accuracy', label: 'Accuracy' },
+  { key: 'communication', label: 'Communication' },
+  { key: 'value', label: 'Value' },
+  { key: 'location', label: 'Location' },
+];
+
+function MiniStarInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
+  const [hovered, setHovered] = useState(0);
+  return (
+    <div className="flex gap-0.5">
+      {[1, 2, 3, 4, 5].map((star) => (
+        <button
+          key={star}
+          type="button"
+          className="focus:outline-none"
+          onMouseEnter={() => setHovered(star)}
+          onMouseLeave={() => setHovered(0)}
+          onClick={() => onChange(star)}
+        >
+          <Star className={`h-4 w-4 ${star <= (hovered || value) ? 'fill-yellow-400 text-yellow-400' : 'text-text-secondary'}`} />
+        </button>
+      ))}
+    </div>
+  );
 }
 
 function ReviewModal({ booking, listing, onClose, onSubmit, submitting }: ReviewModalProps) {
   const [rating, setRating] = useState(0);
   const [comment, setComment] = useState('');
   const [hoveredRating, setHoveredRating] = useState(0);
+  const [categories, setCategories] = useState<ReviewCategoryRatings>({});
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (rating === 0) return;
-    await onSubmit(booking.id, rating, comment || undefined);
+    await onSubmit(booking.id, rating, comment || undefined, categories);
   };
 
   return (
@@ -91,7 +122,20 @@ function ReviewModal({ booking, listing, onClose, onSubmit, submitting }: Review
               </button>
             ))}
           </div>
-          
+
+          {/* Category breakdown - all optional, purely a display refinement on top of the overall rating above */}
+          <div className="space-y-2 border-y border-border py-4">
+            {REVIEW_CATEGORIES.map(({ key, label }) => (
+              <div key={key} className="flex items-center justify-between">
+                <span className="text-sm text-text-secondary">{label}</span>
+                <MiniStarInput
+                  value={categories[key] || 0}
+                  onChange={(v) => setCategories((prev) => ({ ...prev, [key]: v }))}
+                />
+              </div>
+            ))}
+          </div>
+
           {/* Comment */}
           <Textarea
             placeholder="Share your experience (optional)"
@@ -139,6 +183,7 @@ export default function Trips() {
   const [reviewingListing, setReviewingListing] = useState<BookingWithListing['listing'] | null>(null);
   const [reviewedBookings, setReviewedBookings] = useState<Set<string>>(new Set());
   const [cancellingBookingId, setCancellingBookingId] = useState<string | null>(null);
+  const [payingBookingId, setPayingBookingId] = useState<string | null>(null);
   const [submittingReview, setSubmittingReview] = useState(false);
   
   const [upcomingBookings, setUpcomingBookings] = useState<BookingWithListing[]>([]);
@@ -208,10 +253,15 @@ export default function Trips() {
     fetchBookings();
   }, [authLoading, user?.id, toast]);
 
-  const handleReviewSubmit = async (bookingId: string, rating: number, comment?: string) => {
+  const handleReviewSubmit = async (
+    bookingId: string,
+    rating: number,
+    comment?: string,
+    categories?: ReviewCategoryRatings
+  ) => {
     setSubmittingReview(true);
     try {
-      await reviewService.createReview(bookingId, rating, comment);
+      await reviewService.createReview(bookingId, rating, comment, categories);
       toast({
         title: 'Review submitted',
         description: 'Thank you for your review!',
@@ -234,6 +284,44 @@ export default function Trips() {
   const openReviewModal = (booking: BookingWithListing['booking'], listing?: BookingWithListing['listing']) => {
     setReviewingBooking(booking);
     setReviewingListing(listing || null);
+  };
+
+  const handlePayNow = async (
+    booking: BookingWithListing['booking'],
+    listing: BookingWithListing['listing']
+  ) => {
+    if (!user) return;
+    setPayingBookingId(booking.id);
+    try {
+      const result = await payForBooking({
+        bookingId: booking.id,
+        listingTitle: listing?.title || 'your stay',
+        userEmail: user.email,
+        userName: `${user.user_metadata?.first_name || ''} ${user.user_metadata?.last_name || ''}`,
+        onSuccess: () => {
+          toast({
+            title: 'Payment successful',
+            description: 'Your booking is being confirmed. Redirecting...',
+          });
+          setPayingBookingId(null);
+          navigate(`/bookings/${booking.id}/confirmation`);
+        },
+        onDismiss: () => {
+          setPayingBookingId(null);
+        },
+      });
+      if (!result.success) {
+        throw new Error(result.error);
+      }
+    } catch (error: unknown) {
+      console.error('Error opening checkout:', error);
+      toast({
+        title: 'Could not start payment',
+        description: getErrorMessage(error, 'Please try again.'),
+        variant: 'destructive',
+      });
+      setPayingBookingId(null);
+    }
   };
 
   const handleCancelBooking = async (bookingId: string) => {
@@ -347,16 +435,20 @@ export default function Trips() {
                             </p>
                           </div>
                           <span className={`px-3 py-1 rounded-full text-sm ${
-                            booking.status === 'confirmed' 
-                              ? 'bg-accent/20 text-accent-foreground' 
+                            booking.status === 'confirmed'
+                              ? 'bg-accent/20 text-accent-foreground'
                               : booking.status === 'completed'
                                 ? 'bg-surface-3 text-foreground'
-                                : 'bg-destructive/20 text-destructive-foreground'
+                                : booking.status === 'pending' || booking.status === 'pending_payment'
+                                  ? 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400'
+                                  : 'bg-destructive/20 text-destructive-foreground'
                           }`}>
-                            {booking.status}
+                            {booking.status === 'pending' ? 'Awaiting host approval'
+                              : booking.status === 'pending_payment' ? 'Payment required'
+                              : booking.status}
                           </span>
                         </div>
-                        
+
                         <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
                           <div>
                             <p className="text-text-secondary">Check-in</p>
@@ -371,18 +463,73 @@ export default function Trips() {
                             <p className="font-medium">{booking.guests} {booking.guests === 1 ? 'guest' : 'guests'}</p>
                           </div>
                           <div>
-                            <p className="text-text-secondary">Total paid</p>
+                            <p className="text-text-secondary">{booking.status === 'confirmed' || booking.status === 'completed' ? 'Total paid' : 'Total due'}</p>
                             <p className="font-medium">{formatINR(booking.totalPrice)}</p>
                           </div>
                         </div>
 
+                        {booking.status === 'pending_payment' && (
+                          <div className="flex gap-3 flex-wrap mb-3">
+                            <Button
+                              className="bg-accent text-accent-foreground hover:bg-accent-hover"
+                              disabled={payingBookingId === booking.id}
+                              onClick={() => handlePayNow(booking, listing)}
+                            >
+                              {payingBookingId === booking.id ? (
+                                <>
+                                  <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                                  Opening checkout...
+                                </>
+                              ) : (
+                                'Pay now'
+                              )}
+                            </Button>
+                            <Button
+                              variant="outline"
+                              className="border-destructive text-destructive hover:bg-destructive/10"
+                              disabled={cancellingBookingId === booking.id}
+                              onClick={() => handleCancelBooking(booking.id)}
+                            >
+                              {cancellingBookingId === booking.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                'Cancel'
+                              )}
+                            </Button>
+                          </div>
+                        )}
+                        {booking.status === 'pending' && (
+                          <div className="flex gap-3 flex-wrap mb-3">
+                            <Button
+                              variant="outline"
+                              className="border-destructive text-destructive hover:bg-destructive/10"
+                              disabled={cancellingBookingId === booking.id}
+                              onClick={() => handleCancelBooking(booking.id)}
+                            >
+                              {cancellingBookingId === booking.id ? (
+                                <Loader2 className="h-4 w-4 animate-spin" />
+                              ) : (
+                                'Withdraw request'
+                              )}
+                            </Button>
+                          </div>
+                        )}
+
                         <div className="flex gap-3 flex-wrap">
-                          <Button 
-                            variant="outline" 
+                          <Button
+                            variant="outline"
                             onClick={() => navigate(`/listing/${listing?.id}`)}
                           >
                             View listing
                           </Button>
+                          {(booking.status === 'confirmed' || booking.status === 'completed') && (
+                            <Button
+                              variant="outline"
+                              onClick={() => navigate(`/bookings/${booking.id}/confirmation`)}
+                            >
+                              View confirmation
+                            </Button>
+                          )}
                           {booking.status === 'confirmed' && new Date() < new Date(booking.checkIn) && (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
@@ -497,11 +644,17 @@ export default function Trips() {
                           </div>
 
                           <div className="flex gap-3">
-                            <Button 
-                              variant="outline" 
+                            <Button
+                              variant="outline"
                               onClick={() => navigate(`/listing/${listing?.id}`)}
                             >
                               View listing
+                            </Button>
+                            <Button
+                              variant="outline"
+                              onClick={() => navigate(`/bookings/${booking.id}/confirmation`)}
+                            >
+                              View confirmation
                             </Button>
                             {canReview ? (
                               <Button

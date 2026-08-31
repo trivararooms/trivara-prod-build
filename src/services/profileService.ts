@@ -17,6 +17,7 @@ export interface Profile {
   email: string;
   first_name: string;
   last_name: string;
+  phone?: string;
   avatar_url?: string;
   role: 'guest' | 'host' | 'admin';
   is_host: boolean;
@@ -49,6 +50,29 @@ export class ProfileService {
       console.error('Unexpected error fetching profile:', error);
       return null;
     }
+  }
+
+  /**
+   * Updates the caller's own editable profile fields. Restricted to exactly
+   * the columns the `profiles` UPDATE grant permits for `authenticated`
+   * (first_name, last_name, phone, avatar_url, bio) - see baseline migration
+   * section 14; anything else (role, is_host, is_verified) is intentionally
+   * unreachable from here.
+   */
+  async updateOwnProfile(
+    userId: string,
+    updates: { first_name?: string; last_name?: string; phone?: string; avatar_url?: string; bio?: string }
+  ): Promise<{ success: boolean; error?: string }> {
+    const { error } = await supabase
+      .from('profiles')
+      .update({ ...updates, updated_at: new Date().toISOString() })
+      .eq('id', userId);
+
+    if (error) {
+      console.error('Error updating profile:', error);
+      return { success: false, error: error.message };
+    }
+    return { success: true };
   }
 
   async updateRole(userId: string, role: 'guest' | 'host' | 'admin'): Promise<boolean> {

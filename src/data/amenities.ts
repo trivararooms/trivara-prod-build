@@ -16,4 +16,15 @@ export const amenitiesList = [
   { id: 'patio', label: 'Patio', icon: 'Trees' },
   { id: 'bbq', label: 'BBQ grill', icon: 'Flame' },
   { id: 'outdoor_dining', label: 'Outdoor dining', icon: 'TreePalm' },
+  { id: 'pets_allowed', label: 'Pets allowed', icon: 'PawPrint' },
+];
+
+// Step-free access, wide doorways, etc - kept separate from `amenitiesList`
+// so the Search filters sheet can show them under their own "Accessibility"
+// heading instead of buried in a generic amenities grid, matching how other
+// OTAs surface accessibility as its own filter category.
+export const accessibilityList = [
+  { id: 'step_free_access', label: 'Step-free access', icon: 'Accessibility' },
+  { id: 'wide_doorways', label: 'Wide doorways', icon: 'DoorOpen' },
+  { id: 'accessible_bathroom', label: 'Accessible bathroom', icon: 'Bath' },
 ];

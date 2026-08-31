@@ -17,7 +17,13 @@ export function SearchBar({ variant = 'hero', className = '' }: SearchBarProps) 
   const [location, setLocation] = useState('');
   const [checkIn, setCheckIn] = useState<Date | undefined>();
   const [checkOut, setCheckOut] = useState<Date | undefined>();
-  const [guests, setGuests] = useState(1);
+  const [adults, setAdults] = useState(1);
+  const [children, setChildren] = useState(0);
+  const [infants, setInfants] = useState(0);
+  // Infants aren't counted in the "guests" total sent to search (capacity
+  // filtering only cares about adults + children), same convention as the
+  // guest picker on the listing page itself.
+  const guests = adults + children;
 
   const handleSearch = () => {
     const params = new URLSearchParams();
@@ -25,6 +31,7 @@ export function SearchBar({ variant = 'hero', className = '' }: SearchBarProps) 
     if (checkIn) params.set('checkIn', checkIn.toISOString());
     if (checkOut) params.set('checkOut', checkOut.toISOString());
     params.set('guests', guests.toString());
+    if (infants > 0) params.set('infants', infants.toString());
     navigate(`/search?${params.toString()}`);
   };
 
@@ -133,22 +140,32 @@ export function SearchBar({ variant = 'hero', className = '' }: SearchBarProps) 
                 <div className="flex-1 min-w-0">
                   <label className="block text-xs text-text-meta mb-0.5">Guests</label>
                   <span className="text-sm">
-                    {guests} {guests === 1 ? 'guest' : 'guests'}
+                    {guests} {guests === 1 ? 'guest' : 'guests'}{infants > 0 && `, ${infants} ${infants === 1 ? 'infant' : 'infants'}`}
                   </span>
                 </div>
               </div>
             </PopoverTrigger>
-            <PopoverContent className="w-48 bg-card border-border" align="end">
+            <PopoverContent className="w-72 bg-card border-border space-y-4" align="end">
               <div className="flex items-center justify-between">
-                <span className="text-sm">Guests</span>
-                <div className="flex items-center gap-3">
-                  <CounterInput
-                    value={guests}
-                    onChange={setGuests}
-                    min={1}
-                    max={16}
-                  />
+                <div>
+                  <p className="text-sm font-medium">Adults</p>
+                  <p className="text-xs text-text-meta">Ages 13+</p>
                 </div>
+                <CounterInput value={adults} onChange={setAdults} min={1} max={16} />
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">Children</p>
+                  <p className="text-xs text-text-meta">Ages 2-12</p>
+                </div>
+                <CounterInput value={children} onChange={setChildren} min={0} max={16} />
+              </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-sm font-medium">Infants</p>
+                  <p className="text-xs text-text-meta">Under 2</p>
+                </div>
+                <CounterInput value={infants} onChange={setInfants} min={0} max={5} />
               </div>
             </PopoverContent>
           </Popover>

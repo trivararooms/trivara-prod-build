@@ -72,7 +72,7 @@ serve(async (req) => {
 
     const { data: booking, error: bookingError } = await supabaseAdmin
       .from('bookings')
-      .select('id, guest_id, total_price, payment_status, razorpay_payment_id')
+      .select('id, guest_id, listing_id, start_date, total_price, payment_status, razorpay_payment_id')
       .eq('id', booking_id)
       .single();
 
@@ -110,6 +110,53 @@ serve(async (req) => {
       });
     }
 
+    // How much of the total is actually refundable depends on the listing's
+    // cancellation policy and how many full days remain before check-in -
+    // this used to always refund 100% regardless of policy, which is
+    // exactly the "not enforced at refund time" gap the UI audit flagged
+    // (the listing page shows a policy; the refund never read it).
+    const { data: listing, error: listingError } = await supabaseAdmin
+      .from('listings')
+      .select('cancellation_policy')
+      .eq('id', booking.listing_id)
+      .single();
+    if (listingError) throw listingError;
+
+    const policy = (listing?.cancellation_policy as 'flexible' | 'moderate' | 'strict') || 'flexible';
+    const today = new Date(); today.setUTCHours(0, 0, 0, 0);
+    const checkIn = new Date(booking.start_date + 'T00:00:00Z');
+    const daysUntilCheckIn = Math.floor((checkIn.getTime() - today.getTime()) / (24 * 60 * 60 * 1000));
+
+    let refundPercent: number;
+    switch (policy) {
+      case 'moderate':
+        refundPercent = daysUntilCheckIn >= 5 ? 100 : 50;
+        break;
+      case 'strict':
+        refundPercent = daysUntilCheckIn >= 7 ? 50 : 0;
+        break;
+      case 'flexible':
+      default:
+        refundPercent = daysUntilCheckIn >= 1 ? 100 : 0;
+        break;
+    }
+
+    // Nothing is refundable under this policy at this point - flip the
+    // booking to cancelled without calling Razorpay at all (a 0-amount
+    // refund request isn't a real API call worth making, and the guest's
+    // payment_status correctly stays 'paid' since nothing is being returned).
+    if (refundPercent === 0) {
+      const { error: updateError } = await supabaseAdmin
+        .from('bookings')
+        .update({ status: 'cancelled', cancelled_at: new Date().toISOString() })
+        .eq('id', booking_id);
+      if (updateError) throw updateError;
+
+      return new Response(JSON.stringify({ success: true, refunded: false, refundPercent: 0 }), {
+        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+      });
+    }
+
     const { data: settings, error: settingsError } = await supabaseAdmin
       .from('app_settings')
       .select('key, value')
@@ -128,9 +175,11 @@ serve(async (req) => {
       });
     }
 
-    // Full refund - amount is in paise (INR * 100), matching how the order
-    // was originally created in create-razorpay-order.
-    const amountInPaise = booking.total_price * 100;
+    // Amount is in paise (INR * 100), matching how the order was originally
+    // created in create-razorpay-order - scaled down by the policy's refund
+    // percentage rather than always refunding the full amount.
+    const refundAmountRupees = Math.round(booking.total_price * (refundPercent / 100));
+    const refundAmountPaise = refundAmountRupees * 100;
     const basicAuth = btoa(`${razorpayKeyId}:${razorpayKeySecret}`);
 
     const refundResponse = await fetch(
@@ -142,8 +191,8 @@ serve(async (req) => {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          amount: amountInPaise,
-          notes: { booking_id },
+          amount: refundAmountPaise,
+          notes: { booking_id, cancellation_policy: policy, refund_percent: String(refundPercent) },
         }),
       }
     );
@@ -155,6 +204,10 @@ serve(async (req) => {
       throw new Error(refund.error?.description || 'Razorpay refused the refund request');
     }
 
+    // `payment_status` has no separate "partially refunded" value - 'refunded'
+    // means "a refund was processed" for either amount; `refund_amount`
+    // (the actual paise refunded, from Razorpay's own response) is what
+    // distinguishes a 50%/moderate-or-strict-policy refund from a full one.
     const { error: updateError } = await supabaseAdmin
       .from('bookings')
       .update({

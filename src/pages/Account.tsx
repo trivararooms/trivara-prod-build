@@ -23,16 +23,19 @@ import {
 } from 'lucide-react';
 import { listingService } from '@/services/listingService';
 import { bookingService } from '@/services/bookingService';
+import { earningsService } from '@/services/earningsService';
 import { profileService, Profile } from '@/services/profileService';
 import { formatINR } from '@/lib/utils';
 import { Listing } from '@/types';
 
 type DashboardStats = Awaited<ReturnType<typeof bookingService.getStats>>;
+type EarningsStats = Awaited<ReturnType<typeof earningsService.getHostEarningsStats>>;
 
 interface AccountData {
   profile: Profile | null;
   userListings: Listing[];
   dashboardStats: DashboardStats | null;
+  earningsStats: EarningsStats | null;
 }
 
 async function fetchAccountData(user: NonNullable<ReturnType<typeof useAuth>['user']>): Promise<AccountData> {
@@ -54,10 +57,18 @@ async function fetchAccountData(user: NonNullable<ReturnType<typeof useAuth>['us
   // Fetch user's listings
   const userListings = await listingService.getByHostId(user.id);
 
-  // If user is a host, fetch host stats
-  const dashboardStats = userListings.length > 0 ? await bookingService.getStats(user.id) : null;
+  // If user is a host, fetch host stats. Earnings come from earningsService
+  // (real host_earnings rows, the 18%-platform-fee source of truth) rather
+  // than bookingService.getStats(), which used to compute its own
+  // (incorrect, 15%-fee) totalEarnings/pendingEarnings that disagreed with
+  // what HostDashboard.tsx showed for the exact same host.
+  const isHost = userListings.length > 0;
+  const [dashboardStats, earningsStats] = await Promise.all([
+    isHost ? bookingService.getStats(user.id) : Promise.resolve(null),
+    isHost ? earningsService.getHostEarningsStats(user.id) : Promise.resolve(null),
+  ]);
 
-  return { profile: userProfile, userListings, dashboardStats };
+  return { profile: userProfile, userListings, dashboardStats, earningsStats };
 }
 
 const Account = () => {
@@ -72,6 +83,7 @@ const Account = () => {
 
   const profile = accountQuery.data?.profile ?? null;
   const dashboardStats = accountQuery.data?.dashboardStats ?? null;
+  const earningsStats = accountQuery.data?.earningsStats ?? null;
   const userListings = accountQuery.data?.userListings ?? [];
 
   // Determine if user is host based on profile is_host flag (not listing count)
@@ -345,7 +357,7 @@ const Account = () => {
                       <Users className="h-5 w-5 text-accent" />
                       <div>
                         <p className="text-2xl font-medium text-foreground">
-                          {formatINR(dashboardStats?.totalEarnings || 0)}
+                          {formatINR(earningsStats?.totalEarnings || 0)}
                         </p>
                         <p className="text-sm text-text-secondary">Total earnings</p>
                       </div>
@@ -364,13 +376,15 @@ const Account = () => {
           <Card className="bg-card border-border">
             <CardContent className="p-0">
               {/* Account Settings */}
-              <div className="flex items-center justify-between p-4 border-b border-border last:border-b-0 hover:bg-surface-2 transition-colors cursor-not-allowed opacity-60">
+              <div
+                className="flex items-center justify-between p-4 border-b border-border last:border-b-0 hover:bg-surface-2 transition-colors cursor-pointer"
+                onClick={() => navigate('/account/settings')}
+              >
                 <div className="flex items-center gap-4">
                   <Settings className="h-5 w-5 text-text-secondary" />
                   <span className="text-foreground">Account settings</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="bg-surface-3">Coming soon</Badge>
                   <ChevronRight className="h-4 w-4 text-text-secondary" />
                 </div>
               </div>
@@ -382,7 +396,7 @@ const Account = () => {
               >
                 <div className="flex items-center gap-4">
                   <CreditCard className="h-5 w-5 text-text-secondary" />
-                  <span className="text-foreground">Payment methods</span>
+                  <span className="text-foreground">Payout account</span>
                 </div>
                 <div className="flex items-center gap-2">
                   <ChevronRight className="h-4 w-4 text-text-secondary" />
@@ -390,13 +404,15 @@ const Account = () => {
               </div>
               
               {/* Notifications */}
-              <div className="flex items-center justify-between p-4 border-b border-border last:border-b-0 hover:bg-surface-2 transition-colors cursor-not-allowed opacity-60">
+              <div
+                className="flex items-center justify-between p-4 border-b border-border last:border-b-0 hover:bg-surface-2 transition-colors cursor-pointer"
+                onClick={() => navigate('/account/notifications')}
+              >
                 <div className="flex items-center gap-4">
                   <Bell className="h-5 w-5 text-text-secondary" />
                   <span className="text-foreground">Notifications</span>
                 </div>
                 <div className="flex items-center gap-2">
-                  <Badge variant="secondary" className="bg-surface-3">Coming soon</Badge>
                   <ChevronRight className="h-4 w-4 text-text-secondary" />
                 </div>
               </div>

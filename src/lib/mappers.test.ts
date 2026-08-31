@@ -24,6 +24,7 @@ describe('mapListing', () => {
       cleaning_fee: 100,
       service_fee: 50,
       house_rules: ['No smoking'],
+      instant_book: true,
       created_at: '2026-01-01T00:00:00Z',
       updated_at: '2026-01-02T00:00:00Z',
     };
@@ -89,6 +90,8 @@ describe('mapBooking', () => {
       guests: 2,
       total_price: 5000,
       status: 'confirmed',
+      payment_status: 'paid',
+      razorpay_payment_id: 'pay_test123',
       created_at: '2026-01-01T00:00:00Z',
       updated_at: '2026-01-01T00:00:00Z',
     };
@@ -114,6 +117,11 @@ describe('mapReview', () => {
       reviewee_id: 'host1',
       rating: 5,
       comment: null,
+      cleanliness_rating: null,
+      accuracy_rating: null,
+      communication_rating: null,
+      value_rating: null,
+      location_rating: null,
       created_at: '2026-01-05T00:00:00Z',
     };
 

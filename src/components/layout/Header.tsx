@@ -1,5 +1,6 @@
+import { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Search, Menu, User, Home, X, ShieldCheck } from 'lucide-react';
+import { Search, Menu, User, Home, X, ShieldCheck, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import {
   DropdownMenu,
@@ -10,6 +11,7 @@ import {
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { useAuth } from '@/hooks/useAuth';
+import { messageService } from '@/services/messageService';
 
 interface HeaderProps {
   variant?: 'default' | 'transparent';
@@ -25,6 +27,19 @@ export function Header({ variant = 'default' }: HeaderProps) {
   const { user, profile, signOut } = useAuth();
   const isHost = profile?.is_host ?? false;
   const isAdmin = profile?.role === 'admin';
+  const [unreadMessages, setUnreadMessages] = useState(0);
+
+  useEffect(() => {
+    if (!user?.id) {
+      setUnreadMessages(0);
+      return;
+    }
+    let cancelled = false;
+    messageService.getUnreadCount(user.id).then((count) => {
+      if (!cancelled) setUnreadMessages(count);
+    });
+    return () => { cancelled = true; };
+  }, [user?.id]);
 
   const handleLogout = async () => {
     await signOut();
@@ -84,6 +99,14 @@ export function Header({ variant = 'default' }: HeaderProps) {
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={() => navigate('/saved')}>
                     Saved
+                  </DropdownMenuItem>
+                  <DropdownMenuItem onClick={() => navigate('/messages')} className="flex items-center justify-between">
+                    Messages
+                    {unreadMessages > 0 && (
+                      <span className="h-5 min-w-5 px-1 rounded-full bg-accent text-accent-foreground text-xs flex items-center justify-center font-medium">
+                        {unreadMessages}
+                      </span>
+                    )}
                   </DropdownMenuItem>
                   <DropdownMenuSeparator />
                   {isHost && (
@@ -154,6 +177,19 @@ export function Header({ variant = 'default' }: HeaderProps) {
                     Become a Host
                   </Link>
                 </SheetClose>
+                {user && (
+                  <SheetClose asChild>
+                    <Link to="/messages" className="flex items-center gap-3 text-lg">
+                      <MessageCircle className="h-5 w-5" />
+                      Messages
+                      {unreadMessages > 0 && (
+                        <span className="h-5 min-w-5 px-1 rounded-full bg-accent text-accent-foreground text-xs flex items-center justify-center font-medium">
+                          {unreadMessages}
+                        </span>
+                      )}
+                    </Link>
+                  </SheetClose>
+                )}
               </div>
             </SheetContent>
           </Sheet>

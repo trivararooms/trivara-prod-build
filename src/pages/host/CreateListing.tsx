@@ -11,7 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import { listingService } from '@/services/listingService';
-import { amenitiesList } from '@/data/amenities';
+import { amenitiesList, accessibilityList } from '@/data/amenities';
 import { PropertyType, CancellationPolicy } from '@/types';
 import { useToast } from '@/hooks/use-toast';
 import { formatINR } from '@/lib/utils';
@@ -88,6 +88,7 @@ export default function CreateListing() {
     serviceFee: 20,
     houseRules: ['No smoking', 'No parties'] as string[],
     cancellationPolicy: 'moderate' as CancellationPolicy,
+    instantBook: true,
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -215,6 +216,7 @@ export default function CreateListing() {
             serviceFee: listing.serviceFee,
             houseRules: listing.houseRules || ['No smoking', 'No parties'],
             cancellationPolicy: listing.cancellationPolicy as CancellationPolicy,
+            instantBook: listing.instantBook ?? true,
           });
           setInitialLoadComplete(true);
         } else {
@@ -244,6 +246,7 @@ export default function CreateListing() {
               serviceFee: existingDraft.serviceFee || 20,
               houseRules: existingDraft.houseRules || ['No smoking', 'No parties'],
               cancellationPolicy: (existingDraft.cancellationPolicy as CancellationPolicy) || 'moderate',
+              instantBook: existingDraft.instantBook ?? true,
             });
 
             toast({
@@ -310,6 +313,7 @@ export default function CreateListing() {
           bathrooms: debouncedFormData.bathrooms,
           houseRules: debouncedFormData.houseRules,
           cancellationPolicy: debouncedFormData.cancellationPolicy,
+          instantBook: debouncedFormData.instantBook,
           status: 'draft' as const,
         };
 
@@ -456,6 +460,7 @@ export default function CreateListing() {
           bathrooms: formData.bathrooms,
           houseRules: formData.houseRules,
           cancellationPolicy: formData.cancellationPolicy,
+          instantBook: formData.instantBook,
         });
 
         if (updatedListing) {
@@ -494,6 +499,7 @@ export default function CreateListing() {
           bathrooms: formData.bathrooms,
           houseRules: formData.houseRules,
           cancellationPolicy: formData.cancellationPolicy,
+          instantBook: formData.instantBook,
         });
 
         toast({
@@ -739,6 +745,34 @@ export default function CreateListing() {
                 </label>
               ))}
             </div>
+
+            <div>
+              <h3 className="text-lg font-medium mb-2 mt-4">Accessibility</h3>
+              <p className="text-text-secondary mb-4">Select any that apply - these show up as filters for guests who need them</p>
+              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+                {accessibilityList.map((feature) => (
+                  <label
+                    key={feature.id}
+                    className={`flex items-center gap-3 p-4 rounded-xl cursor-pointer trivara-transition ${formData.amenities.includes(feature.id)
+                      ? 'bg-accent'
+                      : 'bg-card hover:bg-surface-3'
+                      }`}
+                  >
+                    <Checkbox
+                      checked={formData.amenities.includes(feature.id)}
+                      onCheckedChange={(checked) => {
+                        if (checked) {
+                          updateForm({ amenities: [...formData.amenities, feature.id] });
+                        } else {
+                          updateForm({ amenities: formData.amenities.filter(a => a !== feature.id) });
+                        }
+                      }}
+                    />
+                    <span>{feature.label}</span>
+                  </label>
+                ))}
+              </div>
+            </div>
           </div>
         );
 
@@ -824,6 +858,42 @@ export default function CreateListing() {
                       </div>
                     </label>
                   ))}
+                </div>
+              </div>
+
+              <div>
+                <label className="block text-sm text-text-secondary mb-2">Booking type</label>
+                <div className="space-y-3">
+                  <label
+                    className={`flex items-start gap-3 p-4 rounded-xl cursor-pointer trivara-transition ${formData.instantBook ? 'bg-accent' : 'bg-card hover:bg-surface-3'}`}
+                  >
+                    <input
+                      type="radio"
+                      name="instantBook"
+                      checked={formData.instantBook}
+                      onChange={() => updateForm({ instantBook: true })}
+                      className="mt-1"
+                    />
+                    <div>
+                      <p className="font-medium">Instant Book</p>
+                      <p className="text-sm text-text-secondary">Guests can book and pay immediately, no approval needed.</p>
+                    </div>
+                  </label>
+                  <label
+                    className={`flex items-start gap-3 p-4 rounded-xl cursor-pointer trivara-transition ${!formData.instantBook ? 'bg-accent' : 'bg-card hover:bg-surface-3'}`}
+                  >
+                    <input
+                      type="radio"
+                      name="instantBook"
+                      checked={!formData.instantBook}
+                      onChange={() => updateForm({ instantBook: false })}
+                      className="mt-1"
+                    />
+                    <div>
+                      <p className="font-medium">Request to Book</p>
+                      <p className="text-sm text-text-secondary">You review and approve each request before the guest pays.</p>
+                    </div>
+                  </label>
                 </div>
               </div>
             </div>

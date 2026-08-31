@@ -50,6 +50,9 @@ export interface Listing {
   bathrooms: number;
   houseRules: string[];
   cancellationPolicy: CancellationPolicy;
+  // true (the default, for every pre-existing listing) = pay immediately;
+  // false = the host must approve before payment is collected.
+  instantBook: boolean;
   status: ListingStatus;
   rating: number;
   reviewCount: number;
@@ -110,10 +113,17 @@ export interface Booking {
   updatedAt: Date;
 }
 
-// Matches the actual `reviews` table: a single 1-5 rating + comment, tied to
-// the booking that earned the review. There is no per-category breakdown
-// (cleanliness/accuracy/etc) in the database - an earlier review form
-// assumed there was and has been removed since it could never have worked.
+export interface ReviewCategoryRatings {
+  cleanliness?: number;
+  accuracy?: number;
+  communication?: number;
+  value?: number;
+  location?: number;
+}
+
+// Matches the `reviews` table: an overall 1-5 `rating` + comment (the single
+// source of truth for listings.rating via refresh_listing_rating()), plus
+// optional per-category 1-5 breakdowns that are display-only.
 export interface Review {
   id: string;
   bookingId: string;
@@ -122,6 +132,7 @@ export interface Review {
   revieweeId: string;
   rating: number;
   comment: string;
+  categories: ReviewCategoryRatings;
   createdAt: Date;
 }
 
@@ -135,10 +146,16 @@ export interface Payout {
   completedDate?: Date;
 }
 
+export type SearchSort = 'recommended' | 'price_asc' | 'price_desc' | 'rating' | 'newest';
+
 export interface SearchFilters {
   location?: string;
   checkIn?: Date;
   checkOut?: Date;
+  // How many days on either side of checkIn/checkOut to also consider when
+  // looking for a free date range - "I'm flexible on dates" in the UI.
+  // 0 (the default) means the exact range must be free.
+  flexibleDays?: number;
   guests?: number;
   minPrice?: number;
   maxPrice?: number;
@@ -147,6 +164,7 @@ export interface SearchFilters {
   minRating?: number;
   cancellationPolicy?: CancellationPolicy[];
   instantBook?: boolean;
+  sort?: SearchSort;
 }
 
 export interface SearchResult {
