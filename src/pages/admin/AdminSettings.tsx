@@ -88,9 +88,12 @@ export default function AdminSettings() {
             const categorySettings = settings.filter(s => s.category === category);
 
             for (const setting of categorySettings) {
+                // Trimmed here so a stray copy-pasted space/newline (a common
+                // mistake when pasting Razorpay keys) never makes it into the
+                // stored value in the first place.
                 const { error } = await supabase.rpc('update_app_setting', {
                     p_key: setting.key,
-                    p_value: setting.value
+                    p_value: setting.value.trim()
                 });
                 if (error) throw error;
             }
