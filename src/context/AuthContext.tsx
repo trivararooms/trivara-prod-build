@@ -46,8 +46,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     // separate, independent subscription and will still correct `user`/
     // `session`/`profile` on its own once the real auth state comes through,
     // even if this race timed out first.
+    //
+    // `settled` guards against the reverse case: if onAuthStateChange fires
+    // (with the real, correct session) before the stuck getSession() call
+    // finally times out, the timeout must not go on to overwrite that
+    // correct state with a false "logged out". Without this guard, a merely
+    // slow session check - not an actually missing one - could force a
+    // signed-in user back to the login page.
     const SESSION_TIMEOUT_MS = 8000;
     const timedOut = Symbol('auth-session-timeout');
+    let settled = false;
 
     const getInitialSession = async () => {
       try {
@@ -64,7 +72,8 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
             'proceeding as logged-out for now; onAuthStateChange will correct this if a ' +
             'session actually exists.'
           );
-          if (mounted) {
+          if (mounted && !settled) {
+            settled = true;
             setSession(null);
             setUser(null);
             setProfile(null);
@@ -75,15 +84,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         const { data: { session }, error } = result;
         if (error) throw error;
 
-        if (mounted) {
+        if (mounted && !settled) {
+          settled = true;
           setSession(session);
           setUser(session?.user || null);
-        }
 
-        if (session?.user && mounted) {
-          await fetchProfile(session.user.id);
-        } else if (mounted) {
-          setProfile(null);
+          if (session?.user) {
+            await fetchProfile(session.user.id);
+          } else {
+            setProfile(null);
+          }
         }
       } catch (err: unknown) {
         if (!(err instanceof Error) || err.name !== 'AbortError') {
@@ -100,6 +110,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const { data: listener } = supabase.auth.onAuthStateChange(async (_event, session) => {
       if (!mounted) return;
+      settled = true;
       setSession(session);
       setUser(session?.user || null);
 
