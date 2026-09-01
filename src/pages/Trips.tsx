@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Link, Navigate, useNavigate } from 'react-router-dom';
-import { Calendar, MapPin, Star, Loader2, Home, X } from 'lucide-react';
+import { Navigate, useNavigate } from 'react-router-dom';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { Calendar, MapPin, Star, Loader2, Home } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -40,6 +41,48 @@ interface BookingWithListing {
     };
     photos?: string[];
   };
+}
+
+interface TripsData {
+  upcomingBookings: BookingWithListing[];
+  pastBookings: BookingWithListing[];
+  reviewedBookings: Set<string>;
+}
+
+async function fetchTripsData(guestId: string): Promise<TripsData> {
+  // Past bookings are now flipped to 'completed' by a server-side
+  // scheduled job (see supabase/migrations) rather than client-triggered
+  // here on every page load.
+
+  // Fetch upcoming bookings
+  const upcoming = await bookingService.getUpcomingByGuestId(guestId);
+  const upcomingBookings = await Promise.all(
+    upcoming.map(async (booking) => {
+      const listing = await listingService.getById(booking.listingId);
+      return { booking, listing };
+    })
+  );
+
+  // Fetch past bookings
+  const past = await bookingService.getPastByGuestId(guestId);
+
+  // Check which bookings have been reviewed
+  const reviewedIds = new Set<string>();
+  for (const booking of past) {
+    const hasReviewed = await reviewService.hasReviewedBooking(booking.id);
+    if (hasReviewed) {
+      reviewedIds.add(booking.id);
+    }
+  }
+
+  const pastBookings = await Promise.all(
+    past.map(async (booking) => {
+      const listing = await listingService.getById(booking.listingId);
+      return { booking, listing };
+    })
+  );
+
+  return { upcomingBookings, pastBookings, reviewedBookings: reviewedIds };
 }
 
 interface ReviewModalProps {
@@ -100,7 +143,7 @@ function ReviewModal({ booking, listing, onClose, onSubmit, submitting }: Review
           <div className="text-sm text-text-secondary mb-4">
             How was your stay at {listing?.title || 'this property'}?
           </div>
-          
+
           {/* Star Rating */}
           <div className="flex gap-2 justify-center mb-4">
             {[1, 2, 3, 4, 5].map((star) => (
@@ -143,7 +186,7 @@ function ReviewModal({ booking, listing, onClose, onSubmit, submitting }: Review
             onChange={(e) => setComment(e.target.value)}
             className="min-h-[100px] bg-surface-2 border-border"
           />
-          
+
           {/* Actions */}
           <div className="flex gap-3 justify-end">
             <Button
@@ -179,79 +222,83 @@ export default function Trips() {
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
+  const queryClient = useQueryClient();
   const [reviewingBooking, setReviewingBooking] = useState<BookingWithListing['booking'] | null>(null);
   const [reviewingListing, setReviewingListing] = useState<BookingWithListing['listing'] | null>(null);
-  const [reviewedBookings, setReviewedBookings] = useState<Set<string>>(new Set());
-  const [cancellingBookingId, setCancellingBookingId] = useState<string | null>(null);
   const [payingBookingId, setPayingBookingId] = useState<string | null>(null);
-  const [submittingReview, setSubmittingReview] = useState(false);
-  
-  const [upcomingBookings, setUpcomingBookings] = useState<BookingWithListing[]>([]);
-  const [pastBookings, setPastBookings] = useState<BookingWithListing[]>([]);
-  const [loading, setLoading] = useState(true);
+
+  const tripsQuery = useQuery({
+    queryKey: ['trips', user?.id],
+    queryFn: () => fetchTripsData(user!.id),
+    enabled: !!user?.id,
+  });
+
+  const upcomingBookings = tripsQuery.data?.upcomingBookings ?? [];
+  const pastBookings = tripsQuery.data?.pastBookings ?? [];
+  const reviewedBookings = tripsQuery.data?.reviewedBookings ?? new Set<string>();
 
   useEffect(() => {
-    // If auth hasn't resolved yet, or there's no logged-in user, don't fetch
-    // - the render logic below shows an auth spinner / redirects to /login
-    // in those cases without ever consulting `loading`. Without this guard,
-    // a logged-out visitor would never reach that redirect: `loading` starts
-    // `true`, nothing here would ever call setLoading(false), and the page
-    // would show its own spinner forever instead.
-    if (authLoading || !user?.id) return;
+    if (tripsQuery.error) {
+      console.error('Error fetching bookings:', tripsQuery.error);
+      toast({
+        title: 'Error',
+        description: 'Failed to load your trips. Please try again.',
+        variant: 'destructive',
+      });
+    }
+  }, [tripsQuery.error, toast]);
 
-    const fetchBookings = async () => {
-      try {
-        setLoading(true);
+  const reviewMutation = useMutation({
+    mutationFn: ({ bookingId, rating, comment, categories }: {
+      bookingId: string; rating: number; comment?: string; categories?: ReviewCategoryRatings;
+    }) => reviewService.createReview(bookingId, rating, comment, categories),
+    onSuccess: () => {
+      toast({
+        title: 'Review submitted',
+        description: 'Thank you for your review!',
+      });
+      setReviewingBooking(null);
+      setReviewingListing(null);
+      queryClient.invalidateQueries({ queryKey: ['trips', user?.id] });
+    },
+    onError: (error: unknown) => {
+      console.error('Error submitting review:', error);
+      toast({
+        title: 'Error',
+        description: getErrorMessage(error, 'Failed to submit review. Please try again.'),
+        variant: 'destructive',
+      });
+    },
+  });
 
-        // Past bookings are now flipped to 'completed' by a server-side
-        // scheduled job (see supabase/migrations) rather than client-triggered
-        // here on every page load.
-
-        // Fetch upcoming bookings
-        const upcoming = await bookingService.getUpcomingByGuestId(user.id);
-        const upcomingWithListings = await Promise.all(
-          upcoming.map(async (booking) => {
-            const listing = await listingService.getById(booking.listingId);
-            return { booking, listing };
-          })
-        );
-        setUpcomingBookings(upcomingWithListings);
-
-        // Fetch past bookings
-        const past = await bookingService.getPastByGuestId(user.id);
-        
-        // Check which bookings have been reviewed
-        const reviewedIds = new Set<string>();
-        for (const booking of past) {
-          const hasReviewed = await reviewService.hasReviewedBooking(booking.id);
-          if (hasReviewed) {
-            reviewedIds.add(booking.id);
-          }
-        }
-        setReviewedBookings(reviewedIds);
-
-        const pastWithListings = await Promise.all(
-          past.map(async (booking) => {
-            const listing = await listingService.getById(booking.listingId);
-            return { booking, listing };
-          })
-        );
-        setPastBookings(pastWithListings);
-
-      } catch (error) {
-        console.error('Error fetching bookings:', error);
+  const cancelMutation = useMutation({
+    mutationFn: (bookingId: string) => bookingService.cancelBooking(bookingId),
+    onSuccess: (result) => {
+      if (result.success) {
         toast({
-          title: 'Error',
-          description: 'Failed to load your trips. Please try again.',
+          title: 'Booking cancelled',
+          description: result.refunded
+            ? 'Your booking has been cancelled, your payment was refunded, and the dates are now available.'
+            : 'Your booking has been cancelled and the dates are now available.',
+        });
+        queryClient.invalidateQueries({ queryKey: ['trips', user?.id] });
+      } else {
+        toast({
+          title: 'Cancellation failed',
+          description: result.error || 'Could not cancel the booking. Please try again.',
           variant: 'destructive',
         });
-      } finally {
-        setLoading(false);
       }
-    };
-
-    fetchBookings();
-  }, [authLoading, user?.id, toast]);
+    },
+    onError: (error: unknown) => {
+      console.error('Error cancelling booking:', error);
+      toast({
+        title: 'Error',
+        description: 'An error occurred while cancelling the booking.',
+        variant: 'destructive',
+      });
+    },
+  });
 
   const handleReviewSubmit = async (
     bookingId: string,
@@ -259,25 +306,10 @@ export default function Trips() {
     comment?: string,
     categories?: ReviewCategoryRatings
   ) => {
-    setSubmittingReview(true);
     try {
-      await reviewService.createReview(bookingId, rating, comment, categories);
-      toast({
-        title: 'Review submitted',
-        description: 'Thank you for your review!',
-      });
-      setReviewedBookings(prev => new Set([...Array.from(prev), bookingId]));
-      setReviewingBooking(null);
-      setReviewingListing(null);
-    } catch (error: unknown) {
-      console.error('Error submitting review:', error);
-      toast({
-        title: 'Error',
-        description: getErrorMessage(error, 'Failed to submit review. Please try again.'),
-        variant: 'destructive',
-      });
-    } finally {
-      setSubmittingReview(false);
+      await reviewMutation.mutateAsync({ bookingId, rating, comment, categories });
+    } catch {
+      // Already surfaced via the mutation's onError toast above.
     }
   };
 
@@ -324,36 +356,8 @@ export default function Trips() {
     }
   };
 
-  const handleCancelBooking = async (bookingId: string) => {
-    setCancellingBookingId(bookingId);
-    try {
-      const result = await bookingService.cancelBooking(bookingId);
-      if (result.success) {
-        toast({
-          title: 'Booking cancelled',
-          description: result.refunded
-            ? 'Your booking has been cancelled, your payment was refunded, and the dates are now available.'
-            : 'Your booking has been cancelled and the dates are now available.',
-        });
-        // Remove the cancelled booking from the UI
-        setUpcomingBookings(prev => prev.filter(({ booking }) => booking.id !== bookingId));
-      } else {
-        toast({
-          title: 'Cancellation failed',
-          description: result.error || 'Could not cancel the booking. Please try again.',
-          variant: 'destructive',
-        });
-      }
-    } catch (error) {
-      console.error('Error cancelling booking:', error);
-      toast({
-        title: 'Error',
-        description: 'An error occurred while cancelling the booking.',
-        variant: 'destructive',
-      });
-    } finally {
-      setCancellingBookingId(null);
-    }
+  const handleCancelBooking = (bookingId: string) => {
+    cancelMutation.mutate(bookingId);
   };
 
   if (authLoading) {
@@ -373,7 +377,12 @@ export default function Trips() {
     return <Navigate to="/login" replace />;
   }
 
-  if (loading) {
+  // react-query's `isPending` stays true forever for a *disabled* query (i.e.
+  // enabled: !!user?.id being false) - it never runs, so it never settles to
+  // success/error. By the time we reach this check, `user` is guaranteed
+  // truthy (checked above), so the query is guaranteed enabled and isPending
+  // will actually resolve once the fetch completes.
+  if (tripsQuery.isPending) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -389,7 +398,7 @@ export default function Trips() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="mb-8">
           <h1 className="text-3xl font-display font-medium text-foreground mb-2">
@@ -414,8 +423,8 @@ export default function Trips() {
                     <div className="grid grid-cols-1 md:grid-cols-3">
                       <div className="aspect-video md:aspect-[4/3]">
                         {listing?.photos && listing.photos[0] ? (
-                          <img 
-                            src={listing.photos[0]} 
+                          <img
+                            src={listing.photos[0]}
                             alt={listing.title}
                             className="w-full h-full object-cover"
                           />
@@ -487,10 +496,10 @@ export default function Trips() {
                             <Button
                               variant="outline"
                               className="border-destructive text-destructive hover:bg-destructive/10"
-                              disabled={cancellingBookingId === booking.id}
+                              disabled={cancelMutation.isPending && cancelMutation.variables === booking.id}
                               onClick={() => handleCancelBooking(booking.id)}
                             >
-                              {cancellingBookingId === booking.id ? (
+                              {cancelMutation.isPending && cancelMutation.variables === booking.id ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                               ) : (
                                 'Cancel'
@@ -503,10 +512,10 @@ export default function Trips() {
                             <Button
                               variant="outline"
                               className="border-destructive text-destructive hover:bg-destructive/10"
-                              disabled={cancellingBookingId === booking.id}
+                              disabled={cancelMutation.isPending && cancelMutation.variables === booking.id}
                               onClick={() => handleCancelBooking(booking.id)}
                             >
-                              {cancellingBookingId === booking.id ? (
+                              {cancelMutation.isPending && cancelMutation.variables === booking.id ? (
                                 <Loader2 className="h-4 w-4 animate-spin" />
                               ) : (
                                 'Withdraw request'
@@ -533,12 +542,12 @@ export default function Trips() {
                           {booking.status === 'confirmed' && new Date() < new Date(booking.checkIn) && (
                             <AlertDialog>
                               <AlertDialogTrigger asChild>
-                                <Button 
+                                <Button
                                   variant="outline"
                                   className="border-destructive text-destructive hover:bg-destructive/10"
-                                  disabled={cancellingBookingId === booking.id}
+                                  disabled={cancelMutation.isPending && cancelMutation.variables === booking.id}
                                 >
-                                  {cancellingBookingId === booking.id ? (
+                                  {cancelMutation.isPending && cancelMutation.variables === booking.id ? (
                                     <>
                                       <Loader2 className="h-4 w-4 mr-2 animate-spin" />
                                       Cancelling...
@@ -558,7 +567,7 @@ export default function Trips() {
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Keep booking</AlertDialogCancel>
-                                  <AlertDialogAction 
+                                  <AlertDialogAction
                                     onClick={() => handleCancelBooking(booking.id)}
                                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                   >
@@ -591,14 +600,14 @@ export default function Trips() {
               <div className="grid gap-6">
                 {pastBookings.map(({ booking, listing }) => {
                   const canReview = booking.status === 'completed' && !reviewedBookings.has(booking.id);
-                  
+
                   return (
                     <div key={booking.id} className="bg-card rounded-xl overflow-hidden">
                       <div className="grid grid-cols-1 md:grid-cols-3">
                         <div className="aspect-video md:aspect-[4/3]">
                           {listing?.photos && listing.photos[0] ? (
-                            <img 
-                              src={listing.photos[0]} 
+                            <img
+                              src={listing.photos[0]}
                               alt={listing.title}
                               className="w-full h-full object-cover"
                             />
@@ -625,7 +634,7 @@ export default function Trips() {
                               {booking.status}
                             </span>
                           </div>
-                          
+
                           <div className="grid grid-cols-2 gap-4 mb-6 text-sm">
                             <div>
                               <p className="text-text-secondary">Stayed</p>
@@ -704,11 +713,10 @@ export default function Trips() {
               setReviewingListing(null);
             }}
             onSubmit={handleReviewSubmit}
-            submitting={submittingReview}
+            submitting={reviewMutation.isPending}
           />
         )}
       </div>
     </div>
   );
 }
-

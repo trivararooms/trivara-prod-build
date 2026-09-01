@@ -59,8 +59,9 @@ serve(async (req) => {
             .eq('key', 'razorpay_webhook_secret')
             .single();
 
-        // Use environment variable as fallback or if not yet in DB
-        const webhookSecret = webhookSecretSetting?.value || Deno.env.get('RAZORPAY_WEBHOOK_SECRET');
+        // Use environment variable as fallback or if not yet in DB. Trimmed
+        // defensively - see create-razorpay-order for why.
+        const webhookSecret = (webhookSecretSetting?.value || Deno.env.get('RAZORPAY_WEBHOOK_SECRET'))?.trim();
 
         if (webhookSecret && !await verifySignature(rawBody, signature, webhookSecret)) {
             console.error('Invalid signature');

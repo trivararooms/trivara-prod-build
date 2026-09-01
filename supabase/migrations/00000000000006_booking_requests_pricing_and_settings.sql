@@ -1,5 +1,5 @@
 -- =============================================================================
--- 00000000000005_booking_requests_pricing_and_settings.sql
+-- 00000000000006_booking_requests_pricing_and_settings.sql
 --
 -- Follow-up round of additive fixes/features:
 --

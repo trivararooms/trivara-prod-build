@@ -1,5 +1,5 @@
 -- =============================================================================
--- 00000000000004_messaging_and_review_categories.sql
+-- 00000000000005_messaging_and_review_categories.sql
 --
 -- Two additive features from the UI audit ("Trivara - UI Blind Spots & Gaps
 -- vs. Other OTAs"), both intentionally scoped to be pure additions with no

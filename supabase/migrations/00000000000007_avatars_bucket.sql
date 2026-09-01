@@ -1,5 +1,5 @@
 -- =============================================================================
--- 00000000000006_avatars_bucket.sql
+-- 00000000000007_avatars_bucket.sql
 --
 -- Creates an "avatars" storage bucket for the new Account Settings page
 -- (src/pages/AccountSettings.tsx), mirroring 00000000000003_storage_bucket.sql's

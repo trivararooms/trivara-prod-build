@@ -6,9 +6,10 @@ export interface PayoutRequest {
   booking_id: string | null;
   amount: number;
   currency: string;
-  status: 'pending' | 'processing' | 'paid' | 'failed';
+  status: 'pending' | 'processing' | 'paid' | 'rejected';
   requested_at: string;
   paid_at: string | null;
+  notes: string | null;
   bookings: {
     id: string;
     listing_id: string;

@@ -1,4 +1,4 @@
-import { Link, Navigate, useNavigate } from 'react-router-dom';
+import { Navigate, useNavigate } from 'react-router-dom';
 import {
   Home,
   Calendar,
@@ -24,109 +24,114 @@ import { earningsService } from '@/services/earningsService';
 import { profileService } from '@/services/profileService';
 import { messageService } from '@/services/messageService';
 import { useToast } from '@/hooks/use-toast';
-import { useState, useEffect } from 'react';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useEffect, useState } from 'react';
 import { formatINR } from '@/lib/utils';
 import { getErrorMessage } from '@/lib/errors';
 import { Listing, Booking } from '@/types';
 
 type EnrichedBooking = Booking & { guestName: string; property: string; dates: string };
 
+interface HostDashboardStats {
+  totalBookings: number;
+  confirmedBookings: number;
+  completedBookings: number;
+  totalEarnings: number;
+  pendingEarnings: number;
+}
+
+interface HostDashboardData {
+  listings: Listing[];
+  stats: HostDashboardStats;
+  bookings: EnrichedBooking[];
+}
+
+async function fetchHostDashboardData(hostId: string): Promise<HostDashboardData> {
+  // Past bookings are now flipped to 'completed' by a server-side
+  // scheduled job (see supabase/migrations) rather than client-triggered
+  // here on every page load.
+
+  // Fetch host listings
+  const listings = await listingService.getByHostId(hostId);
+
+  // Fetch booking stats
+  const bookingStats = await bookingService.getStats(hostId);
+
+  // Fetch earnings stats directly from host_earnings table
+  const earningsStats = await earningsService.getHostEarningsStats(hostId);
+
+  console.log('Dashboard earnings stats:', earningsStats); // Debug log
+
+  const stats: HostDashboardStats = {
+    ...bookingStats,
+    totalEarnings: earningsStats.totalEarnings,
+    pendingEarnings: earningsStats.pendingEarnings,
+  };
+
+  // Fetch all host bookings
+  const allBookings = await bookingService.getByHostId(hostId);
+
+  // Enrich bookings with listing info and the guest's real name (hosts used
+  // to see the literal word "Guest" for every booking here - the guest's
+  // profile is visible to the host once a booking exists, same as the
+  // listing/host info a guest sees on the listing page).
+  const bookings = await Promise.all(
+    allBookings.map(async (booking) => {
+      try {
+        const [listing, guestProfile] = await Promise.all([
+          listingService.getById(booking.listingId),
+          profileService.getByUserId(booking.guestId),
+        ]);
+        const guestName = guestProfile
+          ? `${guestProfile.first_name} ${guestProfile.last_name}`.trim() || 'Guest'
+          : 'Guest';
+        return {
+          ...booking,
+          guestName,
+          property: listing?.title || 'Unknown Property',
+          dates: `${new Date(booking.checkIn).toLocaleDateString()} - ${new Date(booking.checkOut).toLocaleDateString()}`,
+        };
+      } catch (error) {
+        console.error('Error enriching booking:', error);
+        return {
+          ...booking,
+          guestName: 'Guest',
+          property: 'Unknown Property',
+          dates: `${new Date(booking.checkIn).toLocaleDateString()} - ${new Date(booking.checkOut).toLocaleDateString()}`,
+        };
+      }
+    })
+  );
+
+  return { listings, stats, bookings };
+}
+
 export default function HostDashboard() {
   const { toast } = useToast();
   const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const [stats, setStats] = useState<{totalBookings: number, confirmedBookings: number, completedBookings: number, totalEarnings: number, pendingEarnings: number} | null>(null);
-  const [listings, setListings] = useState<Listing[]>([]);
-  const [bookings, setBookings] = useState<EnrichedBooking[]>([]);
-  const [cancellingBookingId, setCancellingBookingId] = useState<string | null>(null);
+  const queryClient = useQueryClient();
   const [messagingBookingId, setMessagingBookingId] = useState<string | null>(null);
-  const [approvingBookingId, setApprovingBookingId] = useState<string | null>(null);
-  const [publishingListingId, setPublishingListingId] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+
+  const dashboardQuery = useQuery({
+    queryKey: ['host-dashboard', user?.id],
+    queryFn: () => fetchHostDashboardData(user!.id),
+    enabled: !!user?.id,
+  });
+
+  const listings = dashboardQuery.data?.listings ?? [];
+  const stats = dashboardQuery.data?.stats ?? null;
+  const bookings = dashboardQuery.data?.bookings ?? [];
 
   useEffect(() => {
-    // This page is already wrapped in <ProtectedRoute>, but guard here too:
-    // without it, if this ever ran before `user` was populated, `loading`
-    // (which starts true) would never clear since nothing below would run,
-    // leaving the page stuck on its spinner forever.
-    if (authLoading || !user?.id) return;
+    if (dashboardQuery.error) {
+      console.error('Error fetching dashboard data:', dashboardQuery.error);
+    }
+  }, [dashboardQuery.error]);
 
-    const fetchData = async () => {
-      try {
-        setLoading(true);
-
-        // Past bookings are now flipped to 'completed' by a server-side
-        // scheduled job (see supabase/migrations) rather than client-triggered
-        // here on every page load.
-
-        // Fetch host listings
-        const hostListings = await listingService.getByHostId(user.id);
-        setListings(hostListings);
-        
-        // Fetch booking stats
-        const bookingStats = await bookingService.getStats(user.id);
-        
-        // Fetch earnings stats directly from host_earnings table
-        const earningsStats = await earningsService.getHostEarningsStats(user.id);
-        
-        console.log('Dashboard earnings stats:', earningsStats); // Debug log
-        
-        setStats({
-          ...bookingStats,
-          totalEarnings: earningsStats.totalEarnings,
-          pendingEarnings: earningsStats.pendingEarnings
-        });
-        
-        // Fetch all host bookings
-        const allBookings = await bookingService.getByHostId(user.id);
-        
-        // Enrich bookings with listing info and the guest's real name (hosts
-        // used to see the literal word "Guest" for every booking here - the
-        // guest's profile is visible to the host once a booking exists, same
-        // as the listing/host info a guest sees on the listing page).
-        const enrichedBookings = await Promise.all(
-          allBookings.map(async (booking) => {
-            try {
-              const [listing, guestProfile] = await Promise.all([
-                listingService.getById(booking.listingId),
-                profileService.getByUserId(booking.guestId),
-              ]);
-              const guestName = guestProfile
-                ? `${guestProfile.first_name} ${guestProfile.last_name}`.trim() || 'Guest'
-                : 'Guest';
-              return {
-                ...booking,
-                guestName,
-                property: listing?.title || 'Unknown Property',
-                dates: `${new Date(booking.checkIn).toLocaleDateString()} - ${new Date(booking.checkOut).toLocaleDateString()}`,
-              };
-            } catch (error) {
-              console.error('Error enriching booking:', error);
-              return {
-                ...booking,
-                guestName: 'Guest',
-                property: 'Unknown Property',
-                dates: `${new Date(booking.checkIn).toLocaleDateString()} - ${new Date(booking.checkOut).toLocaleDateString()}`,
-              };
-            }
-          })
-        );
-        
-        setBookings(enrichedBookings);
-      } catch (error) {
-        console.error('Error fetching dashboard data:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchData();
-  }, [authLoading, user?.id]);
-
-  const handleCancelBooking = async (bookingId: string) => {
-    setCancellingBookingId(bookingId);
-    try {
-      const result = await bookingService.cancelBooking(bookingId);
+  const cancelMutation = useMutation({
+    mutationFn: (bookingId: string) => bookingService.cancelBooking(bookingId),
+    onSuccess: (result) => {
       if (result.success) {
         toast({
           title: 'Booking cancelled',
@@ -134,8 +139,7 @@ export default function HostDashboard() {
             ? 'The booking has been cancelled, the guest was refunded, and the dates are now available.'
             : 'The booking has been cancelled and the dates are now available.',
         });
-        // Remove the cancelled booking from the UI
-        setBookings(prev => prev.filter(b => b.id !== bookingId));
+        queryClient.invalidateQueries({ queryKey: ['host-dashboard', user?.id] });
       } else {
         toast({
           title: 'Cancellation failed',
@@ -143,28 +147,26 @@ export default function HostDashboard() {
           variant: 'destructive',
         });
       }
-    } catch (error: unknown) {
+    },
+    onError: (error: unknown) => {
       console.error('Error cancelling booking:', error);
       toast({
         title: 'Error',
         description: getErrorMessage(error, 'An error occurred while cancelling the booking.'),
         variant: 'destructive',
       });
-    } finally {
-      setCancellingBookingId(null);
-    }
-  };
+    },
+  });
 
-  const handleApproveRequest = async (bookingId: string) => {
-    setApprovingBookingId(bookingId);
-    try {
-      const result = await bookingService.approveBookingRequest(bookingId);
+  const approveMutation = useMutation({
+    mutationFn: (bookingId: string) => bookingService.approveBookingRequest(bookingId),
+    onSuccess: (result) => {
       if (result.success) {
         toast({
           title: 'Request approved',
           description: 'The guest can now complete payment from their trips page.',
         });
-        setBookings(prev => prev.map(b => b.id === bookingId ? { ...b, status: 'pending_payment' } : b));
+        queryClient.invalidateQueries({ queryKey: ['host-dashboard', user?.id] });
       } else {
         toast({
           title: 'Could not approve request',
@@ -172,16 +174,19 @@ export default function HostDashboard() {
           variant: 'destructive',
         });
       }
-    } catch (error: unknown) {
+    },
+    onError: (error: unknown) => {
       console.error('Error approving booking request:', error);
       toast({
         title: 'Error',
         description: getErrorMessage(error, 'An error occurred while approving the request.'),
         variant: 'destructive',
       });
-    } finally {
-      setApprovingBookingId(null);
-    }
+    },
+  });
+
+  const handleApproveRequest = (bookingId: string) => {
+    approveMutation.mutate(bookingId);
   };
 
   const handleMessageGuest = async (booking: EnrichedBooking) => {
@@ -206,20 +211,15 @@ export default function HostDashboard() {
     }
   };
 
-  const handlePublishListing = async (listingId: string) => {
-    setPublishingListingId(listingId);
-    try {
-      const result = await listingService.publishListing(listingId);
+  const publishMutation = useMutation({
+    mutationFn: (listingId: string) => listingService.publishListing(listingId),
+    onSuccess: (result) => {
       if (result) {
         toast({
           title: 'Listing published!',
           description: 'Your listing is now live and visible to guests.',
         });
-        // Refresh listings to show updated status
-        if (user) {
-          const updatedListings = await listingService.getByHostId(user.id);
-          setListings(updatedListings);
-        }
+        queryClient.invalidateQueries({ queryKey: ['host-dashboard', user?.id] });
       } else {
         toast({
           title: 'Publish failed',
@@ -227,16 +227,23 @@ export default function HostDashboard() {
           variant: 'destructive',
         });
       }
-    } catch (error: unknown) {
+    },
+    onError: (error: unknown) => {
       console.error('Error publishing listing:', error);
       toast({
         title: 'Error',
         description: getErrorMessage(error, 'An error occurred while publishing the listing.'),
         variant: 'destructive',
       });
-    } finally {
-      setPublishingListingId(null);
-    }
+    },
+  });
+
+  const handleCancelBooking = (bookingId: string) => {
+    cancelMutation.mutate(bookingId);
+  };
+
+  const handlePublishListing = (listingId: string) => {
+    publishMutation.mutate(listingId);
   };
 
   const getStatusBadgeVariant = (status: string) => {
@@ -273,7 +280,13 @@ export default function HostDashboard() {
     return <Navigate to="/login" replace />;
   }
 
-  if (loading) {
+  // This page is already wrapped in <ProtectedRoute>, so `user` should always
+  // be set by the time we get here - but gating on authLoading/!user first
+  // (rather than trusting the query alone) matters because react-query's
+  // `isPending` stays true forever for a *disabled* query (enabled:
+  // !!user?.id false), so without this a missing user would show this
+  // spinner forever instead of ever resolving.
+  if (dashboardQuery.isPending) {
     return (
       <div className="min-h-screen bg-background">
         <Header />
@@ -289,7 +302,7 @@ export default function HostDashboard() {
   return (
     <div className="min-h-screen bg-background">
       <Header />
-      
+
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
@@ -301,7 +314,7 @@ export default function HostDashboard() {
               Manage your listings, bookings, and earnings
             </p>
           </div>
-          <Button 
+          <Button
             className="bg-accent text-accent-foreground hover:bg-accent-hover gap-2 h-11"
             onClick={() => navigate('/host/listings/new')}
           >
@@ -358,7 +371,7 @@ export default function HostDashboard() {
             </CardContent>
           </Card>
 
-          <Card 
+          <Card
             className="bg-card border-border cursor-pointer transition-all duration-200 hover:bg-card/80 hover:border-accent/30"
             onClick={() => navigate('/host/earnings')}
           >
@@ -411,8 +424,8 @@ export default function HostDashboard() {
                             <div className="flex items-center gap-3">
                               <div className="w-12 h-12 rounded-lg overflow-hidden bg-surface-0">
                                 {listing.photos && listing.photos[0] ? (
-                                  <img 
-                                    src={listing.photos[0]} 
+                                  <img
+                                    src={listing.photos[0]}
                                     alt={listing.title}
                                     className="w-full h-full object-cover"
                                   />
@@ -442,22 +455,22 @@ export default function HostDashboard() {
                           <TableCell className="text-right">
                             <div className="flex items-center justify-end gap-2">
                               {listing.status === 'draft' && (
-                                <Button 
-                                  variant="default" 
+                                <Button
+                                  variant="default"
                                   size="sm"
                                   className="h-8 bg-accent text-accent-foreground hover:bg-accent-hover"
                                   onClick={() => handlePublishListing(listing.id)}
-                                  disabled={publishingListingId === listing.id}
+                                  disabled={publishMutation.isPending && publishMutation.variables === listing.id}
                                 >
-                                  {publishingListingId === listing.id ? (
+                                  {publishMutation.isPending && publishMutation.variables === listing.id ? (
                                     <Loader2 className="h-4 w-4 animate-spin" />
                                   ) : (
                                     'Publish'
                                   )}
                                 </Button>
                               )}
-                              <Button 
-                                variant="ghost" 
+                              <Button
+                                variant="ghost"
                                 size="sm"
                                 className="h-8 w-8 p-0 hover:bg-surface-3"
                                 onClick={() => navigate(`/listing/${listing.id}`)}
@@ -546,10 +559,17 @@ export default function HostDashboard() {
                               <Button
                                 size="sm"
                                 className="h-6 text-xs bg-accent text-accent-foreground hover:bg-accent-hover"
-                                disabled={approvingBookingId === booking.id || cancellingBookingId === booking.id}
+                                disabled={
+                                  (approveMutation.isPending && approveMutation.variables === booking.id)
+                                  || (cancelMutation.isPending && cancelMutation.variables === booking.id)
+                                }
                                 onClick={() => handleApproveRequest(booking.id)}
                               >
-                                {approvingBookingId === booking.id ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Approve'}
+                                {approveMutation.isPending && approveMutation.variables === booking.id ? (
+                                  <Loader2 className="h-3 w-3 animate-spin" />
+                                ) : (
+                                  'Approve'
+                                )}
                               </Button>
                               <AlertDialog>
                                 <AlertDialogTrigger asChild>
@@ -557,9 +577,16 @@ export default function HostDashboard() {
                                     variant="ghost"
                                     size="sm"
                                     className="h-6 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                                    disabled={cancellingBookingId === booking.id || approvingBookingId === booking.id}
+                                    disabled={
+                                      (cancelMutation.isPending && cancelMutation.variables === booking.id)
+                                      || (approveMutation.isPending && approveMutation.variables === booking.id)
+                                    }
                                   >
-                                    {cancellingBookingId === booking.id ? <Loader2 className="h-3 w-3 animate-spin" /> : 'Decline'}
+                                    {cancelMutation.isPending && cancelMutation.variables === booking.id ? (
+                                      <Loader2 className="h-3 w-3 animate-spin" />
+                                    ) : (
+                                      'Decline'
+                                    )}
                                   </Button>
                                 </AlertDialogTrigger>
                                 <AlertDialogContent>
@@ -589,9 +616,9 @@ export default function HostDashboard() {
                                   variant="ghost"
                                   size="sm"
                                   className="h-6 text-xs text-destructive hover:text-destructive hover:bg-destructive/10"
-                                  disabled={cancellingBookingId === booking.id}
+                                  disabled={cancelMutation.isPending && cancelMutation.variables === booking.id}
                                 >
-                                  {cancellingBookingId === booking.id ? (
+                                  {cancelMutation.isPending && cancelMutation.variables === booking.id ? (
                                     <Loader2 className="h-3 w-3 animate-spin" />
                                   ) : (
                                     'Cancel'
@@ -608,7 +635,7 @@ export default function HostDashboard() {
                                 </AlertDialogHeader>
                                 <AlertDialogFooter>
                                   <AlertDialogCancel>Keep booking</AlertDialogCancel>
-                                  <AlertDialogAction 
+                                  <AlertDialogAction
                                     onClick={() => handleCancelBooking(booking.id)}
                                     className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
                                   >
@@ -643,4 +670,3 @@ export default function HostDashboard() {
     </div>
   );
 }
-

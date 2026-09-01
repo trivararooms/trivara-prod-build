@@ -1,5 +1,6 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
+import { useQuery } from '@tanstack/react-query';
 import {
   Home, MapPin, Image, Sparkles, DollarSign,
   CalendarDays, ClipboardList, FileCheck, ChevronRight, ChevronLeft,
@@ -53,6 +54,116 @@ const COUNTER_FIELDS: { key: 'maxGuests' | 'bedrooms' | 'beds' | 'bathrooms'; la
   { key: 'bathrooms', label: 'Bathrooms', min: 1, max: 10 },
 ];
 
+interface ListingFormData {
+  propertyType: PropertyType | '';
+  title: string;
+  description: string;
+  address: string;
+  city: string;
+  state: string;
+  country: string;
+  postalCode: string;
+  photos: string[];
+  maxGuests: number;
+  bedrooms: number;
+  beds: number;
+  bathrooms: number;
+  amenities: string[];
+  pricePerNight: number;
+  cleaningFee: number;
+  serviceFee: number;
+  houseRules: string[];
+  cancellationPolicy: CancellationPolicy;
+  instantBook: boolean;
+}
+
+// Result of loading either an existing listing (edit mode) or an in-progress
+// draft (create mode, if one exists) - see fetchListingEditData below.
+type ListingEditQueryResult =
+  | { kind: 'edit'; formData: ListingFormData }
+  | { kind: 'draft'; draftId: string; formData: ListingFormData }
+  | { kind: 'none' };
+
+// Load existing listing data in edit mode, or find an existing draft in
+// create mode. Pure data loading only - the autosave logic further down is
+// intentionally left as hand-rolled useState/useEffect (see NEXT_STEPS.md).
+async function fetchListingEditData(
+  urlId: string | undefined,
+  user: { id: string } | null
+): Promise<ListingEditQueryResult> {
+  if (!user) {
+    throw new Error('User not authenticated');
+  }
+
+  if (urlId) {
+    // Edit mode: Fetch specific listing
+    const listing = await listingService.getById(urlId);
+    if (!listing) throw new Error('Listing not found');
+    if (listing.hostId !== user.id) throw new Error('Unauthorized: You can only edit your own listings');
+
+    return {
+      kind: 'edit',
+      formData: {
+        propertyType: listing.propertyType as PropertyType,
+        title: listing.title,
+        description: listing.description,
+        address: listing.location?.address || '',
+        city: listing.location?.city || '',
+        state: listing.location?.state || '',
+        country: listing.location?.country || 'United States',
+        postalCode: listing.location?.postalCode || '',
+        photos: listing.photos || [],
+        maxGuests: listing.maxGuests,
+        bedrooms: listing.bedrooms,
+        beds: listing.beds,
+        bathrooms: listing.bathrooms,
+        amenities: listing.amenities || [],
+        pricePerNight: listing.pricePerNight,
+        cleaningFee: listing.cleaningFee,
+        serviceFee: listing.serviceFee,
+        houseRules: listing.houseRules || ['No smoking', 'No parties'],
+        cancellationPolicy: listing.cancellationPolicy as CancellationPolicy,
+        instantBook: listing.instantBook ?? true,
+      },
+    };
+  }
+
+  // Create mode: Check for existing draft
+  const userListings = await listingService.getByHostId(user.id);
+  const existingDraft = userListings.find(l => l.status === 'draft');
+
+  if (!existingDraft) {
+    return { kind: 'none' };
+  }
+
+  return {
+    kind: 'draft',
+    draftId: existingDraft.id,
+    formData: {
+      propertyType: (existingDraft.propertyType as PropertyType) || '',
+      title: existingDraft.title || '',
+      description: existingDraft.description || '',
+      address: existingDraft.location?.address || '',
+      city: existingDraft.location?.city || '',
+      state: existingDraft.location?.state || '',
+      country: existingDraft.location?.country || 'United States',
+      postalCode: existingDraft.location?.postalCode || '',
+      photos: existingDraft.photos || [],
+      maxGuests: existingDraft.maxGuests || 2,
+      bedrooms: existingDraft.bedrooms || 1,
+      beds: existingDraft.beds || 1,
+      bathrooms: existingDraft.bathrooms || 1,
+      amenities: existingDraft.amenities || [],
+      pricePerNight: existingDraft.pricePerNight || 100,
+      cleaningFee: existingDraft.cleaningFee || 50,
+      serviceFee: existingDraft.serviceFee || 20,
+      houseRules: existingDraft.houseRules || ['No smoking', 'No parties'],
+      cancellationPolicy: (existingDraft.cancellationPolicy as CancellationPolicy) || 'moderate',
+      instantBook: existingDraft.instantBook ?? true,
+    },
+  };
+}
+
 export default function CreateListing() {
   const { id: urlId } = useParams<{ id?: string }>();
   const isEditMode = Boolean(urlId);
@@ -61,15 +172,14 @@ export default function CreateListing() {
   const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [isLoading, setIsLoading] = useState<boolean>(true); // Always start true so we can check for an existing draft/listing first
   const [initialLoadComplete, setInitialLoadComplete] = useState(false);
   const [draftId, setDraftId] = useState<string | null>(urlId || null);
   const [isSavingDraft, setIsSavingDraft] = useState(false);
   const [lastSaved, setLastSaved] = useState<Date | null>(null);
 
   // Form state
-  const [formData, setFormData] = useState({
-    propertyType: '' as PropertyType | '',
+  const [formData, setFormData] = useState<ListingFormData>({
+    propertyType: '',
     title: '',
     description: '',
     address: '',
@@ -181,96 +291,47 @@ export default function CreateListing() {
   const debouncedFormData = useDebounce(formData, 1500);
 
   // Load existing listing data in edit mode or find existing draft
+  const listingDataQuery = useQuery({
+    queryKey: ['listing-edit-data', urlId, user?.id],
+    queryFn: () => fetchListingEditData(urlId, user),
+  });
+
+  // Always start true so we can check for an existing draft/listing first -
+  // react-query's `isPending` mirrors that (true until this query's first
+  // fetch settles, success or error).
+  const isLoading = listingDataQuery.isPending;
+
+  // Apply whatever fetchListingEditData resolved with into the editable form
+  // state - mirrors the side effects the old effect used to perform inline
+  // after a successful load.
   useEffect(() => {
-    const loadListingData = async () => {
-      try {
-        setIsLoading(true);
+    const data = listingDataQuery.data;
+    if (!data) return;
 
-        if (!user) {
-          throw new Error('User not authenticated');
-        }
+    if (data.kind === 'edit') {
+      setFormData(data.formData);
+    } else if (data.kind === 'draft') {
+      setDraftId(data.draftId);
+      setFormData(data.formData);
+      toast({
+        title: 'Draft loaded',
+        description: 'We found your previous unsaved listing and loaded it for you.',
+      });
+    }
+    setInitialLoadComplete(true);
+  }, [listingDataQuery.data, toast]);
 
-        if (urlId) {
-          // Edit mode: Fetch specific listing
-          const listing = await listingService.getById(urlId);
-          if (!listing) throw new Error('Listing not found');
-          if (listing.hostId !== user.id) throw new Error('Unauthorized: You can only edit your own listings');
-
-          setFormData({
-            propertyType: listing.propertyType as PropertyType,
-            title: listing.title,
-            description: listing.description,
-            address: listing.location?.address || '',
-            city: listing.location?.city || '',
-            state: listing.location?.state || '',
-            country: listing.location?.country || 'United States',
-            postalCode: listing.location?.postalCode || '',
-            photos: listing.photos || [],
-            maxGuests: listing.maxGuests,
-            bedrooms: listing.bedrooms,
-            beds: listing.beds,
-            bathrooms: listing.bathrooms,
-            amenities: listing.amenities || [],
-            pricePerNight: listing.pricePerNight,
-            cleaningFee: listing.cleaningFee,
-            serviceFee: listing.serviceFee,
-            houseRules: listing.houseRules || ['No smoking', 'No parties'],
-            cancellationPolicy: listing.cancellationPolicy as CancellationPolicy,
-            instantBook: listing.instantBook ?? true,
-          });
-          setInitialLoadComplete(true);
-        } else {
-          // Create mode: Check for existing draft
-          const userListings = await listingService.getByHostId(user.id);
-          const existingDraft = userListings.find(l => l.status === 'draft');
-
-          if (existingDraft) {
-            setDraftId(existingDraft.id);
-            setFormData({
-              propertyType: (existingDraft.propertyType as PropertyType) || '',
-              title: existingDraft.title || '',
-              description: existingDraft.description || '',
-              address: existingDraft.location?.address || '',
-              city: existingDraft.location?.city || '',
-              state: existingDraft.location?.state || '',
-              country: existingDraft.location?.country || 'United States',
-              postalCode: existingDraft.location?.postalCode || '',
-              photos: existingDraft.photos || [],
-              maxGuests: existingDraft.maxGuests || 2,
-              bedrooms: existingDraft.bedrooms || 1,
-              beds: existingDraft.beds || 1,
-              bathrooms: existingDraft.bathrooms || 1,
-              amenities: existingDraft.amenities || [],
-              pricePerNight: existingDraft.pricePerNight || 100,
-              cleaningFee: existingDraft.cleaningFee || 50,
-              serviceFee: existingDraft.serviceFee || 20,
-              houseRules: existingDraft.houseRules || ['No smoking', 'No parties'],
-              cancellationPolicy: (existingDraft.cancellationPolicy as CancellationPolicy) || 'moderate',
-              instantBook: existingDraft.instantBook ?? true,
-            });
-
-            toast({
-              title: 'Draft loaded',
-              description: 'We found your previous unsaved listing and loaded it for you.',
-            });
-          }
-          setInitialLoadComplete(true);
-        }
-      } catch (error: unknown) {
-        console.error('Error loading listing:', error);
-        toast({
-          title: 'Error',
-          description: getErrorMessage(error, 'Failed to load listing data'),
-          variant: 'destructive',
-        });
-        if (urlId) navigate('/host/dashboard'); // Only redirect if specifically looking for an ID
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
-    loadListingData();
-  }, [urlId, navigate, toast, user]);
+  useEffect(() => {
+    if (listingDataQuery.error) {
+      console.error('Error loading listing:', listingDataQuery.error);
+      toast({
+        title: 'Error',
+        description: getErrorMessage(listingDataQuery.error, 'Failed to load listing data'),
+        variant: 'destructive',
+      });
+      if (urlId) navigate('/host/dashboard'); // Only redirect if specifically looking for an ID
+    }
+  }, [listingDataQuery.error, toast, urlId, navigate]);
 
   // State to prevent race conditions during initial draft creation
   const [isCreatingDraft, setIsCreatingDraft] = useState(false);
