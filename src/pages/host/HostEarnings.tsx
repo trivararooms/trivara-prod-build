@@ -253,7 +253,10 @@ export default function HostEarnings() {
                       </TableCell>
                       <TableCell>{formatINR(p.amount)}</TableCell>
                       <TableCell>
-                        <Badge variant={p.status === 'paid' ? 'default' : 'secondary'}>{p.status}</Badge>
+                        <Badge variant={p.status === 'paid' ? 'default' : p.status === 'rejected' ? 'destructive' : 'secondary'}>{p.status}</Badge>
+                        {p.status === 'rejected' && p.notes && (
+                          <div className="text-xs text-muted-foreground mt-1">{p.notes}</div>
+                        )}
                       </TableCell>
                       <TableCell>
                         {new Date(p.requested_at).toLocaleDateString()}

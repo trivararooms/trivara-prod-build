@@ -10,14 +10,16 @@ payout request/approval RPCs, and RLS/security enforcement) against a local
 Postgres 16 instance with a stub `auth` schema.
 
 `00000000000002_saved_listings_and_scheduled_jobs.sql` (saved listings +
-the pg_cron auto-complete job) and `00000000000003_storage_bucket.sql` (the
+the pg_cron auto-complete job), `00000000000003_storage_bucket.sql` (the
 `listing-photos` storage bucket + its RLS policies, previously only ever
-created by hand in the dashboard) build on top of it. **To stand up a brand
-new project from zero** — e.g. after a project is deleted — run all three,
-in order, in the new project's SQL editor; nothing else needs to be created
-by hand in the database. Razorpay/SMTP config still needs to be entered
-through the Admin Settings page (or `update_app_setting`) afterward — the
-baseline only seeds disabled, blank placeholder rows for those.
+created by hand in the dashboard), and `00000000000004_payout_rejection_and_audit.sql`
+(a `reject_payout_request()` RPC, and audit logging extended to payout
+rejections and booking completions/cancellations) build on top of it. **To
+stand up a brand new project from zero** — e.g. after a project is deleted —
+run all four, in order, in the new project's SQL editor; nothing else needs
+to be created by hand in the database. Razorpay/SMTP config still needs to be
+entered through the Admin Settings page (or `update_app_setting`) afterward —
+the baseline only seeds disabled, blank placeholder rows for those.
 
 Every other `*.sql` file in this repo — now moved into `deprecated/` and
 `deprecated/migrations/` — is **historical and superseded**. They are kept
@@ -235,31 +237,34 @@ not exist in this checkout — confirmed via `ls migrations/`.)
 
 ## Known TODO.md items NOT fully resolved at the schema level
 
-These require a product/engineering decision beyond what a migration file
-can decide on its own:
+These required a product/engineering decision beyond what a migration file
+could decide on its own. Three were resolved this pass (see
+`00000000000004_payout_rejection_and_audit.sql` and `NEXT_STEPS.md`):
 
-- **"Show host bank details securely."** `get_bank_details_for_payout()`
-  (masks all but the last 4 digits of the account number) exists and is
-  admin-only, but `src/pages/AdminDashboard.tsx` currently reads
-  `host_bank_accounts` **directly** via `.select('*')`/`.select('host_id,
-  account_holder_name, ...')`, bypassing the masking RPC entirely — admins
-  see the full, unmasked account number today. The RLS fix in this migration
-  (`"Admins can view all bank accounts"`) correctly stops *non-admins* from
-  seeing other hosts' bank details (closing the TODO item "Prevent host from
-  seeing bank details of others"), but whether admins should only ever see a
-  masked view is a frontend/product decision — someone needs to decide
-  whether to change `AdminDashboard.tsx` to call the RPC instead of querying
-  the table directly.
-- **"Add admin payout approval flow" / "Add payout status: pending → approved
-  → paid".** The current flow only has `pending` → `paid` (via
-  `approve_payout_request()`) or `pending` → `rejected`. There's no explicit
-  intermediate `approved` state and no RPC to reject a request — that's a
-  workflow decision (does rejection need a reason/notes field surfaced in the
-  UI?) that wasn't specified anywhere in the historical files.
-- **"Add audit logs for ... completions."** Only payout *approvals* are
-  audited (`log_payout_approval()`). Booking completions and cancellations
-  are not logged to `audit_log`. Whether that's worth the extra write volume
-  is a product call.
+- ~~**"Show host bank details securely."**~~ **Resolved.**
+  `get_bank_details_for_payout()` (masks all but the last 4 digits of the
+  account number) already existed and was admin-only, but
+  `src/pages/AdminDashboard.tsx` was reading `host_bank_accounts` directly,
+  bypassing it. `AdminDashboard.tsx` now calls the RPC instead — admins only
+  ever see `••••<last 4>`, never the full account number.
+- ~~**"Add admin payout approval flow" / "Add payout status: pending →
+  approved → paid".**~~ **Resolved, without an intermediate `approved`
+  state.** `payout_requests.status` already allowed `'rejected'` in its
+  CHECK constraint, but nothing ever set it. `reject_payout_request(p_payout_id,
+  p_reason)` now does, mirroring `approve_payout_request()`'s admin-only +
+  advisory-lock shape; the reason is stored in the existing `notes` column
+  and shown to the admin (and to the host, on their own earnings page) —
+  no new column needed. Rejecting a payout leaves the underlying
+  `host_earnings` row `'pending'`, so the host can request a payout again.
+- ~~**"Add audit logs for ... completions."**~~ **Resolved.** Previously only
+  payout *approvals* were audited (`log_payout_approval()`). That function now
+  also fires on rejections, and a new `audit_booking_status_changes` trigger
+  logs booking transitions to `'completed'`/`'cancelled'` the same way —
+  `changed_by` is `NULL` for the unauthenticated `auto_complete_past_bookings()`
+  cron job, and `auth.uid()` for a guest/host-initiated cancellation.
+
+Still open:
+
 - **`process_booking_refund()` is not wired to any UI.** It exists (ported
   from `production_hardening.sql`) but there's no cancellation-refund button
   anywhere in the frontend that calls it, and no Razorpay refund API call

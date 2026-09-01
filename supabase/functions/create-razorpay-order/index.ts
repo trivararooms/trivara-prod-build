@@ -42,7 +42,11 @@ serve(async (req) => {
 
         if (settingsError) throw settingsError;
 
-        const getSetting = (key: string) => settings?.find(s => s.key === key)?.value;
+        // Trimmed defensively: a stray copy-pasted space or newline in either
+        // value breaks Razorpay's exact-match Basic Auth check and surfaces
+        // as a generic "Authentication failed" with no hint that whitespace
+        // was the cause.
+        const getSetting = (key: string) => settings?.find(s => s.key === key)?.value?.trim();
         const razorpayEnabled = getSetting('razorpay_enabled') === 'true';
         const razorpayKeyId = getSetting('razorpay_key_id');
         const razorpayKeySecret = getSetting('razorpay_key_secret');
