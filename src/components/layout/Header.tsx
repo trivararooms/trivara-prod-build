@@ -37,6 +37,8 @@ export function Header({ variant = 'default' }: HeaderProps) {
     let cancelled = false;
     messageService.getUnreadCount(user.id).then((count) => {
       if (!cancelled) setUnreadMessages(count);
+    }).catch((error) => {
+      console.error('Error loading unread message count:', error);
     });
     return () => { cancelled = true; };
   }, [user?.id]);

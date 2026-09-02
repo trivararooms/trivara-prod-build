@@ -34,14 +34,20 @@ export default function AccountSettings() {
     let cancelled = false;
 
     profileService.getByUserId(user.id).then((profile) => {
-      if (cancelled || !profile) return;
-      setForm({
-        first_name: profile.first_name || '',
-        last_name: profile.last_name || '',
-        phone: profile.phone || '',
-        bio: profile.bio || '',
-        avatar_url: profile.avatar_url || '',
-      });
+      if (cancelled) return;
+      if (profile) {
+        setForm({
+          first_name: profile.first_name || '',
+          last_name: profile.last_name || '',
+          phone: profile.phone || '',
+          bio: profile.bio || '',
+          avatar_url: profile.avatar_url || '',
+        });
+      }
+      setLoading(false);
+    }).catch((error) => {
+      if (cancelled) return;
+      toast({ title: 'Error', description: getErrorMessage(error, 'Could not load your profile.'), variant: 'destructive' });
       setLoading(false);
     });
 

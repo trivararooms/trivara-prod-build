@@ -59,6 +59,10 @@ export default function NotificationSettings() {
         setPrefs(data);
         setLoading(false);
       }
+    }).catch((error) => {
+      if (cancelled) return;
+      toast({ title: 'Error', description: getErrorMessage(error, 'Could not load preferences.'), variant: 'destructive' });
+      setLoading(false);
     });
     return () => { cancelled = true; };
   }, [user?.id]);

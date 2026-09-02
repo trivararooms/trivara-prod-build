@@ -42,6 +42,9 @@ export default function BookingConfirmation() {
           setHost(hostProfile);
         }
       }
+    }).catch((error) => {
+      console.error('Error loading booking:', error);
+      if (!cancelled) setBooking(null);
     });
 
     return () => { cancelled = true; };

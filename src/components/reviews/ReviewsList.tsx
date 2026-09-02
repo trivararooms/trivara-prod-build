@@ -46,6 +46,10 @@ export function ReviewsList({ listingId }: ReviewsListProps) {
       if (cancelled) return;
       setReviews(reviewsData);
       setAverages(averagesData);
+    }).catch(() => {
+      if (cancelled) return;
+      setReviews([]);
+      setAverages(null);
     });
 
     return () => { cancelled = true; };

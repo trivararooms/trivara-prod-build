@@ -47,16 +47,23 @@ export default function ListingCalendar() {
 
     const load = async () => {
       setLoading(true);
-      const [listingData, blackoutData, overrideData] = await Promise.all([
-        listingService.getById(id),
-        calendarService.getBlackoutDates(id),
-        calendarService.getPriceOverrides(id),
-      ]);
-      if (cancelled) return;
-      setListing(listingData ?? null);
-      setBlackouts(blackoutData);
-      setOverrides(overrideData);
-      setLoading(false);
+      try {
+        const [listingData, blackoutData, overrideData] = await Promise.all([
+          listingService.getById(id),
+          calendarService.getBlackoutDates(id),
+          calendarService.getPriceOverrides(id),
+        ]);
+        if (cancelled) return;
+        setListing(listingData ?? null);
+        setBlackouts(blackoutData);
+        setOverrides(overrideData);
+      } catch (error) {
+        if (!cancelled) {
+          toast({ title: 'Error', description: getErrorMessage(error, 'Could not load this listing.'), variant: 'destructive' });
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
     };
 
     load();

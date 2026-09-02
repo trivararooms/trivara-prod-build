@@ -32,24 +32,29 @@ export default function Messages() {
     let cancelled = false;
 
     const load = async () => {
-      const conversations = await messageService.getConversationsForUser(user.id);
-      const enriched = await Promise.all(
-        conversations.map(async (conversation) => {
-          const otherId = conversation.guestId === user.id ? conversation.hostId : conversation.guestId;
-          const [otherProfile, listing] = await Promise.all([
-            profileService.getByUserId(otherId),
-            listingService.getById(conversation.listingId),
-          ]);
-          return {
-            conversation,
-            otherPartyName: otherProfile
-              ? `${otherProfile.first_name} ${otherProfile.last_name}`.trim()
-              : 'Trivara user',
-            listingTitle: listing?.title || 'Listing',
-          };
-        })
-      );
-      if (!cancelled) setSummaries(enriched);
+      try {
+        const conversations = await messageService.getConversationsForUser(user.id);
+        const enriched = await Promise.all(
+          conversations.map(async (conversation) => {
+            const otherId = conversation.guestId === user.id ? conversation.hostId : conversation.guestId;
+            const [otherProfile, listing] = await Promise.all([
+              profileService.getByUserId(otherId),
+              listingService.getById(conversation.listingId),
+            ]);
+            return {
+              conversation,
+              otherPartyName: otherProfile
+                ? `${otherProfile.first_name} ${otherProfile.last_name}`.trim()
+                : 'Trivara user',
+              listingTitle: listing?.title || 'Listing',
+            };
+          })
+        );
+        if (!cancelled) setSummaries(enriched);
+      } catch (error) {
+        console.error('Error loading conversations:', error);
+        if (!cancelled) setSummaries([]);
+      }
     };
 
     load();
@@ -62,6 +67,8 @@ export default function Messages() {
 
     messageService.getMessages(activeId).then((data) => {
       if (!cancelled) setMessages(data);
+    }).catch((error) => {
+      console.error('Error loading messages:', error);
     });
     messageService.markRead(activeId, user.id);
 
