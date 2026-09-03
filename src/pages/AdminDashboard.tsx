@@ -6,6 +6,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
+import { Input } from '@/components/ui/input';
 import {
   AlertDialog,
   AlertDialogTrigger,
@@ -22,7 +23,8 @@ import { supabase } from '@/lib/supabase';
 import { formatINR } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/lib/errors';
-import { Loader2, RefreshCw, Settings } from 'lucide-react';
+import { Loader2, RefreshCw, Settings, UserCheck } from 'lucide-react';
+import { adminAccessService } from '@/services/adminAccessService';
 
 type DashboardStats = {
   total_listings: number;
@@ -77,7 +79,7 @@ async function fetchMaskedBankDetails(hostIds: string[]) {
 }
 
 export default function AdminDashboard() {
-  const { user, loading: authLoading } = useAuth();
+  const { user, profile, loading: authLoading } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
   const [stats, setStats] = useState<DashboardStats | null>(null);
@@ -86,6 +88,8 @@ export default function AdminDashboard() {
   const [approvingId, setApprovingId] = useState<string | null>(null);
   const [rejectingId, setRejectingId] = useState<string | null>(null);
   const [rejectReasons, setRejectReasons] = useState<Record<string, string>>({});
+  const [refundingId, setRefundingId] = useState<string | null>(null);
+  const [refundAmounts, setRefundAmounts] = useState<Record<string, string>>({});
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
 
   // Refs for cleanup
@@ -440,6 +444,46 @@ export default function AdminDashboard() {
     }
   };
 
+  const handleRefundBooking = async (request: PayoutRequest) => {
+    if (!request.booking_id) return;
+    const amount = Number(refundAmounts[request.id] ?? request.amount);
+    if (!Number.isFinite(amount) || amount <= 0) {
+      toast({ title: 'Error', description: 'Enter a valid refund amount.', variant: 'destructive' });
+      return;
+    }
+
+    setRefundingId(request.id);
+    try {
+      const data = await adminAccessService.processRefund(
+        request.booking_id,
+        `manual-${request.booking_id}-${Date.now()}`,
+        Math.round(amount),
+      );
+
+      if (data && data.success === false) {
+        throw new Error(data.error || 'Failed to process refund');
+      }
+
+      toast({ title: 'Refund processed', description: data?.message || 'The booking has been refunded.' });
+      setRefundAmounts(prev => {
+        const next = { ...prev };
+        delete next[request.id];
+        return next;
+      });
+
+      await Promise.all([refreshStats(), refreshPayoutRequests()]);
+    } catch (error: unknown) {
+      console.error('Error processing refund:', error);
+      toast({
+        title: 'Error',
+        description: getErrorMessage(error, 'Failed to process refund.'),
+        variant: 'destructive',
+      });
+    } finally {
+      setRefundingId(null);
+    }
+  };
+
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background">
@@ -481,14 +525,26 @@ export default function AdminDashboard() {
               Live updates enabled
               <span className="text-xs">• Last updated: {lastUpdated.toLocaleTimeString()}</span>
             </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={() => navigate('/admin/dashboard/settings')}
-            >
-              <Settings className="h-4 w-4 mr-2" />
-              Settings
-            </Button>
+            {profile?.role === 'admin' && (
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/admin/host-applications')}
+                >
+                  <UserCheck className="h-4 w-4 mr-2" />
+                  Host applications
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/admin/dashboard/settings')}
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </Button>
+              </>
+            )}
             <Button
               variant="outline"
               size="sm"
@@ -683,6 +739,45 @@ export default function AdminDashboard() {
                               </AlertDialogContent>
                             </AlertDialog>
                           </>
+                        )}
+                        {request.status === 'paid' && request.booking_id && (
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="border-destructive text-destructive hover:bg-destructive/10"
+                                disabled={refundingId === request.id}
+                              >
+                                {refundingId === request.id ? <Loader2 className="h-4 w-4 animate-spin" /> : 'Refund'}
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>Refund this booking?</AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  This marks the booking cancelled and refunded, and reverses its host earnings entry.
+                                  It does not itself move money — record the amount you actually refunded.
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <Input
+                                type="number"
+                                min="1"
+                                placeholder="Refund amount"
+                                value={refundAmounts[request.id] ?? String(request.amount)}
+                                onChange={(e) => setRefundAmounts(prev => ({ ...prev, [request.id]: e.target.value }))}
+                              />
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                <AlertDialogAction
+                                  onClick={() => handleRefundBooking(request)}
+                                  className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                                >
+                                  Process refund
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         )}
                       </div>
                     </div>

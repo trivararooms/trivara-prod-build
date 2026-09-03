@@ -540,10 +540,10 @@ class ListingService {
       throw new Error('Valid price per night is required to publish listing');
     }
 
-    // Host promotion on first published listing is handled entirely by the
-    // `promote_host_on_publish` trigger (see supabase/migrations) - it now
-    // actually exists, whereas previously it was only referenced in a
-    // comment here and never created anywhere.
+    // Publishing no longer grants host status as a side effect - the
+    // `trigger_require_approved_host` trigger (see supabase/migrations)
+    // blocks this update unless profiles.is_host is already true, which only
+    // happens once an admin approves a host_applications row.
     const { data, error } = await supabase
       .from('listings')
       .update({ status: 'published', published: true })
@@ -554,6 +554,9 @@ class ListingService {
 
     if (error || !data) {
       console.error('Publish error details:', error);
+      if (error?.message?.includes('approved host')) {
+        throw new Error('You must be an approved host to publish a listing. Apply to become a host first.');
+      }
       throw error || new Error('Failed to publish listing');
     }
 
