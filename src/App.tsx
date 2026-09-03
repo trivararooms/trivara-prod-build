@@ -71,27 +71,27 @@ const App = () => (
             } />
             <Route path="/host" element={<BecomeHost />} />
             <Route path="/host/dashboard" element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole="host">
                 <HostDashboard />
               </ProtectedRoute>
             } />
             <Route path="/host/listings/new" element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole="host">
                 <CreateListing />
               </ProtectedRoute>
             } />
             <Route path="/host/listings/:id/edit" element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole="host">
                 <CreateListing />
               </ProtectedRoute>
             } />
             <Route path="/host/earnings" element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole="host">
                 <HostEarnings />
               </ProtectedRoute>
             } />
             <Route path="/host/listings/:id/calendar" element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole="host">
                 <ListingCalendar />
               </ProtectedRoute>
             } />
