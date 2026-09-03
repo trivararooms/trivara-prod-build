@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { Header } from '@/components/layout/Header';
 
 interface InfoPageProps {
   title: string;
@@ -18,7 +17,6 @@ interface InfoPageProps {
 export function InfoPage({ title, subtitle, children }: InfoPageProps) {
   return (
     <div className="min-h-screen bg-background">
-      <Header />
       <div className="container mx-auto px-4 py-12 max-w-3xl">
         <h1 className="text-3xl font-display font-medium text-foreground mb-2">{title}</h1>
         {subtitle && <p className="text-text-secondary mb-8">{subtitle}</p>}

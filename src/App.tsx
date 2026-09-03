@@ -5,6 +5,8 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "@/components/ProtectedRoute";
+import { Header } from "@/components/layout/Header";
+import { SiteBackground } from "@/components/layout/SiteBackground";
 import { Loader2 } from "lucide-react";
 import Index from "./pages/Index";
 
@@ -60,6 +62,10 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
+        <SiteBackground />
+        {/* The one common navbar - every page gets it from here, no page
+            renders its own <Header /> any more. */}
+        <Header />
         <Suspense fallback={<PageFallback />}>
           <Routes>
             <Route path="/" element={<Index />} />

@@ -11,7 +11,6 @@ import {
   Loader2,
   MessageCircle
 } from 'lucide-react';
-import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -266,7 +265,6 @@ export default function HostDashboard() {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="container mx-auto px-4 py-8 max-w-7xl">
           <div className="flex items-center justify-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-accent" />
@@ -289,7 +287,6 @@ export default function HostDashboard() {
   if (dashboardQuery.isPending) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="container mx-auto px-4 py-8 max-w-7xl">
           <div className="flex items-center justify-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-accent" />
@@ -301,7 +298,6 @@ export default function HostDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
 
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Page Header */}

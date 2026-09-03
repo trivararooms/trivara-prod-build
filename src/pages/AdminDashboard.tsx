@@ -1,6 +1,5 @@
 import { useEffect, useState, useRef, useCallback } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
-import { Header } from '@/components/layout/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -487,7 +486,6 @@ export default function AdminDashboard() {
   if (authLoading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="flex justify-center items-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-accent" />
         </div>
@@ -502,7 +500,6 @@ export default function AdminDashboard() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="flex justify-center items-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-accent" />
         </div>
@@ -512,7 +509,6 @@ export default function AdminDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
 
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
