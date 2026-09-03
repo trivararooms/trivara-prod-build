@@ -62,14 +62,16 @@ export function Header({ variant = 'default' }: HeaderProps) {
 
   return (
     <header className={isOverlay ? 'absolute top-0 left-0 right-0 z-20 w-full bg-transparent' : 'sticky top-0 z-50 w-full bg-surface-0 border-b border-border'}>
-      <div className="container flex h-16 items-center justify-between">
+      <div className={isOverlay ? 'container grid grid-cols-[1fr_auto_1fr] h-16 items-center' : 'container flex h-16 items-center justify-between'}>
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
           <Logo markClassName="h-8 w-8" nameClassName="text-lg" />
         </Link>
 
-        {/* Desktop Navigation */}
-        <nav className="hidden md:flex items-center gap-8">
+        {/* Desktop Navigation - centered in its own grid column on the hero
+            overlay, matching the mock; flows inline (flex) on every other
+            page's header, which has no third column to center against. */}
+        <nav className={isOverlay ? 'hidden md:flex items-center gap-8 justify-self-center' : 'hidden md:flex items-center gap-8'}>
           <Link to="/search" className={navLinkClass}>
             Explore
           </Link>
@@ -79,7 +81,7 @@ export function Header({ variant = 'default' }: HeaderProps) {
         </nav>
 
         {/* Right Side */}
-        <div className="flex items-center gap-4">
+        <div className={isOverlay ? 'flex items-center gap-4 justify-self-end' : 'flex items-center gap-4'}>
           {/* Desktop Search */}
           <Button
             variant="ghost"
