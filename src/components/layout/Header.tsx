@@ -11,12 +11,18 @@ import {
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { useAuth } from '@/hooks/useAuth';
 import { messageService } from '@/services/messageService';
+import { Logo } from '@/components/layout/Logo';
 
 interface HeaderProps {
   variant?: 'default' | 'transparent';
 }
 
 export function Header({ variant = 'default' }: HeaderProps) {
+  // 'transparent' is the hero-overlay treatment: it floats over the homepage
+  // hero background instead of sitting in its own sticky bar, so it scrolls
+  // away with the hero rather than persisting - a deliberate one-off, not the
+  // pattern for every page.
+  const isOverlay = variant === 'transparent';
   const navigate = useNavigate();
   // AuthContext already fetches this user's own profile row (role, is_host)
   // once on login - reading it here instead of doing a second, separate
@@ -47,22 +53,27 @@ export function Header({ variant = 'default' }: HeaderProps) {
     navigate('/');
   };
 
+  const navLinkClass = isOverlay
+    ? 'text-[11px] font-bold uppercase tracking-wide text-[#0a0806] hover:text-foreground trivara-transition'
+    : 'text-sm text-text-secondary hover:text-foreground trivara-transition';
+  const iconButtonClass = isOverlay
+    ? 'hidden md:flex text-[#0a0806] hover:text-foreground hover:bg-transparent'
+    : 'hidden md:flex hover:bg-surface-2';
+
   return (
-    <header className={`sticky top-0 z-50 w-full ${variant === 'transparent' ? 'bg-transparent' : 'bg-surface-0 border-b border-border'}`}>
+    <header className={isOverlay ? 'absolute top-0 left-0 right-0 z-20 w-full bg-transparent' : 'sticky top-0 z-50 w-full bg-surface-0 border-b border-border'}>
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
-          <span className="font-display text-2xl font-semibold tracking-tight text-foreground">
-            Trivara
-          </span>
+          <Logo markClassName="h-8 w-8" nameClassName="text-lg" />
         </Link>
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center gap-8">
-          <Link to="/search" className="text-sm text-text-secondary hover:text-foreground trivara-transition">
+          <Link to="/search" className={navLinkClass}>
             Explore
           </Link>
-          <Link to="/host" className="text-sm text-text-secondary hover:text-foreground trivara-transition">
+          <Link to="/host" className={navLinkClass}>
             Host
           </Link>
         </nav>
@@ -73,7 +84,7 @@ export function Header({ variant = 'default' }: HeaderProps) {
           <Button
             variant="ghost"
             size="icon"
-            className="hidden md:flex hover:bg-surface-2"
+            className={iconButtonClass}
             onClick={() => navigate('/search')}
           >
             <Search className="h-5 w-5" />
@@ -84,7 +95,7 @@ export function Header({ variant = 'default' }: HeaderProps) {
             <Button
               variant="ghost"
               size="icon"
-              className="relative hidden md:flex hover:bg-surface-2"
+              className={`relative ${iconButtonClass}`}
               onClick={() => navigate('/messages')}
             >
               <MessageCircle className="h-5 w-5" />
@@ -99,9 +110,9 @@ export function Header({ variant = 'default' }: HeaderProps) {
           {/* User Menu */}
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
-              <Button 
-                variant="ghost" 
-                className="flex items-center gap-2 px-3 py-2 hover:bg-surface-2 rounded-full"
+              <Button
+                variant="ghost"
+                className={`flex items-center gap-2 px-3 py-2 rounded-full ${isOverlay ? 'text-[#0a0806] hover:text-foreground hover:bg-transparent' : 'hover:bg-surface-2'}`}
               >
                 <Menu className="h-4 w-4" />
                 <div className="h-8 w-8 rounded-full bg-surface-3 border border-border flex items-center justify-center">
@@ -175,7 +186,7 @@ export function Header({ variant = 'default' }: HeaderProps) {
           {/* Mobile Menu */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden hover:bg-surface-2">
+              <Button variant="ghost" size="icon" className={isOverlay ? 'md:hidden text-[#0a0806] hover:text-foreground hover:bg-transparent' : 'md:hidden hover:bg-surface-2'}>
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
