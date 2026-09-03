@@ -126,7 +126,7 @@ export default function HostEarnings() {
       <Header />
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <h1 className="text-3xl font-display font-medium mb-6">
+        <h1 className="text-3xl font-pillar font-bold uppercase tracking-wide mb-6">
           Earnings
         </h1>
 

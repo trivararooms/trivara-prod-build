@@ -69,7 +69,7 @@ export function ReviewCard({ review }: ReviewCardProps) {
       </div>
 
       {review.comment && (
-        <p className="text-text-secondary leading-relaxed mb-3">{review.comment}</p>
+        <p className="font-script text-xl leading-snug mb-3 text-foreground">{review.comment}</p>
       )}
 
       {Object.values(review.categories).some((v) => v !== undefined) && (

@@ -375,7 +375,7 @@ export default function ListingDetail() {
               <p className="text-text-secondary mt-1 flex items-center gap-1.5">
                 Hosted by {host.first_name} {host.last_name}
                 {host.is_verified && (
-                  <Badge variant="secondary" className="gap-1 bg-surface-3 text-foreground">
+                  <Badge variant="secondary" className="gap-1 bg-surface-3 text-foreground font-morderline text-[10px] tracking-wide">
                     <BadgeCheck className="h-3.5 w-3.5" />
                     Verified
                   </Badge>
