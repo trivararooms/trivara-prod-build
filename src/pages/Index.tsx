@@ -136,7 +136,7 @@ export default function Index() {
                     key={`${dest.city}-${i}`}
                     to={`/search?location=${encodeURIComponent(dest.city)}`}
                     aria-hidden={i >= destinations.length ? true : undefined}
-                    className="group relative flex-shrink-0 aspect-[4/5] overflow-hidden bg-surface-2 border border-border"
+                    className="group relative flex-shrink-0 aspect-[4/5] overflow-hidden bg-surface-2"
                     style={{ width: destCardWidth ? `${destCardWidth}px` : '180px' }}
                   >
                     <img
