@@ -20,12 +20,16 @@ rejections and booking completions/cancellations), `00000000000005_messaging_and
 Request to Book, host-managed blackout dates + per-date price overrides,
 notification preferences, and an abandoned-booking cleanup job), and
 `00000000000007_avatars_bucket.sql` (the `avatars` storage bucket for Account
-Settings) build on top of it. **To stand up a brand new project from zero** —
-e.g. after a project is deleted — run all seven, in order, in the new
-project's SQL editor; nothing else needs to be created by hand in the
-database. Razorpay/SMTP config still needs to be entered through the Admin
-Settings page (or `update_app_setting`) afterward — the baseline only seeds
-disabled, blank placeholder rows for those.
+Settings) build on top of it. `00000000000010_commission_engine.sql` replaces
+the hardcoded 18% platform fee with a configurable one: 3 default global
+tiers keyed by a host's trailing 30-day revenue (admin sets the thresholds
+and rates), overridable per host or per property - see the file header for
+the exact precedence. **To stand up a brand new project from zero** — e.g.
+after a project is deleted — run every migration file in this directory, in
+filename order, in the new project's SQL editor; nothing else needs to be
+created by hand in the database. Razorpay/SMTP config still needs to be
+entered through the Admin Settings page (or `update_app_setting`) afterward
+— the baseline only seeds disabled, blank placeholder rows for those.
 
 Every other `*.sql` file in this repo — now moved into `deprecated/` and
 `deprecated/migrations/` — is **historical and superseded**. They are kept

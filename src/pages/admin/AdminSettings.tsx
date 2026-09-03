@@ -12,7 +12,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/lib/errors';
-import { Loader2, Save, ShieldCheck, Mail, CreditCard } from 'lucide-react';
+import { Loader2, Save, ShieldCheck, Mail, CreditCard, Percent, Trash2, Plus } from 'lucide-react';
+import { useQueryClient } from '@tanstack/react-query';
+import { commissionService, CommissionTier, OverrideScope } from '@/services/commissionService';
 // NOTE: this page used to also gate on isAdminEmail(user.email) (a hardcoded-
 // email check) inside the effect below. That check could disagree with the
 // DB-backed `role === 'admin'` check that <ProtectedRoute requiredRole="admin">
@@ -38,6 +40,155 @@ async function fetchAppSettings(): Promise<AppSetting[]> {
 
     if (error) throw error;
     return data || [];
+}
+
+function CommissionTab() {
+    const { toast } = useToast();
+    const queryClient = useQueryClient();
+    const [tiers, setTiers] = useState<CommissionTier[] | null>(null);
+    const [overrideScope, setOverrideScope] = useState<OverrideScope>('host');
+    const [overrideKey, setOverrideKey] = useState('');
+    const [overrideRate, setOverrideRate] = useState('');
+
+    const tiersQuery = useQuery({ queryKey: ['commission-tiers'], queryFn: () => commissionService.getTiers() });
+    const overridesQuery = useQuery({ queryKey: ['commission-overrides'], queryFn: () => commissionService.getOverrides() });
+
+    useEffect(() => {
+        if (tiersQuery.data) setTiers(tiersQuery.data);
+    }, [tiersQuery.data]);
+
+    const saveTiersMutation = useMutation({
+        mutationFn: () => commissionService.saveTiers(tiers || []),
+        onSuccess: () => toast({ title: 'Commission tiers saved' }),
+        onError: (error) => toast({ title: 'Error', description: getErrorMessage(error, 'Could not save tiers.'), variant: 'destructive' }),
+    });
+
+    const addOverrideMutation = useMutation({
+        mutationFn: async () => {
+            const rate = Number(overrideRate);
+            if (!Number.isFinite(rate) || rate < 0 || rate > 100) {
+                throw new Error('Enter a commission rate between 0 and 100.');
+            }
+            const scopeId = overrideScope === 'host'
+                ? await commissionService.findHostIdByEmail(overrideKey.trim())
+                : await commissionService.findListingIdByTitle(overrideKey.trim());
+            if (!scopeId) {
+                throw new Error(overrideScope === 'host' ? 'No host found with that email.' : 'No listing found with that title.');
+            }
+            await commissionService.setOverride(overrideScope, scopeId, rate);
+        },
+        onSuccess: () => {
+            toast({ title: 'Override saved' });
+            setOverrideKey('');
+            setOverrideRate('');
+            queryClient.invalidateQueries({ queryKey: ['commission-overrides'] });
+        },
+        onError: (error) => toast({ title: 'Error', description: getErrorMessage(error, 'Could not save override.'), variant: 'destructive' }),
+    });
+
+    const removeOverrideMutation = useMutation({
+        mutationFn: (id: string) => commissionService.removeOverride(id),
+        onSuccess: () => {
+            toast({ title: 'Override removed' });
+            queryClient.invalidateQueries({ queryKey: ['commission-overrides'] });
+        },
+        onError: (error) => toast({ title: 'Error', description: getErrorMessage(error, 'Could not remove override.'), variant: 'destructive' }),
+    });
+
+    return (
+        <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Default revenue tiers</CardTitle>
+                    <CardDescription>
+                        A host's commission defaults to whichever tier their trailing 30-day revenue reaches, unless a
+                        host or property override below applies.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {tiersQuery.isLoading && <Loader2 className="h-5 w-5 animate-spin text-accent" />}
+                    {tiers?.map((tier, idx) => (
+                        <div key={tier.tier_order} className="grid grid-cols-3 gap-4 items-end">
+                            <div className="text-sm font-medium pb-2">Tier {tier.tier_order}</div>
+                            <div>
+                                <Label>Min. monthly revenue (₹)</Label>
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    value={tier.min_monthly_revenue}
+                                    onChange={(e) => setTiers(prev => prev!.map((t, i) => i === idx ? { ...t, min_monthly_revenue: Number(e.target.value) } : t))}
+                                />
+                            </div>
+                            <div>
+                                <Label>Commission rate (%)</Label>
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    value={tier.commission_rate}
+                                    onChange={(e) => setTiers(prev => prev!.map((t, i) => i === idx ? { ...t, commission_rate: Number(e.target.value) } : t))}
+                                />
+                            </div>
+                        </div>
+                    ))}
+                    <Button onClick={() => saveTiersMutation.mutate()} disabled={saveTiersMutation.isPending || !tiers} className="gap-2">
+                        {saveTiersMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                        Save tiers
+                    </Button>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Overrides</CardTitle>
+                    <CardDescription>Set a fixed commission rate for a specific host or property, overriding the tiers above.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex flex-wrap gap-2 items-end">
+                        <div>
+                            <Label>Scope</Label>
+                            <select
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                value={overrideScope}
+                                onChange={(e) => setOverrideScope(e.target.value as OverrideScope)}
+                            >
+                                <option value="host">Host (by email)</option>
+                                <option value="property">Property (by listing title)</option>
+                            </select>
+                        </div>
+                        <div className="flex-1 min-w-[200px]">
+                            <Label>{overrideScope === 'host' ? 'Host email' : 'Listing title'}</Label>
+                            <Input value={overrideKey} onChange={(e) => setOverrideKey(e.target.value)} />
+                        </div>
+                        <div className="w-32">
+                            <Label>Rate (%)</Label>
+                            <Input type="number" min="0" max="100" value={overrideRate} onChange={(e) => setOverrideRate(e.target.value)} />
+                        </div>
+                        <Button
+                            onClick={() => addOverrideMutation.mutate()}
+                            disabled={!overrideKey.trim() || !overrideRate.trim() || addOverrideMutation.isPending}
+                            className="gap-2"
+                        >
+                            {addOverrideMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                            Set override
+                        </Button>
+                    </div>
+
+                    <div className="space-y-2">
+                        {overridesQuery.data?.map((o) => (
+                            <div key={o.id} className="flex items-center justify-between border rounded-md px-4 py-2 text-sm">
+                                <span>{o.scope_type === 'host' ? 'Host' : 'Property'} {o.scope_id} — {o.commission_rate}%</span>
+                                <Button variant="ghost" size="sm" onClick={() => removeOverrideMutation.mutate(o.id)} className="text-destructive gap-2">
+                                    <Trash2 className="h-4 w-4" /> Remove
+                                </Button>
+                            </div>
+                        ))}
+                        {overridesQuery.data?.length === 0 && <p className="text-sm text-muted-foreground">No overrides set.</p>}
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    );
 }
 
 export default function AdminSettings() {
@@ -198,12 +349,15 @@ export default function AdminSettings() {
                 </div>
 
                 <Tabs defaultValue="razorpay" className="space-y-6">
-                    <TabsList className="grid w-full grid-cols-2">
+                    <TabsList className="grid w-full grid-cols-3">
                         <TabsTrigger value="razorpay" className="flex items-center gap-2">
                             <CreditCard className="h-4 w-4" /> Razorpay
                         </TabsTrigger>
                         <TabsTrigger value="smtp" className="flex items-center gap-2">
                             <Mail className="h-4 w-4" /> Email (SMTP)
+                        </TabsTrigger>
+                        <TabsTrigger value="commission" className="flex items-center gap-2">
+                            <Percent className="h-4 w-4" /> Commission
                         </TabsTrigger>
                     </TabsList>
 
@@ -253,6 +407,10 @@ export default function AdminSettings() {
                                 </div>
                             </CardContent>
                         </Card>
+                    </TabsContent>
+
+                    <TabsContent value="commission">
+                        <CommissionTab />
                     </TabsContent>
                 </Tabs>
             </div>
