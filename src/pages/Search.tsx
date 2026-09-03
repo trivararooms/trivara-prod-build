@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
-import { SlidersHorizontal, Map, List, X, Search as SearchIcon, Loader2 } from 'lucide-react';
+import { SlidersHorizontal, Map, List, X, Search as SearchIcon, Loader2, Crown } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { SearchBar } from '@/components/search/SearchBar';
 import { ListingGrid } from '@/components/listings/ListingGrid';
@@ -439,8 +439,18 @@ export default function Search() {
                 <CarouselSkeleton />
               ) : popularStays.length > 0 ? (
                 <div className="flex gap-4 overflow-x-auto pb-6 snap-x snap-mandatory scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
-                  {popularStays.map(listing => (
-                    <div key={`popular-${listing.id}`} className="min-w-[280px] w-[280px] md:min-w-[320px] md:w-[320px] flex-shrink-0 snap-start">
+                  {popularStays.map((listing, idx) => (
+                    <div key={`popular-${listing.id}`} className="relative min-w-[280px] w-[280px] md:min-w-[320px] md:w-[320px] flex-shrink-0 snap-start">
+                      {idx < 3 && (
+                        <div
+                          className={`absolute top-2 left-2 z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-background shadow ${
+                            idx === 0 ? 'bg-yellow-400 text-yellow-950' : idx === 1 ? 'bg-slate-300 text-slate-800' : 'bg-amber-600 text-amber-50'
+                          }`}
+                          title={`#${idx + 1} most booked`}
+                        >
+                          <Crown className="h-4 w-4" fill="currentColor" />
+                        </div>
+                      )}
                       <ListingCard listing={listing} />
                     </div>
                   ))}

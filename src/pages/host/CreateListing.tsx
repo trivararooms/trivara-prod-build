@@ -21,6 +21,8 @@ import { useDebounce } from '@/hooks/useDebounce';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { getErrorMessage } from '@/lib/errors';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { FIXED_COUNTRY, FIXED_STATE, KARNATAKA_CITIES } from '@/data/karnatakaLocations';
 
 const STEPS = [
   { id: 'type', label: 'Property type', icon: Home },
@@ -109,8 +111,8 @@ async function fetchListingEditData(
         description: listing.description,
         address: listing.location?.address || '',
         city: listing.location?.city || '',
-        state: listing.location?.state || '',
-        country: listing.location?.country || 'United States',
+        state: FIXED_STATE,
+        country: FIXED_COUNTRY,
         postalCode: listing.location?.postalCode || '',
         photos: listing.photos || [],
         maxGuests: listing.maxGuests,
@@ -145,8 +147,8 @@ async function fetchListingEditData(
       description: existingDraft.description || '',
       address: existingDraft.location?.address || '',
       city: existingDraft.location?.city || '',
-      state: existingDraft.location?.state || '',
-      country: existingDraft.location?.country || 'United States',
+      state: FIXED_STATE,
+      country: FIXED_COUNTRY,
       postalCode: existingDraft.location?.postalCode || '',
       photos: existingDraft.photos || [],
       maxGuests: existingDraft.maxGuests || 2,
@@ -184,8 +186,8 @@ export default function CreateListing() {
     description: '',
     address: '',
     city: '',
-    state: '',
-    country: 'United States',
+    state: FIXED_STATE,
+    country: FIXED_COUNTRY,
     postalCode: '',
     photos: [] as string[], // Empty by default for edit mode
     maxGuests: 2,
@@ -646,40 +648,48 @@ export default function CreateListing() {
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
-                  <label className="block text-sm text-text-secondary mb-2">City</label>
-                  <Input
-                    value={formData.city}
-                    onChange={(e) => updateForm({ city: e.target.value })}
-                    placeholder="San Francisco"
-                    className="trivara-input"
-                  />
+                  <label className="block text-sm text-text-secondary mb-2">City / town</label>
+                  <Select value={formData.city} onValueChange={(value) => updateForm({ city: value })}>
+                    <SelectTrigger className="trivara-input">
+                      <SelectValue placeholder="Select a city or town" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {KARNATAKA_CITIES.map((city) => (
+                        <SelectItem key={city} value={city}>{city}</SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <label className="block text-sm text-text-secondary mb-2">State</label>
-                  <Input
-                    value={formData.state}
-                    onChange={(e) => updateForm({ state: e.target.value })}
-                    placeholder="California"
-                    className="trivara-input"
-                  />
+                  <Select value={FIXED_STATE} disabled>
+                    <SelectTrigger className="trivara-input">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={FIXED_STATE}>{FIXED_STATE}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
               </div>
               <div className="grid grid-cols-2 gap-4">
                 <div>
                   <label className="block text-sm text-text-secondary mb-2">Country</label>
-                  <Input
-                    value={formData.country}
-                    onChange={(e) => updateForm({ country: e.target.value })}
-                    placeholder="United States"
-                    className="trivara-input"
-                  />
+                  <Select value={FIXED_COUNTRY} disabled>
+                    <SelectTrigger className="trivara-input">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value={FIXED_COUNTRY}>{FIXED_COUNTRY}</SelectItem>
+                    </SelectContent>
+                  </Select>
                 </div>
                 <div>
                   <label className="block text-sm text-text-secondary mb-2">Postal code</label>
                   <Input
                     value={formData.postalCode}
                     onChange={(e) => updateForm({ postalCode: e.target.value })}
-                    placeholder="94102"
+                    placeholder="560001"
                     className="trivara-input"
                   />
                 </div>

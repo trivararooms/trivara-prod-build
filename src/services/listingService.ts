@@ -271,15 +271,31 @@ class ListingService {
     return rows.filter(r => hasFreeSlot(r.id));
   }
 
+  /** listing_id -> confirmed/completed booking count, for "most booked" ranking. */
+  private async getBookingCounts(): Promise<Map<string, number>> {
+    const { data, error } = await supabase.rpc('listing_booking_counts');
+    if (error) {
+      console.error('Error fetching listing booking counts:', error);
+      return new Map();
+    }
+    const counts = new Map<string, number>();
+    (data as { listing_id: string; booking_count: number }[] | null)?.forEach((row) => {
+      counts.set(row.listing_id, Number(row.booking_count));
+    });
+    return counts;
+  }
+
+  /** Most-booked stays, in order - "Popular right now" on the Search page. */
   async getPopularListings(limit = 8): Promise<Listing[]> {
     try {
-      const { data, error } = await supabase
-        .from('listings')
-        .select('*')
-        .eq('published', true)
-        .eq('status', 'published')
-        .order('review_count', { ascending: false, nullsFirst: false })
-        .limit(limit);
+      const [{ data, error }, bookingCounts] = await Promise.all([
+        supabase
+          .from('listings')
+          .select('*')
+          .eq('published', true)
+          .eq('status', 'published'),
+        this.getBookingCounts(),
+      ]);
 
       if (error) {
         console.error('Error fetching popular listings:', error);
@@ -287,20 +303,28 @@ class ListingService {
       }
       if (!data) return [];
 
-      return (data as ListingRow[]).map(mapListing);
+      return (data as ListingRow[])
+        .map(mapListing)
+        .sort((a, b) => {
+          const diff = (bookingCounts.get(b.id) || 0) - (bookingCounts.get(a.id) || 0);
+          return diff !== 0 ? diff : b.reviewCount - a.reviewCount;
+        })
+        .slice(0, limit);
     } catch (error) {
       console.error('Unexpected error in getPopularListings:', error);
       return [];
     }
   }
 
+  /** Admin-curated, capped set of listings shown as "Featured stays". */
   async getFeatured(limit = 6): Promise<Listing[]> {
     try {
       const { data, error } = await supabase
         .from('listings')
         .select('*')
         .eq('published', true)
-        .order('rating', { ascending: false })
+        .eq('is_featured', true)
+        .order('featured_at', { ascending: false })
         .limit(limit);
 
       if (error) {
@@ -313,6 +337,37 @@ class ListingService {
       console.error('Unexpected error in getFeatured:', err);
       return [];
     }
+  }
+
+  /** Admin-only: every currently-featured listing, for the Admin Settings "Featured" tab. */
+  async getAllFeatured(): Promise<Listing[]> {
+    const { data, error } = await supabase
+      .from('listings')
+      .select('*')
+      .eq('is_featured', true)
+      .order('featured_at', { ascending: false });
+
+    if (error) throw error;
+    return (data as ListingRow[] | null)?.map(mapListing) || [];
+  }
+
+  /** Admin-only: feature or unfeature a listing, enforcing the configured slot cap server-side. */
+  async setFeatured(listingId: string, featured: boolean): Promise<void> {
+    const { error } = await supabase.rpc('set_listing_featured', { p_listing_id: listingId, p_featured: featured });
+    if (error) throw error;
+  }
+
+  /** Admin-only: find a published listing by (partial, case-insensitive) title, for the "feature this listing" search box. */
+  async searchByTitle(query: string, limit = 8): Promise<Listing[]> {
+    const { data, error } = await supabase
+      .from('listings')
+      .select('*')
+      .eq('published', true)
+      .ilike('title', `%${query}%`)
+      .limit(limit);
+
+    if (error) throw error;
+    return (data as ListingRow[] | null)?.map(mapListing) || [];
   }
 
   /** Other published listings in the same city, for a listing page's "Similar stays" section. */
@@ -365,12 +420,20 @@ class ListingService {
     }
   }
 
+  /**
+   * Places, not properties: one card per city, image is that city's
+   * most-booked property (not just whichever listing happened to load
+   * first).
+   */
   async getPopularDestinations() {
     try {
-      const { data, error } = await supabase
-        .from('listings')
-        .select('details, photos, location')
-        .eq('published', true);
+      const [{ data, error }, bookingCounts] = await Promise.all([
+        supabase
+          .from('listings')
+          .select('id, details, photos, location')
+          .eq('published', true),
+        this.getBookingCounts(),
+      ]);
 
       if (error) {
         console.error('Error fetching popular destinations:', error);
@@ -378,13 +441,14 @@ class ListingService {
       }
 
       const FALLBACK_IMAGE = 'https://images.unsplash.com/photo-1512917774080-9991f1c4c750?auto=format&fit=crop&w=800&q=80';
-      const destinationMap = new Map<string, { city: string; state: string; listings: number; image: string }>();
+      const destinationMap = new Map<string, { city: string; state: string; listings: number; image: string; topBookings: number }>();
 
-      type DestinationRow = { details: Listing['location'] | null; photos: string[] | null; location: string | null };
+      type DestinationRow = { id: string; details: Listing['location'] | null; photos: string[] | null; location: string | null };
       (data as DestinationRow[] | null)?.forEach((listing) => {
         let city = '';
         let state = '';
         const photo = listing.photos?.[0] || null;
+        const bookings = bookingCounts.get(listing.id) || 0;
 
         if (listing.details && typeof listing.details === 'object') {
           city = listing.details.city || '';
@@ -397,10 +461,11 @@ class ListingService {
 
         if (city || state) {
           const key = `${city},${state}`;
-          const current = destinationMap.get(key) || { city, state, listings: 0, image: photo || FALLBACK_IMAGE };
+          const current = destinationMap.get(key) || { city, state, listings: 0, image: photo || FALLBACK_IMAGE, topBookings: -1 };
           current.listings++;
-          if (photo && current.image === FALLBACK_IMAGE) {
+          if (photo && bookings > current.topBookings) {
             current.image = photo;
+            current.topBookings = bookings;
           }
           destinationMap.set(key, current);
         }
@@ -408,14 +473,15 @@ class ListingService {
 
       return Array.from(destinationMap.values())
         .sort((a, b) => b.listings - a.listings)
-        .slice(0, 6);
+        .slice(0, 6)
+        .map(({ city, state, listings, image }) => ({ city, state, listings, image }));
     } catch (err) {
       console.error('Unexpected error in getPopularDestinations:', err);
       return [];
     }
   }
 
-  async create(listing: Omit<Listing, 'id' | 'createdAt' | 'updatedAt' | 'rating' | 'reviewCount' | 'status'>): Promise<Listing | undefined> {
+  async create(listing: Omit<Listing, 'id' | 'createdAt' | 'updatedAt' | 'rating' | 'reviewCount' | 'status' | 'isFeatured'>): Promise<Listing | undefined> {
     const { data: userData, error: userError } = await supabase.auth.getUser();
     if (userError) throw userError;
 

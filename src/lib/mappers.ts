@@ -33,6 +33,7 @@ export interface ListingRow {
   service_fee: number | null;
   house_rules: string[] | null;
   instant_book: boolean | null;
+  is_featured: boolean | null;
   created_at: string;
   updated_at: string | null;
 }
@@ -57,6 +58,7 @@ export function mapListing(row: ListingRow): Listing {
     houseRules: row.house_rules || [],
     cancellationPolicy: row.cancellation_policy || 'flexible',
     instantBook: row.instant_book ?? true,
+    isFeatured: row.is_featured ?? false,
     status: row.status,
     rating: row.rating || 0,
     reviewCount: row.review_count || 0,

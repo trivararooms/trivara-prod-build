@@ -53,6 +53,9 @@ export interface Listing {
   // true (the default, for every pre-existing listing) = pay immediately;
   // false = the host must approve before payment is collected.
   instantBook: boolean;
+  // Admin-curated "Featured stays" - see set_listing_featured() RPC; never
+  // set directly by a host.
+  isFeatured: boolean;
   status: ListingStatus;
   rating: number;
   reviewCount: number;
