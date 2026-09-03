@@ -210,6 +210,27 @@
 }
 
 @layer utilities {
+  /* Infinite seamless marquee (popular destinations) - track holds the list
+     twice back-to-back, animation slides exactly one copy's width. */
+  .marquee-mask {
+    overflow: hidden;
+    -webkit-mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+    mask-image: linear-gradient(90deg, transparent, #000 6%, #000 94%, transparent);
+  }
+
+  .marquee-track {
+    animation: marquee-scroll linear infinite;
+  }
+
+  .marquee-mask:hover .marquee-track {
+    animation-play-state: paused;
+  }
+
+  @keyframes marquee-scroll {
+    from { transform: translateX(0); }
+    to { transform: translateX(-50%); }
+  }
+
   /* Hide scrollbar but allow scrolling */
   .scrollbar-hide {
     -ms-overflow-style: none;
