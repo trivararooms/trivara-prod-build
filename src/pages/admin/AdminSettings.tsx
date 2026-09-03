@@ -16,7 +16,7 @@ import { Loader2, Save, ShieldCheck, Mail, CreditCard, Users, Tag, Trash2, Plus,
 import { useQueryClient } from '@tanstack/react-query';
 import { adminAccessService } from '@/services/adminAccessService';
 import { discountService, DiscountRule, DiscountRuleType, DiscountValueType } from '@/services/discountService';
-import { commissionService, CommissionTier, OverrideScope } from '@/services/commissionService';
+import { commissionService, CommissionTier, OverrideScope, TierOperator } from '@/services/commissionService';
 import { listingService } from '@/services/listingService';
 import { Listing } from '@/types';
 // NOTE: this page used to also gate on isAdminEmail(user.email) (a hardcoded-
@@ -188,10 +188,17 @@ function FeaturedTab() {
     );
 }
 
+const TIER_OPERATOR_LABELS: Record<TierOperator, string> = {
+    upto: 'Up to',
+    greater_than: 'Greater than',
+    less_than: 'Less than',
+};
+
 function CommissionTab() {
     const { toast } = useToast();
     const queryClient = useQueryClient();
     const [tiers, setTiers] = useState<CommissionTier[] | null>(null);
+    const [removedTierOrders, setRemovedTierOrders] = useState<number[]>([]);
     const [overrideScope, setOverrideScope] = useState<OverrideScope>('host');
     const [overrideKey, setOverrideKey] = useState('');
     const [overrideRate, setOverrideRate] = useState('');
@@ -200,12 +207,30 @@ function CommissionTab() {
     const overridesQuery = useQuery({ queryKey: ['commission-overrides'], queryFn: () => commissionService.getOverrides() });
 
     useEffect(() => {
-        if (tiersQuery.data) setTiers(tiersQuery.data);
+        if (tiersQuery.data) {
+            setTiers(tiersQuery.data);
+            setRemovedTierOrders([]);
+        }
     }, [tiersQuery.data]);
 
+    const addTier = () => {
+        const nextOrder = Math.max(0, ...(tiers || []).map(t => t.tier_order)) + 1;
+        setTiers(prev => [...(prev || []), { tier_order: nextOrder, amount: 0, operator: 'greater_than', commission_rate: 0 }]);
+    };
+
+    const removeTier = (tierOrder: number) => {
+        setTiers(prev => (prev || []).filter(t => t.tier_order !== tierOrder));
+        if (tiersQuery.data?.some(t => t.tier_order === tierOrder)) {
+            setRemovedTierOrders(prev => [...prev, tierOrder]);
+        }
+    };
+
     const saveTiersMutation = useMutation({
-        mutationFn: () => commissionService.saveTiers(tiers || []),
-        onSuccess: () => toast({ title: 'Commission tiers saved' }),
+        mutationFn: () => commissionService.saveTiers(tiers || [], removedTierOrders),
+        onSuccess: () => {
+            toast({ title: 'Commission tiers saved' });
+            queryClient.invalidateQueries({ queryKey: ['commission-tiers'] });
+        },
         onError: (error) => toast({ title: 'Error', description: getErrorMessage(error, 'Could not save tiers.'), variant: 'destructive' }),
     });
 
@@ -247,22 +272,36 @@ function CommissionTab() {
                 <CardHeader>
                     <CardTitle>Default revenue tiers</CardTitle>
                     <CardDescription>
-                        A host's commission defaults to whichever tier their trailing 30-day revenue reaches, unless a
-                        host or property override below applies.
+                        A host's commission defaults to whichever tier their average monthly revenue (trailing 90
+                        days) matches, unless a host or property override below applies. A tier sticks as long as
+                        that average stays on its side of the threshold - one unusually slow or fast month won't
+                        flip the rate on its own.
                     </CardDescription>
                 </CardHeader>
                 <CardContent className="space-y-4">
                     {tiersQuery.isLoading && <Loader2 className="h-5 w-5 animate-spin text-accent" />}
                     {tiers?.map((tier, idx) => (
-                        <div key={tier.tier_order} className="grid grid-cols-3 gap-4 items-end">
+                        <div key={tier.tier_order} className="grid grid-cols-[auto_1fr_1fr_1fr_auto] gap-4 items-end">
                             <div className="text-sm font-medium pb-2">Tier {tier.tier_order}</div>
                             <div>
-                                <Label>Min. monthly revenue (₹)</Label>
+                                <Label>Amount is</Label>
+                                <select
+                                    className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                    value={tier.operator}
+                                    onChange={(e) => setTiers(prev => prev!.map((t, i) => i === idx ? { ...t, operator: e.target.value as TierOperator } : t))}
+                                >
+                                    {Object.entries(TIER_OPERATOR_LABELS).map(([value, label]) => (
+                                        <option key={value} value={value}>{label}</option>
+                                    ))}
+                                </select>
+                            </div>
+                            <div>
+                                <Label>Amount (₹)</Label>
                                 <Input
                                     type="number"
                                     min="0"
-                                    value={tier.min_monthly_revenue}
-                                    onChange={(e) => setTiers(prev => prev!.map((t, i) => i === idx ? { ...t, min_monthly_revenue: Number(e.target.value) } : t))}
+                                    value={tier.amount}
+                                    onChange={(e) => setTiers(prev => prev!.map((t, i) => i === idx ? { ...t, amount: Number(e.target.value) } : t))}
                                 />
                             </div>
                             <div>
@@ -275,12 +314,21 @@ function CommissionTab() {
                                     onChange={(e) => setTiers(prev => prev!.map((t, i) => i === idx ? { ...t, commission_rate: Number(e.target.value) } : t))}
                                 />
                             </div>
+                            <Button variant="ghost" size="sm" className="text-destructive" onClick={() => removeTier(tier.tier_order)}>
+                                <Trash2 className="h-4 w-4" />
+                            </Button>
                         </div>
                     ))}
-                    <Button onClick={() => saveTiersMutation.mutate()} disabled={saveTiersMutation.isPending || !tiers} className="gap-2">
-                        {saveTiersMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
-                        Save tiers
-                    </Button>
+                    <div className="flex gap-2">
+                        <Button variant="outline" onClick={addTier} className="gap-2">
+                            <Plus className="h-4 w-4" />
+                            Add tier
+                        </Button>
+                        <Button onClick={() => saveTiersMutation.mutate()} disabled={saveTiersMutation.isPending || !tiers} className="gap-2">
+                            {saveTiersMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                            Save tiers
+                        </Button>
+                    </div>
                 </CardContent>
             </Card>
 
