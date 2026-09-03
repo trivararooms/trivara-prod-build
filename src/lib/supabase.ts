@@ -36,10 +36,27 @@ function timeoutFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Res
   return fetch(input, { ...init, signal: controller.signal }).finally(() => clearTimeout(timeoutId));
 }
 
+// The Web Locks coordination described above is exactly what deadlocks: GoTrueClient's
+// default lock (navigator.locks.request) can be left orphaned by an aborted request, a
+// crashed/closed tab, or React StrictMode's double-invocation in dev, and once orphaned
+// every subsequent auth call - and by extension every .from()/.rpc() call that needs a
+// fresh token first - queues behind it forever. This happens before any fetch() is even
+// made, so timeoutFetch above can't catch it: there's no request in flight yet to time
+// out. This is a currently-open upstream bug (supabase/supabase-js #2013, #1594, #2111,
+// #1517) with no fix on the library side yet. The documented workaround is to replace
+// the lock with a no-op that just runs the callback directly - trading strict cross-tab
+// refresh serialization (a redundant refresh across two tabs is harmless) for never
+// deadlocking, which is what was actually causing "stuck on loading, nothing happens"
+// after navigating away and back.
+const noOpLock = async <R>(_name: string, _acquireTimeout: number, fn: () => Promise<R>): Promise<R> => fn();
+
 export const supabase = createClient(
   import.meta.env.VITE_SUPABASE_URL!,
   import.meta.env.VITE_SUPABASE_ANON_KEY!,
   {
+    auth: {
+      lock: noOpLock,
+    },
     global: {
       fetch: timeoutFetch,
     },
