@@ -56,7 +56,7 @@ export default function Index() {
             <p className="font-script text-2xl text-accent mb-3 animate-fade-in">
               wander well
             </p>
-            <h1 className="mb-8 animate-fade-in">
+            <h1 className="font-beast tracking-wide mb-8 animate-fade-in">
               Find your place
             </h1>
             <p className="text-xl text-text-secondary animate-fade-in" style={{ animationDelay: '0.1s' }}>
@@ -75,7 +75,7 @@ export default function Index() {
       <section className="py-32 md:py-40 bg-surface-0">
         <div className="container">
           <div className="flex items-center justify-between mb-16">
-            <h2 className="text-2xl font-display font-medium">Popular destinations</h2>
+            <h2 className="text-2xl font-beast tracking-wide">Popular destinations</h2>
             <Link to="/search" className="text-sm text-text-secondary hover:text-foreground flex items-center gap-1 trivara-transition">
               View all <ArrowRight className="h-4 w-4" />
             </Link>

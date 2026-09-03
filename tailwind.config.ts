@@ -21,6 +21,7 @@ export default {
         pillar: ["Big Shoulders Display", "system-ui", "sans-serif"],
         bastliga: ["Yellowtail", "cursive"],
         morderline: ["Bungee", "cursive"],
+        beast: ["Anton", "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
