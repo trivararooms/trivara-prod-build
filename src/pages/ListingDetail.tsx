@@ -24,6 +24,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { formatINR } from '@/lib/utils';
 import { getErrorMessage } from '@/lib/errors';
 import { payForBooking } from '@/lib/razorpayCheckout';
+import { discountService, AppliedDiscount } from '@/services/discountService';
 import { Listing } from '@/types';
 
 interface PricingBreakdown {
@@ -76,6 +77,7 @@ export default function ListingDetail() {
   const [checkIn, setCheckIn] = useState<Date>();
   const [checkOut, setCheckOut] = useState<Date>();
   const [pricing, setPricing] = useState<PricingBreakdown | null>(null);
+  const [appliedDiscount, setAppliedDiscount] = useState<AppliedDiscount | null>(null);
   const [unavailableDates, setUnavailableDates] = useState<Date[]>([]);
   const [isBooking, setIsBooking] = useState(false);
   const [host, setHost] = useState<{ first_name: string; last_name: string; avatar_url?: string; is_verified?: boolean } | null>(null);
@@ -190,6 +192,7 @@ export default function ListingDetail() {
     const calculatePricing = async () => {
       if (!listing || !checkIn || !checkOut) {
         setPricing(null); // Reset pricing when dates are not selected
+        setAppliedDiscount(null);
         return;
       }
 
@@ -203,14 +206,27 @@ export default function ListingDetail() {
           listing.serviceFee
         );
         setPricing(pricingData);
+
+        if (user?.id) {
+          try {
+            const discount = await discountService.findBest(user.id, listing.id, pricingData.total, pricingData.nights);
+            setAppliedDiscount(discount);
+          } catch (discountError) {
+            console.error('Error checking for discounts:', discountError);
+            setAppliedDiscount(null);
+          }
+        } else {
+          setAppliedDiscount(null);
+        }
       } catch (error) {
         console.error('Error calculating pricing:', error);
         setPricing(null); // Reset pricing on error
+        setAppliedDiscount(null);
       }
     };
 
     calculatePricing();
-  }, [listing, checkIn, checkOut]);
+  }, [listing, checkIn, checkOut, user?.id]);
 
   const handleShare = async () => {
     const url = window.location.href;
@@ -697,10 +713,18 @@ export default function ListingDetail() {
                         <span className="text-foreground">{formatINR(listing.serviceFee)}</span>
                       </div>
                     )}
+                    {appliedDiscount && (
+                      <div className="flex justify-between">
+                        <span className="text-accent">{appliedDiscount.name}</span>
+                        <span className="text-accent">-{formatINR(appliedDiscount.amount)}</span>
+                      </div>
+                    )}
                     <hr className="border-border my-2" />
                     <div className="flex justify-between items-baseline font-pillar font-bold uppercase tracking-wide text-base">
                       <span className="text-foreground">Total</span>
-                      <span className="text-accent">{formatINR(pricing.total)}</span>
+                      <span className="text-accent">
+                        {formatINR(appliedDiscount ? pricing.total - appliedDiscount.amount : pricing.total)}
+                      </span>
                     </div>
                   </div>
                 )}

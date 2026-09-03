@@ -6,7 +6,6 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
@@ -110,68 +109,66 @@ export function Header({ variant = 'default' }: HeaderProps) {
                 </div>
               </Button>
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="end" className="w-56 bg-card border-border">
-              {user ? (
-                <>
-                  <DropdownMenuItem onClick={() => navigate('/trips')}>
-                    Your trips
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/saved')}>
-                    Saved
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={() => navigate('/messages')} className="flex items-center justify-between">
-                    Messages
-                    {unreadMessages > 0 && (
-                      <span className="h-5 min-w-5 px-1 rounded-full bg-accent text-accent-foreground text-xs flex items-center justify-center font-medium">
-                        {unreadMessages}
-                      </span>
+            <DropdownMenuContent align="end" className="w-72 bg-card border-border p-3">
+              <div className="grid grid-cols-2 gap-2">
+                {user ? (
+                  <>
+                    <DropdownMenuItem className="border border-border rounded-lg justify-center text-center py-3" onClick={() => navigate('/trips')}>
+                      Your trips
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="border border-border rounded-lg justify-center text-center py-3" onClick={() => navigate('/saved')}>
+                      Saved
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="relative border border-border rounded-lg justify-center text-center py-3" onClick={() => navigate('/messages')}>
+                      Messages
+                      {unreadMessages > 0 && (
+                        <span className="absolute -top-1.5 -right-1.5 h-4 min-w-4 px-1 rounded-full bg-accent text-accent-foreground text-[10px] font-morderline flex items-center justify-center">
+                          {unreadMessages}
+                        </span>
+                      )}
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="border border-border rounded-lg justify-center text-center py-3" onClick={() => navigate('/account')}>
+                      Account
+                    </DropdownMenuItem>
+                    {isHost && (
+                      <>
+                        <DropdownMenuItem className="border border-border rounded-lg justify-center text-center py-3 bg-accent/10" onClick={() => navigate('/host/dashboard')}>
+                          Host dashboard
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="border border-border rounded-lg justify-center text-center py-3 bg-accent/10" onClick={() => navigate('/host/listings/new')}>
+                          Create listing
+                        </DropdownMenuItem>
+                      </>
                     )}
-                  </DropdownMenuItem>
-                  <DropdownMenuSeparator />
-                  {isHost && (
-                    <>
-                      <DropdownMenuItem onClick={() => navigate('/host/dashboard')}>
-                        Host dashboard
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => navigate('/host/listings/new')}>
-                        Create listing
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
-                  {isAdmin && (
-                    <>
-                      <DropdownMenuItem onClick={() => navigate('/admin/dashboard')}>
-                        Admin dashboard
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => navigate('/admin/dashboard/settings')}>
-                        <ShieldCheck className="h-4 w-4 mr-2" />
-                        Admin settings
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                    </>
-                  )}
-                  <DropdownMenuItem onClick={() => navigate('/account')}>
-                    Account
-                  </DropdownMenuItem>
-                  <DropdownMenuItem onClick={handleLogout}>
-                    Log out
-                  </DropdownMenuItem>
-                </>
-              ) : (
-                <>
-                  <DropdownMenuItem onClick={() => navigate('/login')}>
-                    Log in
-                  </DropdownMenuItem>
-                  {/* There's no separate signup flow - /login is Google OAuth for
-                      both new and returning users, so a distinct "Sign up" entry
-                      pointing at a non-existent /signup route has been removed. */}
-                  <DropdownMenuSeparator />
-                  <DropdownMenuItem onClick={() => navigate('/host')}>
-                    Become a Host
-                  </DropdownMenuItem>
-                </>
-              )}
+                    {isAdmin && (
+                      <>
+                        <DropdownMenuItem className="border border-border rounded-lg justify-center text-center py-3 bg-primary/10" onClick={() => navigate('/admin/dashboard')}>
+                          Admin dashboard
+                        </DropdownMenuItem>
+                        <DropdownMenuItem className="border border-border rounded-lg justify-center text-center py-3 bg-primary/10" onClick={() => navigate('/admin/dashboard/settings')}>
+                          <ShieldCheck className="h-4 w-4 mr-1" />
+                          Admin settings
+                        </DropdownMenuItem>
+                      </>
+                    )}
+                    <DropdownMenuItem className="col-span-2 border border-border rounded-lg justify-center text-center py-3" onClick={handleLogout}>
+                      Log out
+                    </DropdownMenuItem>
+                  </>
+                ) : (
+                  <>
+                    {/* There's no separate signup flow - /login is Google OAuth for
+                        both new and returning users, so a distinct "Sign up" entry
+                        pointing at a non-existent /signup route has been removed. */}
+                    <DropdownMenuItem className="border border-border rounded-lg justify-center text-center py-3" onClick={() => navigate('/login')}>
+                      Log in
+                    </DropdownMenuItem>
+                    <DropdownMenuItem className="border border-border rounded-lg justify-center text-center py-3" onClick={() => navigate('/host')}>
+                      Become a Host
+                    </DropdownMenuItem>
+                  </>
+                )}
+              </div>
             </DropdownMenuContent>
           </DropdownMenu>
 

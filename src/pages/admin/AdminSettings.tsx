@@ -12,9 +12,10 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/lib/errors';
-import { Loader2, Save, ShieldCheck, Mail, CreditCard, Users, Trash2, Plus } from 'lucide-react';
-import { adminAccessService } from '@/services/adminAccessService';
+import { Loader2, Save, ShieldCheck, Mail, CreditCard, Users, Tag, Trash2, Plus, Power } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { adminAccessService } from '@/services/adminAccessService';
+import { discountService, DiscountRule, DiscountRuleType, DiscountValueType } from '@/services/discountService';
 // NOTE: this page used to also gate on isAdminEmail(user.email) (a hardcoded-
 // email check) inside the effect below. That check could disagree with the
 // DB-backed `role === 'admin'` check that <ProtectedRoute requiredRole="admin">
@@ -126,6 +127,192 @@ function ManageAdminsTab() {
                 </div>
             </CardContent>
         </Card>
+    );
+}
+
+const RULE_TYPE_LABELS: Record<DiscountRuleType, string> = {
+    first_time_user: 'First-time user',
+    area: 'Area',
+    combo: 'Combo',
+};
+
+function OffersTab() {
+    const { toast } = useToast();
+    const queryClient = useQueryClient();
+
+    const [name, setName] = useState('');
+    const [ruleType, setRuleType] = useState<DiscountRuleType>('first_time_user');
+    const [locationContains, setLocationContains] = useState('');
+    const [listingIdsCsv, setListingIdsCsv] = useState('');
+    const [minNights, setMinNights] = useState('');
+    const [discountType, setDiscountType] = useState<DiscountValueType>('percentage');
+    const [discountValue, setDiscountValue] = useState('');
+
+    const rulesQuery = useQuery({ queryKey: ['discount-rules'], queryFn: () => discountService.list() });
+
+    const invalidate = () => queryClient.invalidateQueries({ queryKey: ['discount-rules'] });
+
+    const createMutation = useMutation({
+        mutationFn: async () => {
+            const value = Number(discountValue);
+            if (!Number.isFinite(value) || value <= 0) throw new Error('Enter a discount value greater than 0.');
+
+            const conditions: Record<string, unknown> = {};
+            if (ruleType === 'area') {
+                if (!locationContains.trim()) throw new Error('Enter the area to match.');
+                conditions.location_contains = locationContains.trim();
+            } else if (ruleType === 'combo') {
+                if (listingIdsCsv.trim()) conditions.listing_ids = listingIdsCsv.split(',').map(s => s.trim()).filter(Boolean);
+                if (minNights.trim()) conditions.min_nights = Number(minNights);
+                if (!conditions.listing_ids && !conditions.min_nights) {
+                    throw new Error('Enter listing IDs and/or a minimum nights condition for a combo rule.');
+                }
+            }
+
+            await discountService.create({
+                name,
+                rule_type: ruleType,
+                conditions,
+                discount_type: discountType,
+                discount_value: value,
+                active_from: null,
+                active_until: null,
+                is_active: true,
+            });
+        },
+        onSuccess: () => {
+            toast({ title: 'Offer created' });
+            setName('');
+            setLocationContains('');
+            setListingIdsCsv('');
+            setMinNights('');
+            setDiscountValue('');
+            invalidate();
+        },
+        onError: (error) => toast({ title: 'Error', description: getErrorMessage(error, 'Could not create offer.'), variant: 'destructive' }),
+    });
+
+    const toggleMutation = useMutation({
+        mutationFn: (rule: DiscountRule) => discountService.setActive(rule.id, !rule.is_active),
+        onSuccess: invalidate,
+        onError: (error) => toast({ title: 'Error', description: getErrorMessage(error, 'Could not update offer.'), variant: 'destructive' }),
+    });
+
+    const removeMutation = useMutation({
+        mutationFn: (id: string) => discountService.remove(id),
+        onSuccess: invalidate,
+        onError: (error) => toast({ title: 'Error', description: getErrorMessage(error, 'Could not remove offer.'), variant: 'destructive' }),
+    });
+
+    return (
+        <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>New offer</CardTitle>
+                    <CardDescription>
+                        Only the single largest matching offer applies to a booking - offers never stack.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div>
+                        <Label>Name</Label>
+                        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Welcome discount" />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label>Applies to</Label>
+                            <select
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                value={ruleType}
+                                onChange={(e) => setRuleType(e.target.value as DiscountRuleType)}
+                            >
+                                {Object.entries(RULE_TYPE_LABELS).map(([value, label]) => (
+                                    <option key={value} value={value}>{label}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <Label>Discount type</Label>
+                            <select
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                value={discountType}
+                                onChange={(e) => setDiscountType(e.target.value as DiscountValueType)}
+                            >
+                                <option value="percentage">Percentage</option>
+                                <option value="flat_amount">Flat amount (₹)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {ruleType === 'area' && (
+                        <div>
+                            <Label>Area (matches listing location)</Label>
+                            <Input value={locationContains} onChange={(e) => setLocationContains(e.target.value)} placeholder="e.g. Goa" />
+                        </div>
+                    )}
+
+                    {ruleType === 'combo' && (
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <Label>Listing IDs (comma-separated, optional)</Label>
+                                <Input value={listingIdsCsv} onChange={(e) => setListingIdsCsv(e.target.value)} placeholder="uuid, uuid" />
+                            </div>
+                            <div>
+                                <Label>Minimum nights (optional)</Label>
+                                <Input type="number" min="1" value={minNights} onChange={(e) => setMinNights(e.target.value)} />
+                            </div>
+                        </div>
+                    )}
+
+                    <div>
+                        <Label>{discountType === 'percentage' ? 'Percentage off' : 'Amount off (₹)'}</Label>
+                        <Input type="number" min="0" value={discountValue} onChange={(e) => setDiscountValue(e.target.value)} />
+                    </div>
+
+                    <Button
+                        onClick={() => createMutation.mutate()}
+                        disabled={!name.trim() || !discountValue.trim() || createMutation.isPending}
+                        className="gap-2"
+                    >
+                        {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                        Create offer
+                    </Button>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Existing offers</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                    {rulesQuery.isLoading && <Loader2 className="h-5 w-5 animate-spin text-accent" />}
+                    {rulesQuery.data?.length === 0 && <p className="text-sm text-muted-foreground">No offers yet.</p>}
+                    {rulesQuery.data?.map((rule) => (
+                        <div key={rule.id} className="flex items-center justify-between border rounded-md px-4 py-3">
+                            <div>
+                                <p className="font-medium flex items-center gap-2">
+                                    {rule.name}
+                                    {!rule.is_active && <span className="text-xs text-muted-foreground">(inactive)</span>}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                    {RULE_TYPE_LABELS[rule.rule_type]} &middot; {rule.discount_type === 'percentage' ? `${rule.discount_value}%` : `₹${rule.discount_value}`} off
+                                </p>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button variant="outline" size="sm" className="gap-2" onClick={() => toggleMutation.mutate(rule)}>
+                                    <Power className="h-4 w-4" />
+                                    {rule.is_active ? 'Deactivate' : 'Activate'}
+                                </Button>
+                                <Button variant="ghost" size="sm" className="text-destructive gap-2" onClick={() => removeMutation.mutate(rule.id)}>
+                                    <Trash2 className="h-4 w-4" /> Remove
+                                </Button>
+                            </div>
+                        </div>
+                    ))}
+                </CardContent>
+            </Card>
+        </div>
     );
 }
 
@@ -287,12 +474,15 @@ export default function AdminSettings() {
                 </div>
 
                 <Tabs defaultValue="razorpay" className="space-y-6">
-                    <TabsList className="grid w-full grid-cols-3">
+                    <TabsList className="grid w-full grid-cols-4">
                         <TabsTrigger value="razorpay" className="flex items-center gap-2">
                             <CreditCard className="h-4 w-4" /> Razorpay
                         </TabsTrigger>
                         <TabsTrigger value="smtp" className="flex items-center gap-2">
                             <Mail className="h-4 w-4" /> Email (SMTP)
+                        </TabsTrigger>
+                        <TabsTrigger value="offers" className="flex items-center gap-2">
+                            <Tag className="h-4 w-4" /> Offers
                         </TabsTrigger>
                         <TabsTrigger value="admins" className="flex items-center gap-2">
                             <Users className="h-4 w-4" /> Admins
@@ -345,6 +535,10 @@ export default function AdminSettings() {
                                 </div>
                             </CardContent>
                         </Card>
+                    </TabsContent>
+
+                    <TabsContent value="offers">
+                        <OffersTab />
                     </TabsContent>
 
                     <TabsContent value="admins">

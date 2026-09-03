@@ -23,7 +23,7 @@ import { supabase } from '@/lib/supabase';
 import { formatINR } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/lib/errors';
-import { Loader2, RefreshCw, Settings } from 'lucide-react';
+import { Loader2, RefreshCw, Settings, UserCheck } from 'lucide-react';
 import { adminAccessService } from '@/services/adminAccessService';
 
 type DashboardStats = {
@@ -526,14 +526,24 @@ export default function AdminDashboard() {
               <span className="text-xs">• Last updated: {lastUpdated.toLocaleTimeString()}</span>
             </div>
             {profile?.role === 'admin' && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => navigate('/admin/dashboard/settings')}
-              >
-                <Settings className="h-4 w-4 mr-2" />
-                Settings
-              </Button>
+              <>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/admin/host-applications')}
+                >
+                  <UserCheck className="h-4 w-4 mr-2" />
+                  Host applications
+                </Button>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => navigate('/admin/dashboard/settings')}
+                >
+                  <Settings className="h-4 w-4 mr-2" />
+                  Settings
+                </Button>
+              </>
             )}
             <Button
               variant="outline"
