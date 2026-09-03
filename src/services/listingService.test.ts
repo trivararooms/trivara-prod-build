@@ -69,6 +69,7 @@ function listingRow(overrides: Partial<ListingRow> = {}): ListingRow {
     service_fee: 50,
     house_rules: ['No smoking'],
     instant_book: true,
+    is_featured: false,
     created_at: '2026-01-01T00:00:00Z',
     updated_at: '2026-01-02T00:00:00Z',
     ...overrides,

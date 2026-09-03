@@ -12,11 +12,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/lib/errors';
-import { Loader2, Save, ShieldCheck, Mail, CreditCard, Users, Tag, Trash2, Plus, Power, Percent } from 'lucide-react';
+import { Loader2, Save, ShieldCheck, Mail, CreditCard, Users, Tag, Trash2, Plus, Power, Percent, Star, Search as SearchIcon } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { adminAccessService } from '@/services/adminAccessService';
 import { discountService, DiscountRule, DiscountRuleType, DiscountValueType } from '@/services/discountService';
 import { commissionService, CommissionTier, OverrideScope } from '@/services/commissionService';
+import { listingService } from '@/services/listingService';
+import { Listing } from '@/types';
 // NOTE: this page used to also gate on isAdminEmail(user.email) (a hardcoded-
 // email check) inside the effect below. That check could disagree with the
 // DB-backed `role === 'admin'` check that <ProtectedRoute requiredRole="admin">
@@ -42,6 +44,148 @@ async function fetchAppSettings(): Promise<AppSetting[]> {
 
     if (error) throw error;
     return data || [];
+}
+
+function FeaturedTab() {
+    const { toast } = useToast();
+    const queryClient = useQueryClient();
+    const [maxSlots, setMaxSlots] = useState('');
+    const [query, setQuery] = useState('');
+    const [results, setResults] = useState<Listing[]>([]);
+    const [searching, setSearching] = useState(false);
+
+    const capQuery = useQuery({
+        queryKey: ['featured-cap'],
+        queryFn: async () => {
+            const { data, error } = await supabase.from('app_settings').select('value').eq('key', 'featured_stays_max_slots').single();
+            if (error) throw error;
+            return data?.value || '25';
+        },
+    });
+
+    const featuredQuery = useQuery({ queryKey: ['featured-listings'], queryFn: () => listingService.getAllFeatured() });
+
+    useEffect(() => {
+        if (capQuery.data) setMaxSlots(capQuery.data);
+    }, [capQuery.data]);
+
+    const invalidate = () => {
+        queryClient.invalidateQueries({ queryKey: ['featured-listings'] });
+        queryClient.invalidateQueries({ queryKey: ['featured-cap'] });
+    };
+
+    const saveCapMutation = useMutation({
+        mutationFn: async () => {
+            const { error } = await supabase.rpc('update_app_setting', { p_key: 'featured_stays_max_slots', p_value: maxSlots.trim() });
+            if (error) throw error;
+        },
+        onSuccess: () => { toast({ title: 'Slot limit saved' }); invalidate(); },
+        onError: (error) => toast({ title: 'Error', description: getErrorMessage(error, 'Could not save the slot limit.'), variant: 'destructive' }),
+    });
+
+    const featureMutation = useMutation({
+        mutationFn: (listing: Listing) => listingService.setFeatured(listing.id, true),
+        onSuccess: () => { toast({ title: 'Listing featured' }); setQuery(''); setResults([]); invalidate(); },
+        onError: (error) => toast({ title: 'Error', description: getErrorMessage(error, 'Could not feature this listing.'), variant: 'destructive' }),
+    });
+
+    const unfeatureMutation = useMutation({
+        mutationFn: (listing: Listing) => listingService.setFeatured(listing.id, false),
+        onSuccess: invalidate,
+        onError: (error) => toast({ title: 'Error', description: getErrorMessage(error, 'Could not remove this listing.'), variant: 'destructive' }),
+    });
+
+    const handleSearch = async () => {
+        if (!query.trim()) return;
+        setSearching(true);
+        try {
+            setResults(await listingService.searchByTitle(query.trim()));
+        } catch (error) {
+            toast({ title: 'Error', description: getErrorMessage(error, 'Search failed.'), variant: 'destructive' });
+        } finally {
+            setSearching(false);
+        }
+    };
+
+    const usedSlots = featuredQuery.data?.length ?? 0;
+
+    return (
+        <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Slot limit</CardTitle>
+                    <CardDescription>The maximum number of listings that can be featured on the home page at once.</CardDescription>
+                </CardHeader>
+                <CardContent className="flex items-end gap-3">
+                    <div>
+                        <Label>Max featured slots</Label>
+                        <Input type="number" min="1" value={maxSlots} onChange={(e) => setMaxSlots(e.target.value)} className="w-32" />
+                    </div>
+                    <Button onClick={() => saveCapMutation.mutate()} disabled={saveCapMutation.isPending} className="gap-2">
+                        {saveCapMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                        Save
+                    </Button>
+                    <p className="text-sm text-muted-foreground pb-2">{usedSlots} / {capQuery.data ?? '25'} slots used</p>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Feature a listing</CardTitle>
+                    <CardDescription>Search by title, then add it to Featured Stays.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex gap-2">
+                        <Input
+                            placeholder="Search listings by title..."
+                            value={query}
+                            onChange={(e) => setQuery(e.target.value)}
+                            onKeyDown={(e) => e.key === 'Enter' && handleSearch()}
+                        />
+                        <Button variant="outline" onClick={handleSearch} disabled={searching} className="gap-2">
+                            {searching ? <Loader2 className="h-4 w-4 animate-spin" /> : <SearchIcon className="h-4 w-4" />}
+                        </Button>
+                    </div>
+                    {results.length > 0 && (
+                        <div className="space-y-2">
+                            {results.map((listing) => (
+                                <div key={listing.id} className="flex items-center justify-between border rounded-md px-4 py-2">
+                                    <span className="text-sm">{listing.title}</span>
+                                    <Button
+                                        size="sm"
+                                        className="gap-2"
+                                        disabled={listing.isFeatured || featureMutation.isPending}
+                                        onClick={() => featureMutation.mutate(listing)}
+                                    >
+                                        <Star className="h-4 w-4" />
+                                        {listing.isFeatured ? 'Already featured' : 'Feature'}
+                                    </Button>
+                                </div>
+                            ))}
+                        </div>
+                    )}
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Currently featured</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                    {featuredQuery.isLoading && <Loader2 className="h-5 w-5 animate-spin text-accent" />}
+                    {featuredQuery.data?.length === 0 && <p className="text-sm text-muted-foreground">No featured listings yet.</p>}
+                    {featuredQuery.data?.map((listing) => (
+                        <div key={listing.id} className="flex items-center justify-between border rounded-md px-4 py-2">
+                            <span className="text-sm">{listing.title}</span>
+                            <Button variant="ghost" size="sm" className="text-destructive gap-2" onClick={() => unfeatureMutation.mutate(listing)}>
+                                <Trash2 className="h-4 w-4" /> Remove
+                            </Button>
+                        </div>
+                    ))}
+                </CardContent>
+            </Card>
+        </div>
+    );
 }
 
 function CommissionTab() {
@@ -623,12 +767,15 @@ export default function AdminSettings() {
                 </div>
 
                 <Tabs defaultValue="razorpay" className="space-y-6">
-                    <TabsList className="grid w-full grid-cols-5">
+                    <TabsList className="grid w-full grid-cols-6">
                         <TabsTrigger value="razorpay" className="flex items-center gap-2">
                             <CreditCard className="h-4 w-4" /> Razorpay
                         </TabsTrigger>
                         <TabsTrigger value="smtp" className="flex items-center gap-2">
                             <Mail className="h-4 w-4" /> Email (SMTP)
+                        </TabsTrigger>
+                        <TabsTrigger value="featured" className="flex items-center gap-2">
+                            <Star className="h-4 w-4" /> Featured
                         </TabsTrigger>
                         <TabsTrigger value="commission" className="flex items-center gap-2">
                             <Percent className="h-4 w-4" /> Commission
@@ -687,6 +834,10 @@ export default function AdminSettings() {
                                 </div>
                             </CardContent>
                         </Card>
+                    </TabsContent>
+
+                    <TabsContent value="featured">
+                        <FeaturedTab />
                     </TabsContent>
 
                     <TabsContent value="commission">
