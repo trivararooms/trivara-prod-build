@@ -18,19 +18,15 @@ export function LogoMark({ className = 'h-8 w-8' }: LogoMarkProps) {
 
 interface LogoProps {
   markClassName?: string;
-  showSub?: boolean;
   nameClassName?: string;
 }
 
-export function Logo({ markClassName = 'h-8 w-8', showSub = false, nameClassName = 'text-base' }: LogoProps) {
+export function Logo({ markClassName = 'h-8 w-8', nameClassName = 'text-lg' }: LogoProps) {
   return (
-    <span className="flex items-center gap-2.5">
+    <span className="flex items-center gap-3">
       <LogoMark className={markClassName} />
-      <span className="flex flex-col leading-none">
-        <span className={`font-sans font-bold tracking-[0.14em] text-foreground ${nameClassName}`}>TRIVARA</span>
-        {showSub && (
-          <span className="mt-0.5 font-sans font-medium text-[9px] tracking-[0.32em] text-text-meta">STAYS</span>
-        )}
+      <span className={`font-sans font-bold tracking-[0.1em] text-foreground leading-none ${nameClassName}`}>
+        TRIVARASTAYS
       </span>
     </span>
   );

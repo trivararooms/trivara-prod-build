@@ -60,33 +60,85 @@ export function Header({ variant = 'default' }: HeaderProps) {
     ? 'hidden md:flex text-[#0a0806] hover:text-foreground hover:bg-transparent'
     : 'hidden md:flex hover:bg-surface-2';
 
+  // Mirrors the mock's own locked page margin (--page-margin: clamp(20px,
+  // 4vw, 48px)) instead of Tailwind's default .container gutter (2rem fixed,
+  // capped at 1400px) - used everywhere on the hero overlay so the header
+  // lines up with the homepage sections below it, which use the same value.
+  const sidePad = 'px-[clamp(20px,4vw,48px)]';
+
+  // Search + Messages - shared between variants, just relocated: they sit in
+  // the centered nav group on the hero overlay ("pair up with the things in
+  // the middle"), and in their own right-hand slot on every other page.
+  const utilityIcons = (
+    <>
+      <Button
+        variant="ghost"
+        size="icon"
+        className={iconButtonClass}
+        onClick={() => navigate('/search')}
+      >
+        <Search className="h-5 w-5" />
+      </Button>
+
+      {user && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className={`relative ${iconButtonClass}`}
+          onClick={() => navigate('/messages')}
+        >
+          <MessageCircle className="h-5 w-5" />
+          {unreadMessages > 0 && (
+            <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-accent text-accent-foreground text-[10px] font-morderline flex items-center justify-center">
+              {unreadMessages}
+            </span>
+          )}
+        </Button>
+      )}
+    </>
+  );
+
   return (
     <header className={isOverlay ? 'absolute top-0 left-0 right-0 z-20 w-full bg-transparent' : 'sticky top-0 z-50 w-full bg-surface-0 border-b border-border'}>
-      <div className={isOverlay ? 'container grid grid-cols-[1fr_auto_1fr] h-16 items-center' : 'container flex h-16 items-center justify-between'}>
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2">
-          <Logo markClassName="h-8 w-8" nameClassName="text-lg" />
+      <div className={isOverlay ? `w-full ${sidePad} grid grid-cols-[1fr_auto_1fr] h-20 items-center` : 'container flex h-16 items-center justify-between'}>
+        {/* Logo - flush against the same side padding the footer's logo
+            uses, so the two sit parallel to each other. */}
+        <Link to="/" className={isOverlay ? 'flex items-center gap-2 justify-self-start' : 'flex items-center gap-2'}>
+          <Logo markClassName={isOverlay ? 'h-11 w-11' : 'h-8 w-8'} nameClassName={isOverlay ? 'text-2xl' : 'text-lg'} />
         </Link>
 
         {/* Desktop Navigation - centered in its own grid column on the hero
             overlay, matching the mock; flows inline (flex) on every other
             page's header, which has no third column to center against. */}
         <nav className={isOverlay ? 'hidden md:flex items-center gap-8 justify-self-center' : 'hidden md:flex items-center gap-8'}>
+          {/* On the hero overlay, the mock puts these auth-aware links directly
+              in the nav instead of behind an avatar menu - there is no avatar
+              menu on the hero at all now. Logout sits leftmost. Every other
+              page keeps the plain "Host" link and the full avatar menu,
+              unchanged. */}
+          {isOverlay && user && (
+            <button type="button" className={navLinkClass} onClick={handleLogout}>
+              Logout
+            </button>
+          )}
           <Link to="/search" className={navLinkClass}>
             Explore
           </Link>
-          {/* On the hero overlay, the mock puts these auth-aware links directly
-              in the nav instead of behind the avatar menu's click - Login when
-              signed out, the account shortcuts when signed in. Every other
-              page keeps the plain "Host" link and puts everything else behind
-              the avatar menu, unchanged. */}
           {isOverlay ? (
             user ? (
               <>
-                {!isHost && <Link to="/host" className={navLinkClass}>Become a Host</Link>}
                 <Link to="/trips" className={navLinkClass}>Your Trips</Link>
                 <Link to="/saved" className={navLinkClass}>Saved</Link>
                 <Link to="/account" className={navLinkClass}>Account Settings</Link>
+                {/* Admin tools go rightmost, after the account shortcuts - the
+                    mock never modeled these, so they're additive rather than
+                    replacing anything it did spec. */}
+                {isAdmin && (
+                  <>
+                    <Link to="/admin/dashboard" className={navLinkClass}>Admin Dashboard</Link>
+                    <Link to="/admin/dashboard/settings" className={navLinkClass}>Admin Settings</Link>
+                  </>
+                )}
               </>
             ) : (
               <button type="button" className={navLinkClass} onClick={() => navigate('/login')}>
@@ -98,48 +150,36 @@ export function Header({ variant = 'default' }: HeaderProps) {
               Host
             </Link>
           )}
+          {isOverlay && utilityIcons}
         </nav>
 
         {/* Right Side */}
         <div className={isOverlay ? 'flex items-center gap-4 justify-self-end' : 'flex items-center gap-4'}>
-          {/* Desktop Search */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className={iconButtonClass}
-            onClick={() => navigate('/search')}
-          >
-            <Search className="h-5 w-5" />
-          </Button>
+          {!isOverlay && utilityIcons}
 
-          {/* Desktop Messages */}
-          {user && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className={`relative ${iconButtonClass}`}
-              onClick={() => navigate('/messages')}
-            >
-              <MessageCircle className="h-5 w-5" />
-              {unreadMessages > 0 && (
-                <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-accent text-accent-foreground text-[10px] font-morderline flex items-center justify-center">
-                  {unreadMessages}
-                </span>
-              )}
-            </Button>
+          {/* Become a Host - pulled out of the centered nav group and given
+              logo-sized billing in the corner, right-aligned the same way
+              the footer's copyright is, so the two sit parallel. Shown
+              regardless of signed-in state (unlike the rest of the nav)
+              since it's a standing CTA, not an account shortcut - hidden
+              only once someone already is a host. */}
+          {isOverlay && !isHost && (
+            <Link to="/host" className={`${navLinkClass} !text-2xl !normal-case !tracking-normal font-bold`}>
+              Become a Host
+            </Link>
           )}
 
-          {/* User Menu - on the hero overlay the primary links now live in the
-              nav itself (see above), so this shrinks to just the items the
-              mock never modeled (host/admin tools, logout) and disappears
-              entirely for a signed-out overlay visitor, who already has a
-              visible Login link. Every other page keeps the full menu. */}
-          {(!isOverlay || user) && (
+          {/* User Menu - removed entirely on the hero overlay, per the mock:
+              Login/Logout and the account shortcuts now live directly in the
+              nav (see above). Host/admin tools are simply not reachable from
+              the hero header - a host/admin still gets the full menu on
+              every other page. */}
+          {!isOverlay && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className={`flex items-center gap-2 px-3 py-2 rounded-full ${isOverlay ? 'text-[#0a0806] hover:text-foreground hover:bg-transparent' : 'hover:bg-surface-2'}`}
+                  className="flex items-center gap-2 px-3 py-2 rounded-full hover:bg-surface-2"
                 >
                   <Menu className="h-4 w-4" />
                   <div className="h-8 w-8 rounded-full bg-surface-3 border border-border flex items-center justify-center">
@@ -151,27 +191,23 @@ export function Header({ variant = 'default' }: HeaderProps) {
                 <div className="grid grid-cols-2 gap-2">
                   {user ? (
                     <>
-                      {!isOverlay && (
-                        <>
-                          <DropdownMenuItem className="border border-border rounded-lg justify-center text-center py-3" onClick={() => navigate('/trips')}>
-                            Your trips
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="border border-border rounded-lg justify-center text-center py-3" onClick={() => navigate('/saved')}>
-                            Saved
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="relative border border-border rounded-lg justify-center text-center py-3" onClick={() => navigate('/messages')}>
-                            Messages
-                            {unreadMessages > 0 && (
-                              <span className="absolute -top-1.5 -right-1.5 h-4 min-w-4 px-1 rounded-full bg-accent text-accent-foreground text-[10px] font-morderline flex items-center justify-center">
-                                {unreadMessages}
-                              </span>
-                            )}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="border border-border rounded-lg justify-center text-center py-3" onClick={() => navigate('/account')}>
-                            Account
-                          </DropdownMenuItem>
-                        </>
-                      )}
+                      <DropdownMenuItem className="border border-border rounded-lg justify-center text-center py-3" onClick={() => navigate('/trips')}>
+                        Your trips
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="border border-border rounded-lg justify-center text-center py-3" onClick={() => navigate('/saved')}>
+                        Saved
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="relative border border-border rounded-lg justify-center text-center py-3" onClick={() => navigate('/messages')}>
+                        Messages
+                        {unreadMessages > 0 && (
+                          <span className="absolute -top-1.5 -right-1.5 h-4 min-w-4 px-1 rounded-full bg-accent text-accent-foreground text-[10px] font-morderline flex items-center justify-center">
+                            {unreadMessages}
+                          </span>
+                        )}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="border border-border rounded-lg justify-center text-center py-3" onClick={() => navigate('/account')}>
+                        Account
+                      </DropdownMenuItem>
                       {isHost && (
                         <>
                           <DropdownMenuItem className="border border-border rounded-lg justify-center text-center py-3 bg-accent/10" onClick={() => navigate('/host/dashboard')}>
