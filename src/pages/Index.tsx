@@ -46,15 +46,15 @@ export default function Index() {
     fetchData();
   }, []);
 
-  // Destination cards are sized to exactly half the width of a featured-stay
-  // card (both share the same 4:5 aspect ratio, so this is a true half-scale,
-  // not just a crop) - the same relationship the mock's own vanilla-JS
-  // syncDestCardSize() enforced.
+  // Destination cards are sized to 0.75x the width of a featured-stay card
+  // (both share the same 4:5 aspect ratio, so this is a true proportional
+  // scale, not just a crop) - measured live off the rendered featured card,
+  // the same way the mock's own vanilla-JS syncDestCardSize() did.
   useEffect(() => {
     const sync = () => {
       const featMedia = document.querySelector('.feat-media');
       if (!featMedia) return;
-      setDestCardWidth(featMedia.getBoundingClientRect().width / 2);
+      setDestCardWidth(featMedia.getBoundingClientRect().width * 0.75);
     };
     sync();
     window.addEventListener('resize', sync);
