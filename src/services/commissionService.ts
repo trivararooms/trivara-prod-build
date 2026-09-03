@@ -1,8 +1,11 @@
 import { supabase } from '@/lib/supabase';
 
+export type TierOperator = 'upto' | 'greater_than' | 'less_than';
+
 export interface CommissionTier {
   tier_order: number;
-  min_monthly_revenue: number;
+  amount: number;
+  operator: TierOperator;
   commission_rate: number;
 }
 
@@ -19,16 +22,23 @@ export class CommissionService {
   async getTiers(): Promise<CommissionTier[]> {
     const { data, error } = await supabase
       .from('commission_tiers')
-      .select('tier_order, min_monthly_revenue, commission_rate')
+      .select('tier_order, amount, operator, commission_rate')
       .order('tier_order', { ascending: true });
 
     if (error) throw error;
     return data || [];
   }
 
-  async saveTiers(tiers: CommissionTier[]): Promise<void> {
-    const { error } = await supabase.from('commission_tiers').upsert(tiers, { onConflict: 'tier_order' });
-    if (error) throw error;
+  /** Upserts the given tiers and deletes any tier_order removed since the last load. */
+  async saveTiers(tiers: CommissionTier[], removedTierOrders: number[] = []): Promise<void> {
+    if (removedTierOrders.length > 0) {
+      const { error } = await supabase.from('commission_tiers').delete().in('tier_order', removedTierOrders);
+      if (error) throw error;
+    }
+    if (tiers.length > 0) {
+      const { error } = await supabase.from('commission_tiers').upsert(tiers, { onConflict: 'tier_order' });
+      if (error) throw error;
+    }
   }
 
   async getOverrides(): Promise<CommissionOverride[]> {

@@ -34,12 +34,18 @@ the hardcoded 18% platform fee with a configurable one: 3 default global
 tiers keyed by a host's trailing 30-day revenue, admin-set thresholds and
 rates, overridable per host or per property), `00000000000011_offers_discounts.sql`
 (an admin-managed `discount_rules` table + `find_best_discount()`
-resolver), and `00000000000012_home_curation.sql` (a capped, admin-curated
+resolver), `00000000000012_home_curation.sql` (a capped, admin-curated
 `is_featured` flag on listings, cap stored in
 `app_settings.featured_stays_max_slots`, default 25, plus a
 `listing_booking_counts()` aggregate used to rank "Popular stays" by actual
-bookings and pick each destination's most-booked photo) build on top of it.
-**To stand up a brand new project from zero** — e.g. after a project is
+bookings and pick each destination's most-booked photo), and
+`00000000000013_commission_tier_operators.sql` (each commission tier now
+has an explicit `upto`/`greater_than`/`less_than` operator against its
+`amount`, freely add/removable, and `resolve_commission_rate()` compares
+against a host's trailing-90-day average monthly revenue rather than a
+single 30-day snapshot, so a tier stays in effect as long as the average
+stays on its side of the threshold) build on top of it. **To stand up a
+brand new project from zero** — e.g. after a project is
 deleted — run every migration file in this directory, in filename order,
 in the new project's SQL editor; nothing else needs to be created by hand
 in the database. Razorpay/SMTP config still needs to be entered through
