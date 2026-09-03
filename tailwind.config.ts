@@ -16,7 +16,7 @@ export default {
     extend: {
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
-        display: ["Fredoka", "system-ui", "sans-serif"],
+        display: ["Anton", "system-ui", "sans-serif"],
         script: ["Caveat", "cursive"],
         pillar: ["Big Shoulders Display", "system-ui", "sans-serif"],
         bastliga: ["Yellowtail", "cursive"],
