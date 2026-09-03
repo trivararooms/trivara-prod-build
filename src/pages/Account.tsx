@@ -176,7 +176,7 @@ const Account = () => {
                 </p>
                 <Badge
                   variant={isHost ? "default" : "secondary"}
-                  className={`font-morderline text-[10px] tracking-wide ${isHost ? "bg-accent" : "bg-surface-3"}`}
+                  className={isHost ? "bg-accent" : "bg-surface-3"}
                 >
                   {isHost ? 'Host' : 'Guest'}
                 </Badge>
@@ -356,7 +356,7 @@ const Account = () => {
                     <div className="flex items-center gap-3">
                       <Users className="h-5 w-5 text-accent" />
                       <div>
-                        <p className="text-2xl font-medium text-foreground">
+                        <p className="text-2xl font-pillar font-bold text-accent">
                           {formatINR(earningsStats?.totalEarnings || 0)}
                         </p>
                         <p className="text-sm text-text-secondary">Total earnings</p>

@@ -134,14 +134,14 @@ export default function HostEarnings() {
           <Card>
             <CardContent className="p-6">
               <p className="text-sm text-text-secondary">Total Earnings</p>
-              <p className="text-2xl font-semibold">{formatINR(pendingTotal + paidTotal)}</p>
+              <p className="text-2xl font-pillar font-bold text-accent">{formatINR(pendingTotal + paidTotal)}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="p-6">
               <p className="text-sm text-text-secondary">Pending Earnings</p>
-              <p className="text-2xl font-semibold">{formatINR(pendingTotal)}</p>
+              <p className="text-2xl font-pillar font-bold text-primary">{formatINR(pendingTotal)}</p>
               <p className="text-xs text-text-meta mt-1">Eligible for payment: {formatINR(payableTotal)}</p>
             </CardContent>
           </Card>
@@ -149,7 +149,7 @@ export default function HostEarnings() {
           <Card>
             <CardContent className="p-6">
               <p className="text-sm text-text-secondary">Paid Out</p>
-              <p className="text-2xl font-semibold">{formatINR(paidTotal)}</p>
+              <p className="text-2xl font-pillar font-bold text-foreground">{formatINR(paidTotal)}</p>
             </CardContent>
           </Card>
         </div>

@@ -56,20 +56,21 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-[#2F3A4A] p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <div className="w-full max-w-md border border-border rounded-xl px-8 py-10">
         <div className="text-center mb-8">
-          <h1 className="text-2xl font-medium text-[#FAFAFA] tracking-wide mb-2">
+          <p className="font-script text-xl text-accent mb-1">welcome back</p>
+          <h1 className="text-2xl font-display font-medium text-foreground tracking-wide mb-2">
             Sign in to Trivara
           </h1>
-          <p className="text-sm text-[#B1B1B6] tracking-wide">
+          <p className="text-sm text-text-secondary tracking-wide">
             Sign in to list your place or complete a booking.
           </p>
         </div>
 
         <button
           onClick={handleGoogleSignIn}
-          className="w-full py-3 px-4 bg-[#FAFAFA] text-[#2F3A4A] font-medium rounded-lg hover:bg-[#B1B1B6] transition-colors duration-200 text-base tracking-wide"
+          className="w-full py-3 px-4 bg-accent text-accent-foreground font-medium rounded-lg hover:bg-accent-hover transition-colors duration-200 text-base tracking-wide border border-accent-hover"
         >
           Continue with Google
         </button>

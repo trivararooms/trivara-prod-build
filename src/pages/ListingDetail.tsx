@@ -375,7 +375,7 @@ export default function ListingDetail() {
               <p className="text-text-secondary mt-1 flex items-center gap-1.5">
                 Hosted by {host.first_name} {host.last_name}
                 {host.is_verified && (
-                  <Badge variant="secondary" className="gap-1 bg-surface-3 text-foreground font-morderline text-[10px] tracking-wide">
+                  <Badge variant="secondary" className="gap-1 bg-surface-3 text-foreground">
                     <BadgeCheck className="h-3.5 w-3.5" />
                     Verified
                   </Badge>
@@ -698,9 +698,9 @@ export default function ListingDetail() {
                       </div>
                     )}
                     <hr className="border-border my-2" />
-                    <div className="flex justify-between font-semibold">
+                    <div className="flex justify-between items-baseline font-pillar font-bold uppercase tracking-wide text-base">
                       <span className="text-foreground">Total</span>
-                      <span className="text-foreground">{formatINR(pricing.total)}</span>
+                      <span className="text-accent">{formatINR(pricing.total)}</span>
                     </div>
                   </div>
                 )}

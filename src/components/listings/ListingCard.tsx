@@ -54,7 +54,7 @@ export function ListingCard({ listing, showSaveButton = true }: ListingCardProps
   return (
     <Link to={`/listing/${listing.id}`} className="group block">
       {/* Image Container */}
-      <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-surface-0 mb-3">
+      <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-surface-0 mb-3 border border-border">
         <img
           src={listing.photos[currentImageIndex]}
           alt={listing.title}

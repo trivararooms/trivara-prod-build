@@ -605,7 +605,7 @@ export default function CreateListing() {
         return (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-display font-medium mb-2">What type of property?</h2>
+              <h2 className="text-2xl font-pillar font-bold uppercase tracking-wide mb-2">What type of property?</h2>
               <p className="text-text-secondary">Choose the option that best describes your place</p>
             </div>
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -631,7 +631,7 @@ export default function CreateListing() {
         return (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-display font-medium mb-2">Where is your property?</h2>
+              <h2 className="text-2xl font-pillar font-bold uppercase tracking-wide mb-2">Where is your property?</h2>
               <p className="text-text-secondary">Your address is only shared with guests after they book</p>
             </div>
             <div className="space-y-4 max-w-xl">
@@ -692,7 +692,7 @@ export default function CreateListing() {
         return (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-display font-medium mb-2">Add photos</h2>
+              <h2 className="text-2xl font-pillar font-bold uppercase tracking-wide mb-2">Add photos</h2>
               <p className="text-text-secondary">Photos help guests imagine staying at your place</p>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -737,7 +737,7 @@ export default function CreateListing() {
         return (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-display font-medium mb-2">Tell guests about your place</h2>
+              <h2 className="text-2xl font-pillar font-bold uppercase tracking-wide mb-2">Tell guests about your place</h2>
               <p className="text-text-secondary">Share what makes your place special</p>
             </div>
             <div className="space-y-4 max-w-xl">
@@ -780,7 +780,7 @@ export default function CreateListing() {
         return (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-display font-medium mb-2">What amenities do you offer?</h2>
+              <h2 className="text-2xl font-pillar font-bold uppercase tracking-wide mb-2">What amenities do you offer?</h2>
               <p className="text-text-secondary">Select all that apply</p>
             </div>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
@@ -841,7 +841,7 @@ export default function CreateListing() {
         return (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-display font-medium mb-2">Set your price</h2>
+              <h2 className="text-2xl font-pillar font-bold uppercase tracking-wide mb-2">Set your price</h2>
               <p className="text-text-secondary">You can adjust your pricing anytime</p>
             </div>
             <div className="space-y-6 max-w-md">
@@ -877,7 +877,7 @@ export default function CreateListing() {
         return (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-display font-medium mb-2">Set availability</h2>
+              <h2 className="text-2xl font-pillar font-bold uppercase tracking-wide mb-2">Set availability</h2>
               <p className="text-text-secondary">You can update your calendar after publishing</p>
             </div>
             <div className="bg-card rounded-xl p-8 text-center">
@@ -891,7 +891,7 @@ export default function CreateListing() {
         return (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-display font-medium mb-2">Set house rules</h2>
+              <h2 className="text-2xl font-pillar font-bold uppercase tracking-wide mb-2">Set house rules</h2>
               <p className="text-text-secondary">Let guests know what to expect</p>
             </div>
             <div className="space-y-4 max-w-xl">
@@ -965,7 +965,7 @@ export default function CreateListing() {
         return (
           <div className="space-y-6">
             <div>
-              <h2 className="text-2xl font-display font-medium mb-2">Review your listing draft</h2>
+              <h2 className="text-2xl font-pillar font-bold uppercase tracking-wide mb-2">Review your listing draft</h2>
               <p className="text-text-secondary">Make sure everything looks good before saving as draft</p>
             </div>
             <div className="bg-card rounded-xl overflow-hidden">

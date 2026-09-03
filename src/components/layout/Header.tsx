@@ -49,7 +49,7 @@ export function Header({ variant = 'default' }: HeaderProps) {
   };
 
   return (
-    <header className={`sticky top-0 z-50 w-full ${variant === 'transparent' ? 'bg-transparent' : 'bg-surface-0'}`}>
+    <header className={`sticky top-0 z-50 w-full ${variant === 'transparent' ? 'bg-transparent' : 'bg-surface-0 border-b border-border'}`}>
       <div className="container flex h-16 items-center justify-between">
         {/* Logo */}
         <Link to="/" className="flex items-center gap-2">
@@ -105,7 +105,7 @@ export function Header({ variant = 'default' }: HeaderProps) {
                 className="flex items-center gap-2 px-3 py-2 hover:bg-surface-2 rounded-full"
               >
                 <Menu className="h-4 w-4" />
-                <div className="h-8 w-8 rounded-full bg-surface-3 flex items-center justify-center">
+                <div className="h-8 w-8 rounded-full bg-surface-3 border border-border flex items-center justify-center">
                   <User className="h-4 w-4" />
                 </div>
               </Button>

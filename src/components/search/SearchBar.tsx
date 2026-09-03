@@ -37,7 +37,7 @@ export function SearchBar({ variant = 'hero', className = '' }: SearchBarProps) 
 
   if (variant === 'compact') {
     return (
-      <div className={`flex items-center gap-2 bg-surface-2 rounded-full px-4 py-2 ${className}`}>
+      <div className={`flex items-center gap-2 bg-surface-2 rounded-full px-4 py-2 border border-border ${className}`}>
         <Search className="h-4 w-4 text-text-secondary" />
         <input
           type="text"
@@ -52,7 +52,7 @@ export function SearchBar({ variant = 'hero', className = '' }: SearchBarProps) 
   }
 
   return (
-    <div className={`bg-surface-2 rounded-2xl p-2 ${className}`}>
+    <div className={`bg-surface-2 rounded-2xl p-2 border border-border ${className}`}>
       <div className="grid grid-cols-1 md:grid-cols-4 gap-2">
         {/* Location */}
         <div

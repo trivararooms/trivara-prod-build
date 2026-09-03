@@ -534,14 +534,14 @@ export default function AdminDashboard() {
           <Card>
             <CardContent className="p-6">
               <p className="text-sm text-text-secondary">Platform Revenue</p>
-              <p className="text-3xl font-semibold">{formatINR(stats?.platform_revenue || 0)}</p>
+              <p className="text-3xl font-pillar font-bold text-accent">{formatINR(stats?.platform_revenue || 0)}</p>
             </CardContent>
           </Card>
 
           <Card>
             <CardContent className="p-6">
               <p className="text-sm text-text-secondary">Pending Host Payouts</p>
-              <p className="text-3xl font-semibold">{formatINR(stats?.pending_payouts || 0)}</p>
+              <p className="text-3xl font-pillar font-bold text-primary">{formatINR(stats?.pending_payouts || 0)}</p>
             </CardContent>
           </Card>
         </div>
