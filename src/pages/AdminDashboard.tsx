@@ -472,7 +472,7 @@ export default function AdminDashboard() {
 
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          <h1 className="text-3xl font-display font-medium">
+          <h1 className="text-3xl font-pillar font-bold uppercase tracking-wide">
             Admin Dashboard
           </h1>
           <div className="flex items-center gap-4">

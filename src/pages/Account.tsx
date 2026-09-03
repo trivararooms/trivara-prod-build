@@ -174,9 +174,9 @@ const Account = () => {
                 <p className="text-text-secondary mb-3">
                   {userEmail}
                 </p>
-                <Badge 
-                  variant={isHost ? "default" : "secondary"} 
-                  className={isHost ? "bg-accent" : "bg-surface-3"}
+                <Badge
+                  variant={isHost ? "default" : "secondary"}
+                  className={`font-morderline text-[10px] tracking-wide ${isHost ? "bg-accent" : "bg-surface-3"}`}
                 >
                   {isHost ? 'Host' : 'Guest'}
                 </Badge>
