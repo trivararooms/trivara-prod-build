@@ -473,7 +473,7 @@ export default function Trips() {
                           </div>
                           <div>
                             <p className="text-text-secondary">{booking.status === 'confirmed' || booking.status === 'completed' ? 'Total paid' : 'Total due'}</p>
-                            <p className="font-medium">{formatINR(booking.totalPrice)}</p>
+                            <p className="font-pillar font-bold uppercase tracking-wide text-accent">{formatINR(booking.totalPrice)}</p>
                           </div>
                         </div>
 

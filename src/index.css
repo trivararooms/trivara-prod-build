@@ -47,9 +47,9 @@
     --destructive: 0 45% 32%;
     --destructive-foreground: 0 0% 98%;
 
-    /* Border - very subtle, chestnut-tinted */
-    --border: 14 18% 26%;
-    --input: 14 20% 15%;
+    /* Border - cool indigo line contrasting against warm chestnut fills */
+    --border: 233 32% 42%;
+    --input: 233 28% 38%;
     --ring: 239 50% 58%;
 
     /* Limited availability indicator */
@@ -76,7 +76,7 @@
     --sidebar-primary-foreground: 240 45% 97%;
     --sidebar-accent: 14 20% 16%;
     --sidebar-accent-foreground: 30 20% 95%;
-    --sidebar-border: 14 18% 26%;
+    --sidebar-border: 233 32% 42%;
     --sidebar-ring: 239 50% 58%;
   }
 }
@@ -127,31 +127,31 @@
 }
 
 @layer components {
-  /* Card without shadow - depth via color only */
+  /* Card with a cool indigo border - depth via border + color, chestnut-mock signature */
   .trivara-card {
-    @apply bg-card rounded-lg;
+    @apply bg-card rounded-lg border border-border;
   }
-  
+
   .trivara-card-elevated {
-    @apply bg-surface-3 rounded-lg;
+    @apply bg-surface-3 rounded-lg border border-border;
   }
-  
+
   /* Button variants */
   .trivara-btn-primary {
-    @apply bg-accent text-accent-foreground hover:bg-accent-hover transition-colors duration-200;
+    @apply bg-accent text-accent-foreground hover:bg-accent-hover transition-colors duration-200 border border-accent-hover;
   }
-  
+
   .trivara-btn-secondary {
-    @apply bg-surface-3 text-foreground hover:bg-surface-4 transition-colors duration-200;
+    @apply bg-surface-3 text-foreground hover:bg-surface-4 transition-colors duration-200 border border-border;
   }
-  
+
   .trivara-btn-ghost {
     @apply bg-transparent text-foreground hover:bg-surface-2 transition-colors duration-200;
   }
-  
+
   /* Input styling */
   .trivara-input {
-    @apply bg-surface-2 border-0 text-foreground placeholder:text-text-secondary focus:ring-1 focus:ring-accent;
+    @apply bg-surface-2 border border-border text-foreground placeholder:text-text-secondary focus:ring-1 focus:ring-accent;
   }
   
   /* Text styles */
@@ -188,12 +188,12 @@
   
   /* Image containers */
   .trivara-image {
-    @apply rounded-lg overflow-hidden bg-surface-0;
+    @apply rounded-lg overflow-hidden bg-surface-0 border border-border;
   }
-  
+
   /* Search bar styling */
   .search-container {
-    @apply bg-surface-2 rounded-full;
+    @apply bg-surface-2 rounded-full border border-border;
   }
   
   /* Map styling */

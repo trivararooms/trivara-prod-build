@@ -50,13 +50,13 @@ export default function Index() {
       <Header />
 
       {/* Hero Section */}
-      <section className="relative py-16 md:py-24 lg:py-32">
+      <section className="relative py-24 md:py-36 lg:py-48">
         <div className="container">
-          <div className="max-w-3xl mx-auto text-center mb-10">
-            <p className="font-script text-2xl text-accent mb-1 animate-fade-in">
+          <div className="max-w-3xl mx-auto text-center mb-16">
+            <p className="font-script text-2xl text-accent mb-2 animate-fade-in">
               wander well
             </p>
-            <h1 className="mb-4 animate-fade-in">
+            <h1 className="mb-6 animate-fade-in">
               Find your place
             </h1>
             <p className="text-xl text-text-secondary animate-fade-in" style={{ animationDelay: '0.1s' }}>
@@ -72,21 +72,21 @@ export default function Index() {
       </section>
 
       {/* Popular Destinations */}
-      <section className="py-16 bg-surface-0">
+      <section className="py-24 md:py-32 bg-surface-0">
         <div className="container">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-14">
             <h2 className="text-2xl font-display font-medium">Popular destinations</h2>
             <Link to="/search" className="text-sm text-text-secondary hover:text-foreground flex items-center gap-1 trivara-transition">
               View all <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
             {destinations.map((dest) => (
               <Link
                 key={dest.city}
                 to={`/search?location=${encodeURIComponent(dest.city)}`}
-                className="group relative aspect-[3/4] rounded-xl overflow-hidden bg-surface-2"
+                className="group relative aspect-[3/4] rounded-xl overflow-hidden bg-surface-2 border border-border"
               >
                 <img
                   src={dest.image}
@@ -105,9 +105,9 @@ export default function Index() {
       </section>
 
       {/* Featured Listings */}
-      <section className="py-16">
+      <section className="py-24 md:py-32">
         <div className="container">
-          <div className="flex items-center justify-between mb-8">
+          <div className="flex items-center justify-between mb-14">
             <h2 className="text-2xl font-display font-medium">Featured stays</h2>
             <Link to="/search" className="text-sm text-text-secondary hover:text-foreground flex items-center gap-1 trivara-transition">
               Explore more <ArrowRight className="h-4 w-4" />
@@ -119,19 +119,19 @@ export default function Index() {
       </section>
 
       {/* Become a Host CTA */}
-      <section className="py-20 bg-surface-0">
+      <section className="py-32 bg-surface-0">
         <div className="container">
-          <div className="max-w-3xl mx-auto text-center relative">
-            <span className="inline-block font-morderline text-[10px] tracking-wide bg-accent text-accent-foreground px-3 py-1 rounded-full mb-4">
+          <div className="max-w-3xl mx-auto text-center relative border border-border rounded-xl px-8 py-20 md:px-20 md:py-24">
+            <span className="inline-block font-morderline text-[10px] tracking-wide bg-accent text-accent-foreground px-3 py-1 rounded-full border border-accent-hover -mt-24 mb-6">
               share &amp; earn
             </span>
-            <h2 className="text-3xl md:text-4xl font-pillar font-bold uppercase tracking-wide mb-4">
+            <h2 className="text-3xl md:text-4xl font-pillar font-bold uppercase tracking-wide mb-6">
               Share your space
             </h2>
-            <p className="text-text-secondary mb-2 text-lg">
+            <p className="text-text-secondary mb-3 text-lg">
               Join hosts who earn by sharing their homes with travelers worldwide
             </p>
-            <p className="font-bastliga text-2xl text-primary mb-8">
+            <p className="font-bastliga text-2xl text-primary mb-12">
               your home, your rules
             </p>
             <Link to="/host">
@@ -144,43 +144,43 @@ export default function Index() {
       </section>
 
       {/* Footer */}
-      <footer className="py-12 border-t border-border">
+      <footer className="py-24 border-t border-border">
         <div className="container">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-20">
             <div>
-              <h4 className="font-medium mb-4 text-sm">Support</h4>
-              <ul className="space-y-3 text-sm text-text-secondary">
+              <h4 className="font-medium mb-5 text-sm">Support</h4>
+              <ul className="space-y-4 text-sm text-text-secondary">
                 <li><Link to="/help" className="hover:text-foreground trivara-transition">Help Center</Link></li>
                 <li><Link to="/safety" className="hover:text-foreground trivara-transition">Safety information</Link></li>
                 <li><Link to="/cancellation-options" className="hover:text-foreground trivara-transition">Cancellation options</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-medium mb-4 text-sm">Hosting</h4>
-              <ul className="space-y-3 text-sm text-text-secondary">
+              <h4 className="font-medium mb-5 text-sm">Hosting</h4>
+              <ul className="space-y-4 text-sm text-text-secondary">
                 <li><Link to="/host" className="hover:text-foreground trivara-transition">Become a Host</Link></li>
                 <li><Link to="/resources" className="hover:text-foreground trivara-transition">Resources</Link></li>
                 <li><Link to="/community" className="hover:text-foreground trivara-transition">Community</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-medium mb-4 text-sm">Trivara</h4>
-              <ul className="space-y-3 text-sm text-text-secondary">
+              <h4 className="font-medium mb-5 text-sm">Trivara</h4>
+              <ul className="space-y-4 text-sm text-text-secondary">
                 <li><Link to="/about" className="hover:text-foreground trivara-transition">About</Link></li>
                 <li><Link to="/careers" className="hover:text-foreground trivara-transition">Careers</Link></li>
                 <li><Link to="/press" className="hover:text-foreground trivara-transition">Press</Link></li>
               </ul>
             </div>
             <div>
-              <h4 className="font-medium mb-4 text-sm">Legal</h4>
-              <ul className="space-y-3 text-sm text-text-secondary">
+              <h4 className="font-medium mb-5 text-sm">Legal</h4>
+              <ul className="space-y-4 text-sm text-text-secondary">
                 <li><Link to="/privacy" className="hover:text-foreground trivara-transition">Privacy</Link></li>
                 <li><Link to="/terms" className="hover:text-foreground trivara-transition">Terms</Link></li>
               </ul>
             </div>
           </div>
 
-          <div className="flex flex-col md:flex-row items-center justify-between pt-8 border-t border-border">
+          <div className="flex flex-col md:flex-row items-center justify-between pt-12 border-t border-border">
             <span className="font-display text-xl font-semibold mb-4 md:mb-0">Trivara</span>
             <p className="text-sm text-text-meta">© {new Date().getFullYear()} Trivara. All rights reserved.</p>
           </div>

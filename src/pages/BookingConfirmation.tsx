@@ -153,7 +153,7 @@ export default function BookingConfirmation() {
 
             <div className="flex justify-between items-center mb-2">
               <span className="text-text-secondary">Total paid</span>
-              <span className="text-xl font-semibold">{formatINR(booking.totalPrice)}</span>
+              <span className="text-xl font-pillar font-bold uppercase tracking-wide text-accent">{formatINR(booking.totalPrice)}</span>
             </div>
             <p className="text-xs text-text-meta">
               Payment status: <span className="capitalize">{booking.paymentStatus}</span>

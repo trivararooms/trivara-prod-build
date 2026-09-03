@@ -698,9 +698,9 @@ export default function ListingDetail() {
                       </div>
                     )}
                     <hr className="border-border my-2" />
-                    <div className="flex justify-between font-semibold">
+                    <div className="flex justify-between items-baseline font-pillar font-bold uppercase tracking-wide text-base">
                       <span className="text-foreground">Total</span>
-                      <span className="text-foreground">{formatINR(pricing.total)}</span>
+                      <span className="text-accent">{formatINR(pricing.total)}</span>
                     </div>
                   </div>
                 )}
