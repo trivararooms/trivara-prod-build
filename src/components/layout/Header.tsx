@@ -72,14 +72,19 @@ export function Header({ variant = 'default' }: HeaderProps) {
             overlay, matching the mock; flows inline (flex) on every other
             page's header, which has no third column to center against. */}
         <nav className={isOverlay ? 'hidden md:flex items-center gap-8 justify-self-center' : 'hidden md:flex items-center gap-8'}>
+          {/* On the hero overlay, the mock puts these auth-aware links directly
+              in the nav instead of behind an avatar menu - there is no avatar
+              menu on the hero at all now. Logout sits leftmost. Every other
+              page keeps the plain "Host" link and the full avatar menu,
+              unchanged. */}
+          {isOverlay && user && (
+            <button type="button" className={navLinkClass} onClick={handleLogout}>
+              Logout
+            </button>
+          )}
           <Link to="/search" className={navLinkClass}>
             Explore
           </Link>
-          {/* On the hero overlay, the mock puts these auth-aware links directly
-              in the nav instead of behind the avatar menu's click - Login when
-              signed out, the account shortcuts when signed in. Every other
-              page keeps the plain "Host" link and puts everything else behind
-              the avatar menu, unchanged. */}
           {isOverlay ? (
             user ? (
               <>
@@ -129,17 +134,17 @@ export function Header({ variant = 'default' }: HeaderProps) {
             </Button>
           )}
 
-          {/* User Menu - on the hero overlay the primary links now live in the
-              nav itself (see above), so this shrinks to just the items the
-              mock never modeled (host/admin tools, logout) and disappears
-              entirely for a signed-out overlay visitor, who already has a
-              visible Login link. Every other page keeps the full menu. */}
-          {(!isOverlay || user) && (
+          {/* User Menu - removed entirely on the hero overlay, per the mock:
+              Login/Logout and the account shortcuts now live directly in the
+              nav (see above). Host/admin tools are simply not reachable from
+              the hero header - a host/admin still gets the full menu on
+              every other page. */}
+          {!isOverlay && (
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button
                   variant="ghost"
-                  className={`flex items-center gap-2 px-3 py-2 rounded-full ${isOverlay ? 'text-[#0a0806] hover:text-foreground hover:bg-transparent' : 'hover:bg-surface-2'}`}
+                  className="flex items-center gap-2 px-3 py-2 rounded-full hover:bg-surface-2"
                 >
                   <Menu className="h-4 w-4" />
                   <div className="h-8 w-8 rounded-full bg-surface-3 border border-border flex items-center justify-center">
@@ -151,27 +156,23 @@ export function Header({ variant = 'default' }: HeaderProps) {
                 <div className="grid grid-cols-2 gap-2">
                   {user ? (
                     <>
-                      {!isOverlay && (
-                        <>
-                          <DropdownMenuItem className="border border-border rounded-lg justify-center text-center py-3" onClick={() => navigate('/trips')}>
-                            Your trips
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="border border-border rounded-lg justify-center text-center py-3" onClick={() => navigate('/saved')}>
-                            Saved
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="relative border border-border rounded-lg justify-center text-center py-3" onClick={() => navigate('/messages')}>
-                            Messages
-                            {unreadMessages > 0 && (
-                              <span className="absolute -top-1.5 -right-1.5 h-4 min-w-4 px-1 rounded-full bg-accent text-accent-foreground text-[10px] font-morderline flex items-center justify-center">
-                                {unreadMessages}
-                              </span>
-                            )}
-                          </DropdownMenuItem>
-                          <DropdownMenuItem className="border border-border rounded-lg justify-center text-center py-3" onClick={() => navigate('/account')}>
-                            Account
-                          </DropdownMenuItem>
-                        </>
-                      )}
+                      <DropdownMenuItem className="border border-border rounded-lg justify-center text-center py-3" onClick={() => navigate('/trips')}>
+                        Your trips
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="border border-border rounded-lg justify-center text-center py-3" onClick={() => navigate('/saved')}>
+                        Saved
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="relative border border-border rounded-lg justify-center text-center py-3" onClick={() => navigate('/messages')}>
+                        Messages
+                        {unreadMessages > 0 && (
+                          <span className="absolute -top-1.5 -right-1.5 h-4 min-w-4 px-1 rounded-full bg-accent text-accent-foreground text-[10px] font-morderline flex items-center justify-center">
+                            {unreadMessages}
+                          </span>
+                        )}
+                      </DropdownMenuItem>
+                      <DropdownMenuItem className="border border-border rounded-lg justify-center text-center py-3" onClick={() => navigate('/account')}>
+                        Account
+                      </DropdownMenuItem>
                       {isHost && (
                         <>
                           <DropdownMenuItem className="border border-border rounded-lg justify-center text-center py-3 bg-accent/10" onClick={() => navigate('/host/dashboard')}>
