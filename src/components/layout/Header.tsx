@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { Link, useNavigate, useLocation } from 'react-router-dom';
 import { Search, Menu, Home, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
@@ -7,14 +7,18 @@ import { useAuth } from '@/hooks/useAuth';
 import { messageService } from '@/services/messageService';
 import { Logo } from '@/components/layout/Logo';
 
-// The one common navbar for every page - there is no longer a separate
-// "default" sticky-bar-with-avatar-dropdown design. It started as the
-// homepage hero's overlay treatment (see git history / PR history for
-// "hero-nav-centering") and was promoted sitewide: sticky + transparent, so
-// whatever page background sits behind it (now the same site-wide gradient
-// everywhere, see App.tsx's SiteBackground) shows through consistently.
+// Rendered exactly once, in App.tsx, above every route - it decides for
+// itself whether to show the full navbar or just the logo, based on the
+// current path. Only the home page gets the full nav (links, search/
+// messages icons, the Become-a-Host corner CTA); every other page gets a
+// transparent bar with just the logo in the corner, since a host dashboard/
+// checkout/settings page etc. doesn't need the full explore-the-site nav.
+const sidePad = 'px-[clamp(20px,4vw,48px)]';
+
 export function Header() {
   const navigate = useNavigate();
+  const location = useLocation();
+  const isHome = location.pathname === '/';
   // AuthContext already fetches this user's own profile row (role, is_host)
   // once on login - reading it here instead of doing a second, separate
   // profileService.getByUserId() fetch on every single page (Header renders
@@ -47,12 +51,17 @@ export function Header() {
   const navLinkClass = 'text-[11px] font-bold uppercase tracking-wide text-[#0a0806] hover:text-foreground trivara-transition';
   const iconButtonClass = 'hidden md:flex text-[#0a0806] hover:text-foreground hover:bg-transparent';
 
-  // Mirrors the mock's own locked page margin (--page-margin: clamp(20px,
-  // 4vw, 48px)) instead of Tailwind's default .container gutter - kept as
-  // its own literal here (rather than importing tailwind.config's now-equal
-  // .container padding) so the header's spacing doesn't silently drift if
-  // one or the other changes later.
-  const sidePad = 'px-[clamp(20px,4vw,48px)]';
+  if (!isHome) {
+    return (
+      <header className="sticky top-0 z-20 w-full bg-transparent">
+        <div className={`w-full ${sidePad} h-20 flex items-center`}>
+          <Link to="/" className="flex items-center gap-2">
+            <Logo markClassName="h-11 w-11" nameClassName="text-2xl" />
+          </Link>
+        </div>
+      </header>
+    );
+  }
 
   return (
     // sticky, not fixed: fixed would contribute zero height to the page's
