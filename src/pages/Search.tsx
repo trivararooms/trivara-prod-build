@@ -42,7 +42,7 @@ export default function Search() {
 
   const priceRange: [number, number] = useMemo(() => [
     parseInt(getParam('minPrice') || '0'),
-    parseInt(getParam('maxPrice') || '1000')
+    parseInt(getParam('maxPrice') || '30000')
   ], [getParam]);
 
   const selectedPropertyTypes = getArrayParam('propertyTypes') as PropertyType[];
@@ -53,20 +53,33 @@ export default function Search() {
   const flexibleDays = parseInt(getParam('flexibleDays') || '0');
   const page = parseInt(getParam('page') || '1');
 
-  // Update URL function
-  const updateFilter = useCallback((key: string, value: string | null) => {
+  // Update URL function(s). Two back-to-back setSearchParams(prev => ...)
+  // calls in the same tick don't reliably compose - react-router's setter
+  // isn't a plain useState setter, and the second call's `prev` can still
+  // reflect the state from before the first call landed, silently losing
+  // it. This is exactly what made the price-range slider only ever move
+  // its max handle: onValueChange called updateFilter('minPrice', ...)
+  // immediately followed by updateFilter('maxPrice', ...), and the second
+  // call clobbered the first. updateFilters applies every key in one
+  // setSearchParams call instead.
+  const updateFilters = useCallback((updates: Record<string, string | null>) => {
     setSearchParams(prev => {
       const newParams = new URLSearchParams(prev);
-      if (value === null || value === '' || value === '0') {
-        newParams.delete(key);
-      } else {
-        newParams.set(key, value);
+      for (const [key, value] of Object.entries(updates)) {
+        if (value === null || value === '' || value === '0') {
+          newParams.delete(key);
+        } else {
+          newParams.set(key, value);
+        }
       }
-      // Reset to page 1 on any filter change
-      if (key !== 'page') newParams.delete('page');
+      if (!('page' in updates)) newParams.delete('page');
       return newParams;
     });
   }, [setSearchParams]);
+
+  const updateFilter = useCallback((key: string, value: string | null) => {
+    updateFilters({ [key]: value });
+  }, [updateFilters]);
 
   const updateArrayFilter = useCallback((key: string, values: string[]) => {
     updateFilter(key, values.length > 0 ? values.join(',') : null);
@@ -79,7 +92,7 @@ export default function Search() {
     checkOut: getParam('checkOut') ? new Date(getParam('checkOut')!) : undefined,
     flexibleDays: flexibleDays > 0 ? flexibleDays : undefined,
     minPrice: priceRange[0] > 0 ? priceRange[0] : undefined,
-    maxPrice: priceRange[1] < 1000 ? priceRange[1] : undefined,
+    maxPrice: priceRange[1] < 30000 ? priceRange[1] : undefined,
     propertyTypes: selectedPropertyTypes.length > 0 ? selectedPropertyTypes : undefined,
     amenities: selectedAmenities.length > 0 ? selectedAmenities : undefined,
     minRating: minRating > 0 ? minRating : undefined,
@@ -140,7 +153,7 @@ export default function Search() {
   };
 
   const activeFilterCount = [
-    priceRange[0] > 0 || priceRange[1] < 1000,
+    priceRange[0] > 0 || priceRange[1] < 30000,
     selectedPropertyTypes.length > 0,
     selectedAmenities.length > 0,
     minRating > 0,
@@ -276,17 +289,19 @@ export default function Search() {
                       <Slider
                         value={priceRange}
                         onValueChange={(value) => {
-                          updateFilter('minPrice', value[0] === 0 ? null : value[0].toString());
-                          updateFilter('maxPrice', value[1] === 1000 ? null : value[1].toString());
+                          updateFilters({
+                            minPrice: value[0] === 0 ? null : value[0].toString(),
+                            maxPrice: value[1] === 30000 ? null : value[1].toString(),
+                          });
                         }}
                         min={0}
-                        max={1000}
-                        step={25}
+                        max={30000}
+                        step={500}
                         className="mb-4"
                       />
                       <div className="flex items-center justify-between text-sm text-text-secondary">
                         <span>{formatINR(priceRange[0])}</span>
-                        <span>{priceRange[1] >= 1000 ? `${formatINR(1000)}+` : formatINR(priceRange[1])}</span>
+                        <span>{priceRange[1] >= 30000 ? `${formatINR(30000)}+` : formatINR(priceRange[1])}</span>
                       </div>
                     </div>
 
