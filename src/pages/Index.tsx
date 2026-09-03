@@ -50,13 +50,13 @@ export default function Index() {
       <Header />
 
       {/* Hero Section */}
-      <section className="relative py-24 md:py-36 lg:py-48">
+      <section className="relative py-32 md:py-44 lg:py-56">
         <div className="container">
-          <div className="max-w-3xl mx-auto text-center mb-16">
-            <p className="font-script text-2xl text-accent mb-2 animate-fade-in">
+          <div className="max-w-3xl mx-auto text-center mb-20">
+            <p className="font-script text-2xl text-accent mb-3 animate-fade-in">
               wander well
             </p>
-            <h1 className="mb-6 animate-fade-in">
+            <h1 className="mb-8 animate-fade-in">
               Find your place
             </h1>
             <p className="text-xl text-text-secondary animate-fade-in" style={{ animationDelay: '0.1s' }}>
@@ -72,16 +72,16 @@ export default function Index() {
       </section>
 
       {/* Popular Destinations */}
-      <section className="py-24 md:py-32 bg-surface-0">
+      <section className="py-32 md:py-40 bg-surface-0">
         <div className="container">
-          <div className="flex items-center justify-between mb-14">
+          <div className="flex items-center justify-between mb-16">
             <h2 className="text-2xl font-display font-medium">Popular destinations</h2>
             <Link to="/search" className="text-sm text-text-secondary hover:text-foreground flex items-center gap-1 trivara-transition">
               View all <ArrowRight className="h-4 w-4" />
             </Link>
           </div>
 
-          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-8">
             {destinations.map((dest) => (
               <Link
                 key={dest.city}
@@ -105,9 +105,9 @@ export default function Index() {
       </section>
 
       {/* Featured Listings */}
-      <section className="py-24 md:py-32">
+      <section className="py-32 md:py-40">
         <div className="container">
-          <div className="flex items-center justify-between mb-14">
+          <div className="flex items-center justify-between mb-16">
             <h2 className="text-2xl font-display font-medium">Featured stays</h2>
             <Link to="/search" className="text-sm text-text-secondary hover:text-foreground flex items-center gap-1 trivara-transition">
               Explore more <ArrowRight className="h-4 w-4" />
@@ -119,19 +119,19 @@ export default function Index() {
       </section>
 
       {/* Become a Host CTA */}
-      <section className="py-32 bg-surface-0">
+      <section className="py-40 bg-surface-0">
         <div className="container">
-          <div className="max-w-3xl mx-auto text-center relative border border-border rounded-xl px-8 py-20 md:px-20 md:py-24">
-            <span className="inline-block font-morderline text-[10px] tracking-wide bg-accent text-accent-foreground px-3 py-1 rounded-full border border-accent-hover -mt-24 mb-6">
+          <div className="max-w-3xl mx-auto text-center relative border border-border rounded-xl px-8 py-24 md:px-24 md:py-32">
+            <span className="inline-block font-morderline text-[10px] tracking-wide bg-accent text-accent-foreground px-3 py-1 rounded-full border border-accent-hover -mt-32 mb-8">
               share &amp; earn
             </span>
-            <h2 className="text-3xl md:text-4xl font-pillar font-bold uppercase tracking-wide mb-6">
+            <h2 className="text-3xl md:text-4xl font-pillar font-bold uppercase tracking-wide mb-8">
               Share your space
             </h2>
-            <p className="text-text-secondary mb-3 text-lg">
+            <p className="text-text-secondary mb-4 text-lg">
               Join hosts who earn by sharing their homes with travelers worldwide
             </p>
-            <p className="font-bastliga text-2xl text-primary mb-12">
+            <p className="font-bastliga text-2xl text-primary mb-16">
               your home, your rules
             </p>
             <Link to="/host">
@@ -144,9 +144,9 @@ export default function Index() {
       </section>
 
       {/* Footer */}
-      <footer className="py-24 border-t border-border">
+      <footer className="py-32 border-t border-border">
         <div className="container">
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-12 mb-20">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-16 mb-24">
             <div>
               <h4 className="font-medium mb-5 text-sm">Support</h4>
               <ul className="space-y-4 text-sm text-text-secondary">

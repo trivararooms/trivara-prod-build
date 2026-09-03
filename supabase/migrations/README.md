@@ -18,14 +18,16 @@ rejections and booking completions/cancellations), `00000000000005_messaging_and
 (host-guest `conversations`/`messages` + per-category review ratings),
 `00000000000006_booking_requests_pricing_and_settings.sql` (Instant Book vs.
 Request to Book, host-managed blackout dates + per-date price overrides,
-notification preferences, and an abandoned-booking cleanup job), and
+notification preferences, and an abandoned-booking cleanup job),
 `00000000000007_avatars_bucket.sql` (the `avatars` storage bucket for Account
-Settings) build on top of it. `00000000000011_offers_discounts.sql` adds an
-admin-managed `discount_rules` table (first-time-user / area / combo
-conditions) and a `find_best_discount()` resolver that returns the single
-largest matching discount at checkout (non-stackable). **To stand up a brand
-new project from zero** — e.g. after a project is deleted — run every
-migration file in this directory, in filename order, in the new project's
+Settings), and `00000000000008_host_applications.sql` (the host application/
+verification-document flow — `host_applications` table, the private
+`host-verification-docs` bucket, `approve_host_application()`/
+`reject_host_application()` RPCs, and a `trigger_require_approved_host`
+trigger that replaces `promote_host_on_publish()`: publishing a listing no
+longer grants host status, it now requires an already-approved application)
+build on top of it. **To stand up a brand new project from zero** — e.g.
+after a project is deleted — run all eight, in order, in the new project's
 SQL editor; nothing else needs to be created by hand in the database.
 Razorpay/SMTP config still needs to be entered through the Admin Settings
 page (or `update_app_setting`) afterward — the baseline only seeds disabled,

@@ -1,9 +1,13 @@
 import { Link } from 'react-router-dom';
 import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
+import { useAuth } from '@/hooks/useAuth';
 import { ArrowRight, Check, Home, DollarSign, Calendar, Shield } from 'lucide-react';
 
 export default function BecomeHost() {
+  const { profile } = useAuth();
+  const ctaHref = profile?.is_host ? '/host/listings/new' : '/host/apply';
+
   return (
     <div className="min-h-screen bg-background">
       <Header />
@@ -21,9 +25,9 @@ export default function BecomeHost() {
             <p className="text-xl text-text-secondary mb-8 animate-fade-in" style={{ animationDelay: '0.1s' }}>
               Join thousands of hosts who are earning by sharing their homes with travelers.
             </p>
-            <Link to="/host/listings/new" className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            <Link to={ctaHref} className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
               <Button className="trivara-btn-primary px-8 py-6 text-base gap-2">
-                Start hosting
+                {profile?.is_host ? 'Start hosting' : 'Apply to become a host'}
                 <ArrowRight className="h-5 w-5" />
               </Button>
             </Link>
@@ -80,18 +84,18 @@ export default function BecomeHost() {
               {[
                 {
                   step: '01',
-                  title: 'Create your listing',
-                  description: 'Share details about your space, set your price, and add photos.',
+                  title: 'Apply as a host',
+                  description: 'Submit your ID, property ownership proof, and bank details for review.',
                 },
                 {
                   step: '02',
-                  title: 'Welcome guests',
-                  description: 'Accept bookings and provide a great experience for your guests.',
+                  title: 'Get approved',
+                  description: "We'll verify your documents, usually within a few business days.",
                 },
                 {
                   step: '03',
-                  title: 'Get paid',
-                  description: 'Receive payments directly to your account after each stay.',
+                  title: 'List and get paid',
+                  description: 'Create your listing, welcome guests, and receive payments after each stay.',
                 },
               ].map((item, idx) => (
                 <div key={idx} className="flex gap-6">
@@ -115,9 +119,9 @@ export default function BecomeHost() {
           <h2 className="text-3xl font-display font-medium mb-6">
             Ready to start hosting?
           </h2>
-          <Link to="/host/listings/new">
+          <Link to={ctaHref}>
             <Button className="trivara-btn-primary px-8 py-6 text-base">
-              Create your listing
+              {profile?.is_host ? 'Create your listing' : 'Apply to become a host'}
             </Button>
           </Link>
         </div>
