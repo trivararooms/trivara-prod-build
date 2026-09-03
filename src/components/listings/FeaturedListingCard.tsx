@@ -66,7 +66,11 @@ export function FeaturedListingCard({ listing }: FeaturedListingCardProps) {
 
   return (
     <Link to={`/listing/${listing.id}`} className="group block">
-      <div ref={mediaRef} className="relative aspect-[4/5] rounded-lg overflow-hidden bg-surface-0 border border-border mb-3">
+      {/* "feat-media" is a plain measurement hook - Index.tsx reads its
+          rendered width to size the destination marquee cards at exactly
+          half, the same way the mock's own vanilla-JS syncDestCardSize()
+          did. No rounded corners, per the redesign. */}
+      <div ref={mediaRef} className="feat-media relative aspect-[4/5] overflow-hidden bg-surface-0 border border-border mb-4">
         <div ref={layerRef} className="absolute left-0 right-0 -top-[15%] h-[130%] will-change-transform">
           <img
             src={listing.photos[0]}
@@ -79,23 +83,23 @@ export function FeaturedListingCard({ listing }: FeaturedListingCardProps) {
           onClick={handleSave}
           disabled={toggleSaved.isPending}
           aria-label={isSaved ? 'Remove from saved' : 'Save listing'}
-          className="absolute top-2.5 right-2.5 h-7 w-7 rounded-full bg-black/45 flex items-center justify-center trivara-transition"
+          className="absolute top-3 right-3 h-9 w-9 rounded-full bg-black/45 flex items-center justify-center trivara-transition"
         >
-          <Heart className={`h-3.5 w-3.5 ${isSaved ? 'fill-foreground' : ''}`} />
+          <Heart className={`h-4 w-4 ${isSaved ? 'fill-foreground' : ''}`} />
         </button>
       </div>
 
-      <div className="flex items-center justify-between text-[13.5px] font-semibold">
+      <div className="flex items-center justify-between text-base font-semibold">
         <span className="truncate">{listing.location.city}, {listing.location.state}</span>
         <span className="flex items-center gap-1 flex-shrink-0">
-          <Star className="h-3 w-3 fill-foreground" /> {listing.rating.toFixed(2)}
+          <Star className="h-3.5 w-3.5 fill-foreground" /> {listing.rating.toFixed(2)}
         </span>
       </div>
-      <p className="text-text-meta text-[12.5px] mt-0.5 mb-1 line-clamp-1">{listing.title}</p>
-      <p className="text-text-meta text-[11.5px] mb-1">
+      <p className="text-text-meta text-sm mt-1 mb-1 line-clamp-1">{listing.title}</p>
+      <p className="text-text-meta text-sm mb-1.5">
         {listing.bedrooms} {listing.bedrooms === 1 ? 'bedroom' : 'bedrooms'} · {listing.beds} {listing.beds === 1 ? 'bed' : 'beds'}
       </p>
-      <p className="text-[13.5px] font-semibold">
+      <p className="text-base font-semibold">
         {formatINR(listing.pricePerNight)} <span className="text-text-secondary font-normal">night</span>
       </p>
     </Link>

@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
 import { Header } from '@/components/layout/Header';
@@ -12,12 +12,13 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/lib/errors';
-import { Loader2, Save, ShieldCheck, Mail, CreditCard, Users, Tag, Trash2, Plus, Power, Percent, Star, Search as SearchIcon } from 'lucide-react';
+import { Loader2, Save, ShieldCheck, Mail, CreditCard, Users, Tag, Trash2, Plus, Power, Percent, Star, Search as SearchIcon, Image as ImageIcon } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { adminAccessService } from '@/services/adminAccessService';
 import { discountService, DiscountRule, DiscountRuleType, DiscountValueType } from '@/services/discountService';
 import { commissionService, CommissionTier, OverrideScope, TierOperator } from '@/services/commissionService';
 import { listingService } from '@/services/listingService';
+import { siteSettingsService } from '@/services/siteSettingsService';
 import { Listing } from '@/types';
 // NOTE: this page used to also gate on isAdminEmail(user.email) (a hardcoded-
 // email check) inside the effect below. That check could disagree with the
@@ -657,6 +658,68 @@ function OffersTab() {
     );
 }
 
+function BrandingTab() {
+    const { toast } = useToast();
+    const queryClient = useQueryClient();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [uploading, setUploading] = useState(false);
+
+    const heroImageQuery = useQuery({
+        queryKey: ['hero-background-image'],
+        queryFn: () => siteSettingsService.getHeroBackgroundImageUrl(),
+    });
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploading(true);
+        try {
+            await siteSettingsService.uploadHeroBackgroundImage(file);
+            toast({ title: 'Hero background updated' });
+            queryClient.invalidateQueries({ queryKey: ['hero-background-image'] });
+        } catch (error) {
+            toast({ title: 'Error', description: getErrorMessage(error, 'Could not upload the image.'), variant: 'destructive' });
+        } finally {
+            setUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
+    return (
+        <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Hero background image</CardTitle>
+                    <CardDescription>
+                        Shown behind "Find your place" on the home page. Leave unset to use the default gradient.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {heroImageQuery.data && (
+                        <img
+                            src={heroImageQuery.data}
+                            alt="Current hero background"
+                            className="w-full max-w-md aspect-video object-cover"
+                        />
+                    )}
+                    <input
+                        ref={fileInputRef}
+                        type="file"
+                        accept="image/*"
+                        className="hidden"
+                        onChange={handleFileChange}
+                    />
+                    <Button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="gap-2">
+                        {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
+                        {heroImageQuery.data ? 'Replace image' : 'Upload image'}
+                    </Button>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
 export default function AdminSettings() {
     const { user, loading: authLoading } = useAuth();
     const navigate = useNavigate();
@@ -814,27 +877,32 @@ export default function AdminSettings() {
                     </Button>
                 </div>
 
-                <Tabs defaultValue="razorpay" className="space-y-6">
-                    <TabsList className="grid w-full grid-cols-6">
-                        <TabsTrigger value="razorpay" className="flex items-center gap-2">
+                <Tabs defaultValue="razorpay" orientation="vertical" className="flex flex-col md:flex-row gap-8 items-start space-y-0">
+                    <TabsList className="flex md:flex-col h-auto w-full md:w-56 shrink-0 items-stretch justify-start gap-1 bg-transparent p-0">
+                        <TabsTrigger value="razorpay" className="justify-start gap-2 data-[state=active]:bg-surface-2">
                             <CreditCard className="h-4 w-4" /> Razorpay
                         </TabsTrigger>
-                        <TabsTrigger value="smtp" className="flex items-center gap-2">
+                        <TabsTrigger value="smtp" className="justify-start gap-2 data-[state=active]:bg-surface-2">
                             <Mail className="h-4 w-4" /> Email (SMTP)
                         </TabsTrigger>
-                        <TabsTrigger value="featured" className="flex items-center gap-2">
+                        <TabsTrigger value="featured" className="justify-start gap-2 data-[state=active]:bg-surface-2">
                             <Star className="h-4 w-4" /> Featured
                         </TabsTrigger>
-                        <TabsTrigger value="commission" className="flex items-center gap-2">
+                        <TabsTrigger value="commission" className="justify-start gap-2 data-[state=active]:bg-surface-2">
                             <Percent className="h-4 w-4" /> Commission
                         </TabsTrigger>
-                        <TabsTrigger value="offers" className="flex items-center gap-2">
+                        <TabsTrigger value="offers" className="justify-start gap-2 data-[state=active]:bg-surface-2">
                             <Tag className="h-4 w-4" /> Offers
                         </TabsTrigger>
-                        <TabsTrigger value="admins" className="flex items-center gap-2">
+                        <TabsTrigger value="branding" className="justify-start gap-2 data-[state=active]:bg-surface-2">
+                            <ImageIcon className="h-4 w-4" /> Branding
+                        </TabsTrigger>
+                        <TabsTrigger value="admins" className="justify-start gap-2 data-[state=active]:bg-surface-2">
                             <Users className="h-4 w-4" /> Admins
                         </TabsTrigger>
                     </TabsList>
+
+                    <div className="flex-1 min-w-0 w-full">
 
                     <TabsContent value="razorpay">
                         <Card>
@@ -896,9 +964,15 @@ export default function AdminSettings() {
                         <OffersTab />
                     </TabsContent>
 
+                    <TabsContent value="branding">
+                        <BrandingTab />
+                    </TabsContent>
+
                     <TabsContent value="admins">
                         <ManageAdminsTab />
                     </TabsContent>
+
+                    </div>
                 </Tabs>
             </div>
         </div>

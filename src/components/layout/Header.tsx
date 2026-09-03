@@ -60,12 +60,51 @@ export function Header({ variant = 'default' }: HeaderProps) {
     ? 'hidden md:flex text-[#0a0806] hover:text-foreground hover:bg-transparent'
     : 'hidden md:flex hover:bg-surface-2';
 
+  // Mirrors the mock's own locked page margin (--page-margin: clamp(20px,
+  // 4vw, 48px)) instead of Tailwind's default .container gutter (2rem fixed,
+  // capped at 1400px) - used everywhere on the hero overlay so the header
+  // lines up with the homepage sections below it, which use the same value.
+  const sidePad = 'px-[clamp(20px,4vw,48px)]';
+
+  // Search + Messages - shared between variants, just relocated: they sit in
+  // the centered nav group on the hero overlay ("pair up with the things in
+  // the middle"), and in their own right-hand slot on every other page.
+  const utilityIcons = (
+    <>
+      <Button
+        variant="ghost"
+        size="icon"
+        className={iconButtonClass}
+        onClick={() => navigate('/search')}
+      >
+        <Search className="h-5 w-5" />
+      </Button>
+
+      {user && (
+        <Button
+          variant="ghost"
+          size="icon"
+          className={`relative ${iconButtonClass}`}
+          onClick={() => navigate('/messages')}
+        >
+          <MessageCircle className="h-5 w-5" />
+          {unreadMessages > 0 && (
+            <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-accent text-accent-foreground text-[10px] font-morderline flex items-center justify-center">
+              {unreadMessages}
+            </span>
+          )}
+        </Button>
+      )}
+    </>
+  );
+
   return (
     <header className={isOverlay ? 'absolute top-0 left-0 right-0 z-20 w-full bg-transparent' : 'sticky top-0 z-50 w-full bg-surface-0 border-b border-border'}>
-      <div className={isOverlay ? 'container grid grid-cols-[1fr_auto_1fr] h-16 items-center' : 'container flex h-16 items-center justify-between'}>
-        {/* Logo */}
-        <Link to="/" className="flex items-center gap-2">
-          <Logo markClassName="h-8 w-8" nameClassName="text-lg" />
+      <div className={isOverlay ? `w-full ${sidePad} grid grid-cols-[1fr_auto_1fr] h-20 items-center` : 'container flex h-16 items-center justify-between'}>
+        {/* Logo - flush against the same side padding the footer's logo
+            uses, so the two sit parallel to each other. */}
+        <Link to="/" className={isOverlay ? 'flex items-center gap-2 justify-self-start' : 'flex items-center gap-2'}>
+          <Logo markClassName={isOverlay ? 'h-11 w-11' : 'h-8 w-8'} nameClassName={isOverlay ? 'text-2xl' : 'text-lg'} />
         </Link>
 
         {/* Desktop Navigation - centered in its own grid column on the hero
@@ -88,10 +127,18 @@ export function Header({ variant = 'default' }: HeaderProps) {
           {isOverlay ? (
             user ? (
               <>
-                {!isHost && <Link to="/host" className={navLinkClass}>Become a Host</Link>}
                 <Link to="/trips" className={navLinkClass}>Your Trips</Link>
                 <Link to="/saved" className={navLinkClass}>Saved</Link>
                 <Link to="/account" className={navLinkClass}>Account Settings</Link>
+                {/* Admin tools go rightmost, after the account shortcuts - the
+                    mock never modeled these, so they're additive rather than
+                    replacing anything it did spec. */}
+                {isAdmin && (
+                  <>
+                    <Link to="/admin/dashboard" className={navLinkClass}>Admin Dashboard</Link>
+                    <Link to="/admin/dashboard/settings" className={navLinkClass}>Admin Settings</Link>
+                  </>
+                )}
               </>
             ) : (
               <button type="button" className={navLinkClass} onClick={() => navigate('/login')}>
@@ -103,35 +150,23 @@ export function Header({ variant = 'default' }: HeaderProps) {
               Host
             </Link>
           )}
+          {isOverlay && utilityIcons}
         </nav>
 
         {/* Right Side */}
         <div className={isOverlay ? 'flex items-center gap-4 justify-self-end' : 'flex items-center gap-4'}>
-          {/* Desktop Search */}
-          <Button
-            variant="ghost"
-            size="icon"
-            className={iconButtonClass}
-            onClick={() => navigate('/search')}
-          >
-            <Search className="h-5 w-5" />
-          </Button>
+          {!isOverlay && utilityIcons}
 
-          {/* Desktop Messages */}
-          {user && (
-            <Button
-              variant="ghost"
-              size="icon"
-              className={`relative ${iconButtonClass}`}
-              onClick={() => navigate('/messages')}
-            >
-              <MessageCircle className="h-5 w-5" />
-              {unreadMessages > 0 && (
-                <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-accent text-accent-foreground text-[10px] font-morderline flex items-center justify-center">
-                  {unreadMessages}
-                </span>
-              )}
-            </Button>
+          {/* Become a Host - pulled out of the centered nav group and given
+              logo-sized billing in the corner, right-aligned the same way
+              the footer's copyright is, so the two sit parallel. Shown
+              regardless of signed-in state (unlike the rest of the nav)
+              since it's a standing CTA, not an account shortcut - hidden
+              only once someone already is a host. */}
+          {isOverlay && !isHost && (
+            <Link to="/host" className={`${navLinkClass} !text-2xl !normal-case !tracking-normal font-bold`}>
+              Become a Host
+            </Link>
           )}
 
           {/* User Menu - removed entirely on the hero overlay, per the mock:
