@@ -443,7 +443,7 @@ export default function Trips() {
                               {listing?.location?.city}, {listing?.location?.state}
                             </p>
                           </div>
-                          <span className={`px-3 py-1 rounded-full text-sm ${
+                          <span className={`px-3 py-1 rounded-full font-morderline text-[10px] tracking-wide border border-border ${
                             booking.status === 'confirmed'
                               ? 'bg-accent/20 text-accent-foreground'
                               : booking.status === 'completed'
@@ -626,7 +626,7 @@ export default function Trips() {
                                 {listing?.location?.city}, {listing?.location?.state}
                               </p>
                             </div>
-                            <span className={`px-3 py-1 rounded-full text-sm ${
+                            <span className={`px-3 py-1 rounded-full font-morderline text-[10px] tracking-wide border border-border ${
                               booking.status === 'completed'
                                 ? 'bg-surface-3 text-foreground'
                                 : 'bg-destructive/20 text-destructive-foreground'

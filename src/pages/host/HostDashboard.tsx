@@ -381,7 +381,7 @@ export default function HostDashboard() {
                   <DollarSign className="h-6 w-6 text-accent" />
                 </div>
                 <div>
-                  <p className="text-3xl font-semibold text-foreground">
+                  <p className="text-3xl font-pillar font-bold text-accent">
                     {formatINR(stats?.totalEarnings || 0)}
                   </p>
                   <p className="text-sm text-text-secondary">Total Earnings</p>

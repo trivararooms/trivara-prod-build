@@ -191,7 +191,7 @@ export default function Search() {
               </Select>
 
               {/* View Toggle */}
-              <div className="hidden md:flex items-center gap-1 bg-surface-2 rounded-lg p-1">
+              <div className="hidden md:flex items-center gap-1 bg-surface-2 rounded-lg p-1 border border-border">
                 <Button
                   variant="ghost"
                   size="sm"

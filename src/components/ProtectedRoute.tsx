@@ -13,7 +13,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children, requiredRole 
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center bg-[#2F3A4A]">
+      <div className="min-h-screen flex items-center justify-center bg-background">
         Loading...
       </div>
     );
