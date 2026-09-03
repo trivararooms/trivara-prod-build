@@ -117,9 +117,10 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Popular Destinations */}
+      {/* Popular Destinations - tight bottom padding so the cards sit close
+          to "Featured stays" below, instead of a big gap between sections. */}
       {destinations.length > 0 && (
-        <section className="py-24 md:py-32">
+        <section className="pt-24 md:pt-32 pb-4 md:pb-6">
           <div className={`w-full ${SIDE_PAD}`}>
             <h2 className="text-[27px] sm:text-[42px] lg:text-[55px] font-display font-medium text-center mb-10">
               Popular destinations
@@ -156,8 +157,10 @@ export default function Index() {
         </section>
       )}
 
-      {/* Featured Listings */}
-      <section className="py-16 md:py-20">
+      {/* Featured Listings - tight top padding to match the destinations
+          section's tight bottom padding above, so the gap between the two
+          sections stays minimal. */}
+      <section className="pt-4 md:pt-6 pb-16 md:pb-20">
         <div className={`w-full ${SIDE_PAD}`}>
           <div className="grid grid-cols-[1fr_auto_1fr] items-center mb-10 gap-4">
             <div />
