@@ -87,14 +87,12 @@ export default function Index() {
         <div
           className="absolute inset-0"
           style={{
+            // One continuous diagonal blend between the two locked palette
+            // hues (indigo -> chestnut) instead of two separate radial
+            // "blobs" - a single wash, not two colored patches.
             backgroundImage: heroImage
-              ? `radial-gradient(120% 90% at 30% 20%, hsl(var(--accent) / 0.55) 0%, transparent 55%),
-                 radial-gradient(90% 70% at 80% 80%, hsl(var(--primary) / 0.45) 0%, transparent 60%),
-                 linear-gradient(160deg, hsl(var(--surface-1) / 0.75), hsl(var(--surface-0) / 0.85)),
-                 url(${heroImage})`
-              : `radial-gradient(120% 90% at 30% 20%, hsl(var(--accent) / 0.55) 0%, transparent 55%),
-                 radial-gradient(90% 70% at 80% 80%, hsl(var(--primary) / 0.45) 0%, transparent 60%),
-                 linear-gradient(160deg, hsl(var(--surface-1)), hsl(var(--surface-0)))`,
+              ? `linear-gradient(135deg, hsl(var(--primary) / 0.65) 0%, hsl(var(--accent) / 0.65) 100%), url(${heroImage})`
+              : `linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%)`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
           }}
