@@ -147,7 +147,7 @@ const App = () => (
                 dashboard rather than letting it fall through to the catch-all
                 NotFound route, since that's the URL people naturally try. */}
             <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-            <Route path="/admin/dashboard" element={<ProtectedRoute requiredRole="admin">
+            <Route path="/admin/dashboard" element={<ProtectedRoute allowRoles={['admin', 'ops_admin']}>
               <AdminDashboard />
             </ProtectedRoute>} />
             <Route path="/admin/dashboard/settings" element={<ProtectedRoute requiredRole="admin">

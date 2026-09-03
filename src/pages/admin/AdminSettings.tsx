@@ -12,8 +12,9 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/lib/errors';
-import { Loader2, Save, ShieldCheck, Mail, CreditCard, Tag, Trash2, Plus, Power } from 'lucide-react';
+import { Loader2, Save, ShieldCheck, Mail, CreditCard, Users, Tag, Trash2, Plus, Power } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { adminAccessService } from '@/services/adminAccessService';
 import { discountService, DiscountRule, DiscountRuleType, DiscountValueType } from '@/services/discountService';
 // NOTE: this page used to also gate on isAdminEmail(user.email) (a hardcoded-
 // email check) inside the effect below. That check could disagree with the
@@ -40,6 +41,93 @@ async function fetchAppSettings(): Promise<AppSetting[]> {
 
     if (error) throw error;
     return data || [];
+}
+
+function ManageAdminsTab() {
+    const { toast } = useToast();
+    const queryClient = useQueryClient();
+    const [email, setEmail] = useState('');
+
+    const opsAdminsQuery = useQuery({
+        queryKey: ['ops-admins'],
+        queryFn: () => adminAccessService.listOpsAdmins(),
+    });
+
+    const grantMutation = useMutation({
+        mutationFn: (e: string) => adminAccessService.grant(e),
+        onSuccess: () => {
+            toast({ title: 'Access granted', description: `${email} can now approve payouts and view platform stats.` });
+            setEmail('');
+            queryClient.invalidateQueries({ queryKey: ['ops-admins'] });
+        },
+        onError: (error) => toast({ title: 'Error', description: getErrorMessage(error, 'Could not grant access.'), variant: 'destructive' }),
+    });
+
+    const revokeMutation = useMutation({
+        mutationFn: (e: string) => adminAccessService.revoke(e),
+        onSuccess: () => {
+            toast({ title: 'Access revoked' });
+            queryClient.invalidateQueries({ queryKey: ['ops-admins'] });
+        },
+        onError: (error) => toast({ title: 'Error', description: getErrorMessage(error, 'Could not revoke access.'), variant: 'destructive' }),
+    });
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Delegated admins</CardTitle>
+                <CardDescription>
+                    Grant an email platform stats, live activity, payout approve/reject/request-on-behalf, and refunds —
+                    without full admin access (commission, offers, and admin management stay main-admin only).
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="flex gap-2">
+                    <Input
+                        type="email"
+                        placeholder="teammate@trivara.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
+                    <Button
+                        onClick={() => grantMutation.mutate(email)}
+                        disabled={!email.trim() || grantMutation.isPending}
+                        className="gap-2 whitespace-nowrap"
+                    >
+                        {grantMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                        Grant access
+                    </Button>
+                </div>
+
+                {opsAdminsQuery.isLoading && <Loader2 className="h-5 w-5 animate-spin text-accent" />}
+
+                {opsAdminsQuery.data && opsAdminsQuery.data.length === 0 && (
+                    <p className="text-sm text-muted-foreground">No delegated admins yet.</p>
+                )}
+
+                <div className="space-y-2">
+                    {opsAdminsQuery.data?.map((profile) => (
+                        <div key={profile.id} className="flex items-center justify-between border rounded-md px-4 py-3">
+                            <div>
+                                <p className="font-medium">{profile.full_name || profile.email}</p>
+                                <p className="text-sm text-muted-foreground">{profile.email}</p>
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-2 text-destructive hover:text-destructive"
+                                onClick={() => revokeMutation.mutate(profile.email)}
+                                disabled={revokeMutation.isPending}
+                            >
+                                <Trash2 className="h-4 w-4" />
+                                Revoke
+                            </Button>
+                        </div>
+                    ))}
+                </div>
+            </CardContent>
+        </Card>
+    );
 }
 
 const RULE_TYPE_LABELS: Record<DiscountRuleType, string> = {
@@ -386,7 +474,7 @@ export default function AdminSettings() {
                 </div>
 
                 <Tabs defaultValue="razorpay" className="space-y-6">
-                    <TabsList className="grid w-full grid-cols-3">
+                    <TabsList className="grid w-full grid-cols-4">
                         <TabsTrigger value="razorpay" className="flex items-center gap-2">
                             <CreditCard className="h-4 w-4" /> Razorpay
                         </TabsTrigger>
@@ -395,6 +483,9 @@ export default function AdminSettings() {
                         </TabsTrigger>
                         <TabsTrigger value="offers" className="flex items-center gap-2">
                             <Tag className="h-4 w-4" /> Offers
+                        </TabsTrigger>
+                        <TabsTrigger value="admins" className="flex items-center gap-2">
+                            <Users className="h-4 w-4" /> Admins
                         </TabsTrigger>
                     </TabsList>
 
@@ -448,6 +539,10 @@ export default function AdminSettings() {
 
                     <TabsContent value="offers">
                         <OffersTab />
+                    </TabsContent>
+
+                    <TabsContent value="admins">
+                        <ManageAdminsTab />
                     </TabsContent>
                 </Tabs>
             </div>
