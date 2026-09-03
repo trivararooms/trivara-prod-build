@@ -1,7 +1,6 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Loader2, Clock, CheckCircle2, XCircle, Upload } from 'lucide-react';
-import { Header } from '@/components/layout/Header';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -114,7 +113,6 @@ export default function HostApplicationPage() {
   if (authLoading || existing === 'loading') {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="flex items-center justify-center h-64"><Loader2 className="h-8 w-8 animate-spin text-accent" /></div>
       </div>
     );
@@ -168,7 +166,6 @@ export default function HostApplicationPage() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
       <div className="container max-w-2xl py-12">
         {showStatusScreen && <StatusScreen application={existing as HostApplication} onReapply={() => setForceNewForm(true)} />}
         {showRejectedScreen && <StatusScreen application={existing as HostApplication} onReapply={() => setForceNewForm(true)} />}

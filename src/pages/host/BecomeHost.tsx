@@ -1,5 +1,4 @@
 import { Link } from 'react-router-dom';
-import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { ArrowRight, Check, Home, DollarSign, Calendar, Shield } from 'lucide-react';
@@ -10,7 +9,6 @@ export default function BecomeHost() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
 
       {/* Hero Section */}
       <section className="relative py-20 md:py-32">

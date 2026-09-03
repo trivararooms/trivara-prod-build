@@ -1,9 +1,9 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import { Header } from '@/components/layout/Header';
 import { Logo } from '@/components/layout/Logo';
 import { SearchBar } from '@/components/search/SearchBar';
 import { FeaturedListingCard } from '@/components/listings/FeaturedListingCard';
+import { EditableText } from '@/components/content/EditableText';
 import { listingService } from '@/services/listingService';
 import { siteSettingsService } from '@/services/siteSettingsService';
 import { Button } from '@/components/ui/button';
@@ -22,20 +22,23 @@ export default function Index() {
   const [featuredListings, setFeaturedListings] = useState<Listing[]>([]);
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [heroImage, setHeroImage] = useState<string | null>(null);
+  const [hostCtaImage, setHostCtaImage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [destCardWidth, setDestCardWidth] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [featured, popularDestinations, heroBackground] = await Promise.all([
+        const [featured, popularDestinations, heroBackground, hostBackground] = await Promise.all([
           listingService.getFeatured(3),
           listingService.getPopularDestinations(),
           siteSettingsService.getHeroBackgroundImageUrl(),
+          siteSettingsService.getHostCtaBackgroundImageUrl(),
         ]);
         setFeaturedListings(featured);
         setDestinations(popularDestinations);
         setHeroImage(heroBackground);
+        setHostCtaImage(hostBackground);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -64,7 +67,6 @@ export default function Index() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="container py-8 flex items-center justify-center">
           <p>Loading...</p>
         </div>
@@ -79,11 +81,13 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background">
-      {/* Hero - the header lives inside it as a transparent overlay topbar
-          instead of a separate persistent nav, matching the mock. Admin-
+      {/* Hero - the common <Header /> (rendered once in App.tsx, sticky and
+          transparent) floats over this section's own background. Admin-
           uploaded background image (Admin Settings > Branding) layers under
-          the same gradient wash used when none is set. */}
-      <section className="relative min-h-screen flex flex-col overflow-hidden">
+          the same gradient wash used when none is set. Height accounts for
+          the header's own 5rem (h-20) so hero + header together still fill
+          exactly one viewport. */}
+      <section className="relative min-h-[calc(100vh-5rem)] flex flex-col overflow-hidden">
         <div
           className="absolute inset-0"
           style={{
@@ -98,18 +102,26 @@ export default function Index() {
           }}
         />
 
-        <Header variant="transparent" />
-
         <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6">
-          <p className="font-script text-2xl text-accent-hover mb-3 animate-fade-in">
-            wander well
-          </p>
-          <h1 className="mb-8 animate-fade-in">
-            Find your place
-          </h1>
-          <p className="text-xl text-text-secondary animate-fade-in" style={{ animationDelay: '0.1s' }}>
-            Discover extraordinary stays around the world
-          </p>
+          <EditableText
+            settingKey="content_hero_eyebrow"
+            fallback="wander well"
+            as="p"
+            className="font-script text-2xl text-accent-hover mb-3 animate-fade-in"
+          />
+          <EditableText
+            settingKey="content_hero_heading"
+            fallback="Find your place"
+            as="h1"
+            className="mb-8 animate-fade-in"
+          />
+          <EditableText
+            settingKey="content_hero_subtitle"
+            fallback="Discover extraordinary stays around the world"
+            as="p"
+            className="text-xl text-text-secondary animate-fade-in"
+            style={{ animationDelay: '0.1s' }}
+          />
 
           <div className="w-full max-w-[1100px] mx-auto mt-16 animate-fade-in" style={{ animationDelay: '0.2s' }}>
             <SearchBar variant="hero" />
@@ -122,9 +134,12 @@ export default function Index() {
       {destinations.length > 0 && (
         <section className="pt-24 md:pt-32 pb-4 md:pb-6">
           <div className={`w-full ${SIDE_PAD}`}>
-            <h2 className="text-[27px] sm:text-[42px] lg:text-[55px] font-display font-medium text-center mb-10">
-              Popular destinations
-            </h2>
+            <EditableText
+              settingKey="content_destinations_heading"
+              fallback="Popular destinations"
+              as="h2"
+              className="text-[27px] sm:text-[42px] lg:text-[55px] font-display font-medium text-center mb-10"
+            />
 
             <div className="marquee-mask">
               <div
@@ -164,9 +179,12 @@ export default function Index() {
         <div className={`w-full ${SIDE_PAD}`}>
           <div className="grid grid-cols-[1fr_auto_1fr] items-center mb-10 gap-4">
             <div />
-            <h2 className="text-[42px] sm:text-[64px] lg:text-[84px] font-display font-medium text-center leading-none">
-              Featured stays
-            </h2>
+            <EditableText
+              settingKey="content_featured_heading"
+              fallback="Featured stays"
+              as="h2"
+              className="text-[42px] sm:text-[64px] lg:text-[84px] font-display font-medium text-center leading-none"
+            />
             <Link to="/search" aria-label="Explore more" className="justify-self-end text-text-meta hover:text-foreground trivara-transition">
               <ArrowRight className="h-6 w-6" />
             </Link>
@@ -184,26 +202,47 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Become a Host CTA */}
+      {/* Become a Host CTA - admin-uploaded background image (Admin
+          Settings > Branding) shows through a dark wash behind the text,
+          the same layering pattern as the hero. */}
       <section className="py-16 md:py-20">
         <div className={`w-full ${SIDE_PAD}`}>
-          <div className="min-h-[85vh] flex items-center justify-center text-center border border-border rounded-xl px-8 md:px-16">
+          <div
+            className="relative min-h-[85vh] flex items-center justify-center text-center border border-border rounded-xl px-8 md:px-16 overflow-hidden"
+            style={hostCtaImage ? {
+              backgroundImage: `linear-gradient(160deg, hsl(var(--surface-0) / 0.8), hsl(var(--surface-1) / 0.85)), url(${hostCtaImage})`,
+              backgroundSize: 'cover',
+              backgroundPosition: 'center',
+            } : undefined}
+          >
             <div className="max-w-2xl">
-              <span className="inline-block font-morderline text-xs tracking-wide bg-accent text-accent-foreground px-5 py-2 rounded-full mb-10">
-                share &amp; earn
-              </span>
-              <h2 className="text-4xl md:text-6xl font-display font-medium mb-8">
-                Share your space
-              </h2>
-              <p className="text-text-secondary mb-4 text-xl">
-                Join hosts who earn by sharing their homes with travelers worldwide
-              </p>
-              <p className="font-bastliga text-3xl text-primary mb-12">
-                your home, your rules
-              </p>
+              <EditableText
+                settingKey="content_host_ribbon"
+                fallback="share & earn"
+                as="span"
+                className="inline-block font-morderline text-xs tracking-wide bg-accent text-accent-foreground px-5 py-2 rounded-full mb-10"
+              />
+              <EditableText
+                settingKey="content_host_heading"
+                fallback="Share your space"
+                as="h2"
+                className="text-4xl md:text-6xl font-display font-medium mb-8"
+              />
+              <EditableText
+                settingKey="content_host_subtitle"
+                fallback="Join hosts who earn by sharing their homes with travelers worldwide"
+                as="p"
+                className="text-text-secondary mb-4 text-xl"
+              />
+              <EditableText
+                settingKey="content_host_aside"
+                fallback="your home, your rules"
+                as="p"
+                className="font-bastliga text-3xl text-primary mb-12"
+              />
               <Link to="/host">
                 <Button className="trivara-btn-primary rounded-full px-12 py-7 text-base uppercase tracking-wide font-bold">
-                  Become a Host
+                  <EditableText settingKey="content_host_button" fallback="Become a Host" as="span" />
                 </Button>
               </Link>
             </div>

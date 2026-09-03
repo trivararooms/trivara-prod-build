@@ -2,7 +2,6 @@ import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { SlidersHorizontal, Map, List, X, Search as SearchIcon, Loader2, Crown, Calendar as CalendarIcon } from 'lucide-react';
-import { Header } from '@/components/layout/Header';
 import { SearchBar } from '@/components/search/SearchBar';
 import { ListingGrid } from '@/components/listings/ListingGrid';
 import { ListingCard } from '@/components/listings/ListingCard';
@@ -190,7 +189,6 @@ export default function Search() {
 
   return (
     <div className="min-h-screen bg-background pb-12">
-      <Header />
 
       {/* Sticky Search Header */}
       <div className="sticky top-0 z-40 border-b border-border bg-surface-0 shadow-sm transition-all duration-300">

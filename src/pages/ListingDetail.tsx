@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Calendar, MapPin, Wifi, Car, Snowflake, Tv, Loader2, Home, BadgeCheck, ShieldCheck, Share2, X, ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react';
-import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
@@ -348,7 +347,6 @@ export default function ListingDetail() {
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="flex items-center justify-center h-64">
             <Loader2 className="h-8 w-8 animate-spin text-accent" />
@@ -361,7 +359,6 @@ export default function ListingDetail() {
   if (!listing) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <h1 className="text-2xl font-medium text-foreground mb-4">Listing not found</h1>
@@ -374,7 +371,6 @@ export default function ListingDetail() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Title and Location */}

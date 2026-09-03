@@ -1,7 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { Loader2, Trash2, Ban, Tag } from 'lucide-react';
-import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -73,7 +72,6 @@ export default function ListingCalendar() {
   if (authLoading || loading) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="flex items-center justify-center h-64">
           <Loader2 className="h-8 w-8 animate-spin text-accent" />
         </div>
@@ -86,7 +84,6 @@ export default function ListingCalendar() {
   if (!listing || listing.hostId !== user.id) {
     return (
       <div className="min-h-screen bg-background">
-        <Header />
         <div className="container mx-auto px-4 py-16 text-center">
           <h1 className="text-2xl font-medium mb-4">Listing not found</h1>
           <Button onClick={() => navigate('/host/dashboard')}>Back to dashboard</Button>
@@ -148,7 +145,6 @@ export default function ListingCalendar() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">
           <h1 className="text-3xl font-pillar font-bold uppercase tracking-wide text-foreground mb-2">Calendar</h1>

@@ -6,11 +6,16 @@ export default {
   content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
   prefix: "",
   theme: {
+    // Matches the homepage redesign's own locked page margin
+    // (clamp(20px, 4vw, 48px)) instead of a fixed 2rem gutter capped at
+    // 1400px - applying it here means every existing `.container` usage
+    // sitewide picks up the same minimal, consistent side spacing for free,
+    // with no per-page edits.
     container: {
       center: true,
-      padding: "2rem",
+      padding: "clamp(20px, 4vw, 48px)",
       screens: {
-        "2xl": "1400px",
+        "2xl": "1900px",
       },
     },
     extend: {

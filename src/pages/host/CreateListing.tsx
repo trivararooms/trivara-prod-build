@@ -6,7 +6,6 @@ import {
   CalendarDays, ClipboardList, FileCheck, ChevronRight, ChevronLeft,
   Building, Warehouse, TreePine, Hotel, Loader2
 } from 'lucide-react';
-import { Header } from '@/components/layout/Header';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
@@ -1009,7 +1008,6 @@ export default function CreateListing() {
 
   return (
     <div className="min-h-screen bg-background">
-      <Header />
 
       <div className="container py-8">
         {/* Loading state for edit mode */}

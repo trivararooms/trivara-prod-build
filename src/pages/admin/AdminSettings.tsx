@@ -1,7 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
-import { Header } from '@/components/layout/Header';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -19,6 +18,7 @@ import { discountService, DiscountRule, DiscountRuleType, DiscountValueType } fr
 import { commissionService, CommissionTier, OverrideScope, TierOperator } from '@/services/commissionService';
 import { listingService } from '@/services/listingService';
 import { siteSettingsService } from '@/services/siteSettingsService';
+import { WordStyleEditor } from '@/components/admin/WordStyleEditor';
 import { Listing } from '@/types';
 // NOTE: this page used to also gate on isAdminEmail(user.email) (a hardcoded-
 // email check) inside the effect below. That check could disagree with the
@@ -658,16 +658,22 @@ function OffersTab() {
     );
 }
 
-function BrandingTab() {
+interface BackgroundImageCardProps {
+    title: string;
+    description: string;
+    queryKey: string;
+    getUrl: () => Promise<string | null>;
+    upload: (file: File) => Promise<string>;
+}
+
+/** Shared shape for the hero and "Become a Host" background-image uploaders - same bucket, different setting key. */
+function BackgroundImageCard({ title, description, queryKey, getUrl, upload }: BackgroundImageCardProps) {
     const { toast } = useToast();
     const queryClient = useQueryClient();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
 
-    const heroImageQuery = useQuery({
-        queryKey: ['hero-background-image'],
-        queryFn: () => siteSettingsService.getHeroBackgroundImageUrl(),
-    });
+    const imageQuery = useQuery({ queryKey: [queryKey], queryFn: getUrl });
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -675,9 +681,9 @@ function BrandingTab() {
 
         setUploading(true);
         try {
-            await siteSettingsService.uploadHeroBackgroundImage(file);
-            toast({ title: 'Hero background updated' });
-            queryClient.invalidateQueries({ queryKey: ['hero-background-image'] });
+            await upload(file);
+            toast({ title: `${title} updated` });
+            queryClient.invalidateQueries({ queryKey: [queryKey] });
         } catch (error) {
             toast({ title: 'Error', description: getErrorMessage(error, 'Could not upload the image.'), variant: 'destructive' });
         } finally {
@@ -687,33 +693,138 @@ function BrandingTab() {
     };
 
     return (
+        <Card>
+            <CardHeader>
+                <CardTitle>{title}</CardTitle>
+                <CardDescription>{description}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {imageQuery.data && (
+                    <img src={imageQuery.data} alt={`Current ${title.toLowerCase()}`} className="w-full max-w-md aspect-video object-cover" />
+                )}
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                <Button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="gap-2">
+                    {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
+                    {imageQuery.data ? 'Replace image' : 'Upload image'}
+                </Button>
+            </CardContent>
+        </Card>
+    );
+}
+
+function SiteBackgroundCard() {
+    const { toast } = useToast();
+    const queryClient = useQueryClient();
+    const [value, setValue] = useState<string | null>(null);
+    const [colorA, setColorA] = useState('#5457c9');
+    const [colorB, setColorB] = useState('#8a3d29');
+
+    const query = useQuery({ queryKey: ['site-background'], queryFn: () => siteSettingsService.getSiteBackground() });
+
+    useEffect(() => {
+        if (query.data && value === null) setValue(query.data);
+    }, [query.data, value]);
+
+    const saveMutation = useMutation({
+        mutationFn: () => siteSettingsService.setSiteBackground(value ?? ''),
+        onSuccess: () => {
+            toast({ title: 'Site background saved', description: 'Refresh any open tab to see it applied.' });
+            queryClient.invalidateQueries({ queryKey: ['site-background'] });
+        },
+        onError: (error) => toast({ title: 'Error', description: getErrorMessage(error, 'Could not save.'), variant: 'destructive' }),
+    });
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Site-wide background</CardTitle>
+                <CardDescription>
+                    Applied to every page (not just the home page) as the page background - a solid color or a CSS gradient.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="h-16 rounded-md border border-border" style={{ background: value ?? undefined }} />
+                <div>
+                    <Label>CSS background value</Label>
+                    <Input value={value ?? ''} onChange={(e) => setValue(e.target.value)} placeholder="e.g. #1a1410 or linear-gradient(135deg, #5457c9, #8a3d29)" />
+                </div>
+
+                <div className="flex flex-wrap items-end gap-3">
+                    <div>
+                        <Label>Color A</Label>
+                        <input type="color" className="h-9 w-16 border border-border rounded" value={colorA} onChange={(e) => setColorA(e.target.value)} />
+                    </div>
+                    <div>
+                        <Label>Color B</Label>
+                        <input type="color" className="h-9 w-16 border border-border rounded" value={colorB} onChange={(e) => setColorB(e.target.value)} />
+                    </div>
+                    <Button variant="outline" size="sm" onClick={() => setValue(`linear-gradient(135deg, ${colorA} 0%, ${colorB} 100%)`)}>
+                        Use as gradient
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={() => setValue(colorA)}>
+                        Use A as solid color
+                    </Button>
+                </div>
+
+                <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="gap-2">
+                    {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    Save
+                </Button>
+            </CardContent>
+        </Card>
+    );
+}
+
+function BrandingTab() {
+    return (
         <div className="space-y-6">
+            <BackgroundImageCard
+                title="Hero background image"
+                description={'Shown behind "Find your place" on the home page. Leave unset to use the default gradient.'}
+                queryKey="hero-background-image"
+                getUrl={() => siteSettingsService.getHeroBackgroundImageUrl()}
+                upload={(file) => siteSettingsService.uploadHeroBackgroundImage(file)}
+            />
+
+            <BackgroundImageCard
+                title="Become a Host background image"
+                description={'Shown behind "Share your space" on the home page. Leave unset to use the default gradient.'}
+                queryKey="host-cta-background-image"
+                getUrl={() => siteSettingsService.getHostCtaBackgroundImageUrl()}
+                upload={(file) => siteSettingsService.uploadHostCtaBackgroundImage(file)}
+            />
+
+            <SiteBackgroundCard />
+
             <Card>
                 <CardHeader>
-                    <CardTitle>Hero background image</CardTitle>
+                    <CardTitle>Home page text</CardTitle>
                     <CardDescription>
-                        Shown behind "Find your place" on the home page. Leave unset to use the default gradient.
+                        Edit the wording of each block below, then give any individual word its own font and/or color. Leaving a word's font/color at "Default" keeps it looking exactly as it does now.
                     </CardDescription>
                 </CardHeader>
-                <CardContent className="space-y-4">
-                    {heroImageQuery.data && (
-                        <img
-                            src={heroImageQuery.data}
-                            alt="Current hero background"
-                            className="w-full max-w-md aspect-video object-cover"
-                        />
-                    )}
-                    <input
-                        ref={fileInputRef}
-                        type="file"
-                        accept="image/*"
-                        className="hidden"
-                        onChange={handleFileChange}
-                    />
-                    <Button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="gap-2">
-                        {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
-                        {heroImageQuery.data ? 'Replace image' : 'Upload image'}
-                    </Button>
+                <CardContent className="space-y-6">
+                    <div className="space-y-3">
+                        <h4 className="text-sm font-semibold text-text-secondary uppercase tracking-wide">Hero</h4>
+                        <WordStyleEditor settingKey="content_hero_eyebrow" label="Eyebrow" fallback="wander well" />
+                        <WordStyleEditor settingKey="content_hero_heading" label="Heading" fallback="Find your place" />
+                        <WordStyleEditor settingKey="content_hero_subtitle" label="Subtitle" fallback="Discover extraordinary stays around the world" />
+                    </div>
+
+                    <div className="space-y-3">
+                        <h4 className="text-sm font-semibold text-text-secondary uppercase tracking-wide">Section headings</h4>
+                        <WordStyleEditor settingKey="content_featured_heading" label="Featured stays heading" fallback="Featured stays" />
+                        <WordStyleEditor settingKey="content_destinations_heading" label="Popular destinations heading" fallback="Popular destinations" />
+                    </div>
+
+                    <div className="space-y-3">
+                        <h4 className="text-sm font-semibold text-text-secondary uppercase tracking-wide">Become a Host</h4>
+                        <WordStyleEditor settingKey="content_host_ribbon" label="Ribbon" fallback="share & earn" />
+                        <WordStyleEditor settingKey="content_host_heading" label="Heading" fallback="Share your space" />
+                        <WordStyleEditor settingKey="content_host_subtitle" label="Subtitle" fallback="Join hosts who earn by sharing their homes with travelers worldwide" />
+                        <WordStyleEditor settingKey="content_host_aside" label="Aside" fallback="your home, your rules" />
+                        <WordStyleEditor settingKey="content_host_button" label="Button label" fallback="Become a Host" />
+                    </div>
                 </CardContent>
             </Card>
         </div>
@@ -834,7 +945,6 @@ export default function AdminSettings() {
     if (authLoading) {
         return (
             <div className="min-h-screen bg-background">
-                <Header />
                 <div className="flex justify-center items-center h-64">
                     <Loader2 className="h-8 w-8 animate-spin text-accent" />
                 </div>
@@ -852,7 +962,6 @@ export default function AdminSettings() {
     if (settingsQuery.isPending) {
         return (
             <div className="min-h-screen bg-background">
-                <Header />
                 <div className="flex justify-center items-center h-64">
                     <Loader2 className="h-8 w-8 animate-spin text-accent" />
                 </div>
@@ -865,7 +974,6 @@ export default function AdminSettings() {
 
     return (
         <div className="min-h-screen bg-background pb-12">
-            <Header />
             <div className="container mx-auto px-4 py-8 max-w-4xl">
                 <div className="flex items-center justify-between mb-8">
                     <div>
