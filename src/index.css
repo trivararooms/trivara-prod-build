@@ -127,22 +127,28 @@
 }
 
 @layer components {
-  /* Card with a cool indigo border - depth via border + color, chestnut-mock signature */
+  /* Card with a cool indigo border - depth via border + color, chestnut-mock signature.
+     !important since these can be layered onto primitives (Card, Input, etc.) whose
+     own base classes are plain Tailwind utilities, which otherwise always win over
+     @layer components regardless of source order. */
   .trivara-card {
-    @apply bg-card rounded-lg border border-border;
+    @apply !bg-card rounded-lg !border !border-border;
   }
 
   .trivara-card-elevated {
-    @apply bg-surface-3 rounded-lg border border-border;
+    @apply !bg-surface-3 rounded-lg !border !border-border;
   }
 
-  /* Button variants */
+  /* Button variants - !important because these are almost always layered onto
+     shadcn's <Button>, whose "default" variant emits bg-primary as a utility
+     class; utilities always win over @layer components regardless of source
+     order, so without !important these silently render bg-primary instead. */
   .trivara-btn-primary {
-    @apply bg-accent text-accent-foreground hover:bg-accent-hover transition-colors duration-200 border border-accent-hover;
+    @apply !bg-accent !text-accent-foreground hover:!bg-accent-hover transition-colors duration-200 !border !border-accent-hover;
   }
 
   .trivara-btn-secondary {
-    @apply bg-surface-3 text-foreground hover:bg-surface-4 transition-colors duration-200 border border-border;
+    @apply !bg-surface-3 !text-foreground hover:!bg-surface-4 transition-colors duration-200 !border !border-border;
   }
 
   .trivara-btn-ghost {
@@ -151,7 +157,7 @@
 
   /* Input styling */
   .trivara-input {
-    @apply bg-surface-2 border border-border text-foreground placeholder:text-text-secondary focus:ring-1 focus:ring-accent;
+    @apply !bg-surface-2 !border !border-border !text-foreground placeholder:!text-text-secondary focus:ring-1 focus:ring-accent;
   }
   
   /* Text styles */
@@ -188,7 +194,7 @@
   
   /* Image containers */
   .trivara-image {
-    @apply rounded-lg overflow-hidden bg-surface-0 border border-border;
+    @apply rounded-lg overflow-hidden !bg-surface-0 !border !border-border;
   }
 
   /* Search bar styling */
