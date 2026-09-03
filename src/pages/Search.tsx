@@ -1,7 +1,7 @@
 import { useState, useEffect, useMemo, useCallback } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
-import { SlidersHorizontal, Map, List, X, Search as SearchIcon, Loader2, Crown } from 'lucide-react';
+import { SlidersHorizontal, Map, List, X, Search as SearchIcon, Loader2, Crown, Calendar as CalendarIcon } from 'lucide-react';
 import { Header } from '@/components/layout/Header';
 import { SearchBar } from '@/components/search/SearchBar';
 import { ListingGrid } from '@/components/listings/ListingGrid';
@@ -13,6 +13,10 @@ import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from '@/co
 import { Slider } from '@/components/ui/slider';
 import { Checkbox } from '@/components/ui/checkbox';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar as CalendarComponent } from '@/components/ui/calendar';
+import { CounterInput } from '@/components/ui/CounterInput';
+import { format, addDays } from 'date-fns';
 import { SearchFilters, SearchResult, CancellationPolicy, PropertyType, Listing, SearchSort } from '@/types';
 import { formatINR } from '@/lib/utils';
 import { amenitiesList, accessibilityList } from '@/data/amenities';
@@ -35,6 +39,12 @@ export default function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
   const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
   const [showFilters, setShowFilters] = useState(false);
+  // The URL only ever stores a combined `guests` total (no adults/children
+  // split), so on first load we can only best-effort restore it as all
+  // adults - same limitation the old hero search bar's guest picker had.
+  const [adults, setAdults] = useState(() => parseInt(searchParams.get('guests') || '1') || 1);
+  const [children, setChildren] = useState(0);
+  const [infants, setInfants] = useState(() => parseInt(searchParams.get('infants') || '0') || 0);
 
   // Sync state from URL
   const getParam = useCallback((key: string) => searchParams.get(key), [searchParams]);
@@ -150,6 +160,9 @@ export default function Search() {
 
   const clearFilters = () => {
     setSearchParams(new URLSearchParams());
+    setAdults(1);
+    setChildren(0);
+    setInfants(0);
   };
 
   const activeFilterCount = [
@@ -158,6 +171,8 @@ export default function Search() {
     selectedAmenities.length > 0,
     minRating > 0,
     selectedCancellationPolicies.length > 0,
+    !!filters.checkIn && !!filters.checkOut,
+    adults > 1 || children > 0 || infants > 0,
   ].filter(Boolean).length;
 
   const propertyTypeOptions: { value: PropertyType; label: string }[] = [
@@ -254,7 +269,120 @@ export default function Search() {
                   </SheetHeader>
 
                   <div className="space-y-8">
-                    {/* Flexible dates - only meaningful once exact dates are picked in the search bar */}
+                    {/* Dates */}
+                    <div>
+                      <h4 className="font-medium mb-4">Dates</h4>
+                      <div className="grid grid-cols-2 gap-2">
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" className="justify-start gap-2 font-normal">
+                              <CalendarIcon className="h-4 w-4 text-text-secondary" />
+                              {filters.checkIn ? format(filters.checkIn, 'MMM d') : 'Check in'}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
+                            <CalendarComponent
+                              mode="single"
+                              selected={filters.checkIn}
+                              onSelect={(date) => {
+                                const updates: Record<string, string | null> = {
+                                  checkIn: date ? date.toISOString() : null,
+                                };
+                                if (date && (!filters.checkOut || filters.checkOut <= date)) {
+                                  updates.checkOut = addDays(date, 1).toISOString();
+                                }
+                                updateFilters(updates);
+                              }}
+                              disabled={(date) => date < new Date()}
+                              initialFocus
+                              className="pointer-events-auto"
+                            />
+                          </PopoverContent>
+                        </Popover>
+                        <Popover>
+                          <PopoverTrigger asChild>
+                            <Button variant="outline" className="justify-start gap-2 font-normal">
+                              <CalendarIcon className="h-4 w-4 text-text-secondary" />
+                              {filters.checkOut ? format(filters.checkOut, 'MMM d') : 'Check out'}
+                            </Button>
+                          </PopoverTrigger>
+                          <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
+                            <CalendarComponent
+                              mode="single"
+                              selected={filters.checkOut}
+                              onSelect={(date) => updateFilters({ checkOut: date ? date.toISOString() : null })}
+                              disabled={(date) => date < (filters.checkIn || new Date())}
+                              initialFocus
+                              className="pointer-events-auto"
+                            />
+                          </PopoverContent>
+                        </Popover>
+                      </div>
+                      {filters.checkIn && (
+                        <Button
+                          variant="ghost"
+                          size="sm"
+                          className="mt-2 text-text-secondary hover:text-foreground -ml-3"
+                          onClick={() => updateFilters({ checkIn: null, checkOut: null, flexibleDays: null })}
+                        >
+                          Clear dates
+                        </Button>
+                      )}
+                    </div>
+
+                    {/* Guests */}
+                    <div>
+                      <h4 className="font-medium mb-4">Guests</h4>
+                      <div className="space-y-4">
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium">Adults</p>
+                            <p className="text-xs text-text-meta">Ages 13+</p>
+                          </div>
+                          <CounterInput
+                            value={adults}
+                            onChange={(value) => {
+                              setAdults(value);
+                              updateFilter('guests', (value + children).toString());
+                            }}
+                            min={1}
+                            max={16}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium">Children</p>
+                            <p className="text-xs text-text-meta">Ages 2-12</p>
+                          </div>
+                          <CounterInput
+                            value={children}
+                            onChange={(value) => {
+                              setChildren(value);
+                              updateFilter('guests', (adults + value).toString());
+                            }}
+                            min={0}
+                            max={16}
+                          />
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <div>
+                            <p className="text-sm font-medium">Infants</p>
+                            <p className="text-xs text-text-meta">Under 2</p>
+                          </div>
+                          <CounterInput
+                            value={infants}
+                            onChange={(value) => {
+                              setInfants(value);
+                              updateFilter('infants', value > 0 ? value.toString() : null);
+                            }}
+                            min={0}
+                            max={5}
+                          />
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Flexible dates - only meaningful once exact dates are picked */}
                     {filters.checkIn && filters.checkOut && (
                       <div>
                         <h4 className="font-medium mb-4">Dates</h4>
