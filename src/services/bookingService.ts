@@ -6,6 +6,7 @@ import { supabase } from '../lib/supabase';
 import { toDateOnly } from '../lib/utils';
 import { mapBooking, BookingRow } from '../lib/mappers';
 import { getErrorMessage } from '../lib/errors';
+import { discountService } from './discountService';
 
 interface RazorpayOrder {
   id: string;
@@ -154,6 +155,16 @@ class BookingService {
       // approve_booking_request(); an Instant Book listing goes straight to
       // 'pending_payment' so the caller can open Razorpay checkout right
       // after this returns, same as before.
+      // Non-stackable: at most one discount, the single best match, applied
+      // server-side by find_best_discount() so the amount can't be spoofed
+      // by the client - this call just surfaces what it already decided.
+      let discount: Awaited<ReturnType<typeof discountService.findBest>> = null;
+      try {
+        discount = await discountService.findBest(guestId, listingId, pricing.total, pricing.nights);
+      } catch (discountError) {
+        console.error('find_best_discount failed, booking without a discount:', discountError);
+      }
+
       const requiresApproval = !listing.instantBook;
       const bookingPayload: Record<string, unknown> = {
         listing_id: listingId,
@@ -162,7 +173,10 @@ class BookingService {
         start_date: toDateOnly(checkIn),
         end_date: toDateOnly(checkOut),
         guests,
-        total_price: pricing.total,
+        total_price: discount ? pricing.total - discount.amount : pricing.total,
+        discount_rule_id: discount?.rule_id ?? null,
+        discount_amount: discount?.amount ?? 0,
+        discount_name: discount?.name ?? null,
         status: requiresApproval ? 'pending' : 'pending_payment',
         payment_status: 'pending',
       };

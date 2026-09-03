@@ -12,8 +12,11 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/lib/errors';
-import { Loader2, Save, ShieldCheck, Mail, CreditCard, Star, Trash2, Search as SearchIcon } from 'lucide-react';
+import { Loader2, Save, ShieldCheck, Mail, CreditCard, Users, Tag, Trash2, Plus, Power, Percent, Star, Search as SearchIcon } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
+import { adminAccessService } from '@/services/adminAccessService';
+import { discountService, DiscountRule, DiscountRuleType, DiscountValueType } from '@/services/discountService';
+import { commissionService, CommissionTier, OverrideScope } from '@/services/commissionService';
 import { listingService } from '@/services/listingService';
 import { Listing } from '@/types';
 // NOTE: this page used to also gate on isAdminEmail(user.email) (a hardcoded-
@@ -185,6 +188,427 @@ function FeaturedTab() {
     );
 }
 
+function CommissionTab() {
+    const { toast } = useToast();
+    const queryClient = useQueryClient();
+    const [tiers, setTiers] = useState<CommissionTier[] | null>(null);
+    const [overrideScope, setOverrideScope] = useState<OverrideScope>('host');
+    const [overrideKey, setOverrideKey] = useState('');
+    const [overrideRate, setOverrideRate] = useState('');
+
+    const tiersQuery = useQuery({ queryKey: ['commission-tiers'], queryFn: () => commissionService.getTiers() });
+    const overridesQuery = useQuery({ queryKey: ['commission-overrides'], queryFn: () => commissionService.getOverrides() });
+
+    useEffect(() => {
+        if (tiersQuery.data) setTiers(tiersQuery.data);
+    }, [tiersQuery.data]);
+
+    const saveTiersMutation = useMutation({
+        mutationFn: () => commissionService.saveTiers(tiers || []),
+        onSuccess: () => toast({ title: 'Commission tiers saved' }),
+        onError: (error) => toast({ title: 'Error', description: getErrorMessage(error, 'Could not save tiers.'), variant: 'destructive' }),
+    });
+
+    const addOverrideMutation = useMutation({
+        mutationFn: async () => {
+            const rate = Number(overrideRate);
+            if (!Number.isFinite(rate) || rate < 0 || rate > 100) {
+                throw new Error('Enter a commission rate between 0 and 100.');
+            }
+            const scopeId = overrideScope === 'host'
+                ? await commissionService.findHostIdByEmail(overrideKey.trim())
+                : await commissionService.findListingIdByTitle(overrideKey.trim());
+            if (!scopeId) {
+                throw new Error(overrideScope === 'host' ? 'No host found with that email.' : 'No listing found with that title.');
+            }
+            await commissionService.setOverride(overrideScope, scopeId, rate);
+        },
+        onSuccess: () => {
+            toast({ title: 'Override saved' });
+            setOverrideKey('');
+            setOverrideRate('');
+            queryClient.invalidateQueries({ queryKey: ['commission-overrides'] });
+        },
+        onError: (error) => toast({ title: 'Error', description: getErrorMessage(error, 'Could not save override.'), variant: 'destructive' }),
+    });
+
+    const removeOverrideMutation = useMutation({
+        mutationFn: (id: string) => commissionService.removeOverride(id),
+        onSuccess: () => {
+            toast({ title: 'Override removed' });
+            queryClient.invalidateQueries({ queryKey: ['commission-overrides'] });
+        },
+        onError: (error) => toast({ title: 'Error', description: getErrorMessage(error, 'Could not remove override.'), variant: 'destructive' }),
+    });
+
+    return (
+        <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>Default revenue tiers</CardTitle>
+                    <CardDescription>
+                        A host's commission defaults to whichever tier their trailing 30-day revenue reaches, unless a
+                        host or property override below applies.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {tiersQuery.isLoading && <Loader2 className="h-5 w-5 animate-spin text-accent" />}
+                    {tiers?.map((tier, idx) => (
+                        <div key={tier.tier_order} className="grid grid-cols-3 gap-4 items-end">
+                            <div className="text-sm font-medium pb-2">Tier {tier.tier_order}</div>
+                            <div>
+                                <Label>Min. monthly revenue (₹)</Label>
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    value={tier.min_monthly_revenue}
+                                    onChange={(e) => setTiers(prev => prev!.map((t, i) => i === idx ? { ...t, min_monthly_revenue: Number(e.target.value) } : t))}
+                                />
+                            </div>
+                            <div>
+                                <Label>Commission rate (%)</Label>
+                                <Input
+                                    type="number"
+                                    min="0"
+                                    max="100"
+                                    value={tier.commission_rate}
+                                    onChange={(e) => setTiers(prev => prev!.map((t, i) => i === idx ? { ...t, commission_rate: Number(e.target.value) } : t))}
+                                />
+                            </div>
+                        </div>
+                    ))}
+                    <Button onClick={() => saveTiersMutation.mutate()} disabled={saveTiersMutation.isPending || !tiers} className="gap-2">
+                        {saveTiersMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                        Save tiers
+                    </Button>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Overrides</CardTitle>
+                    <CardDescription>Set a fixed commission rate for a specific host or property, overriding the tiers above.</CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div className="flex flex-wrap gap-2 items-end">
+                        <div>
+                            <Label>Scope</Label>
+                            <select
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                value={overrideScope}
+                                onChange={(e) => setOverrideScope(e.target.value as OverrideScope)}
+                            >
+                                <option value="host">Host (by email)</option>
+                                <option value="property">Property (by listing title)</option>
+                            </select>
+                        </div>
+                        <div className="flex-1 min-w-[200px]">
+                            <Label>{overrideScope === 'host' ? 'Host email' : 'Listing title'}</Label>
+                            <Input value={overrideKey} onChange={(e) => setOverrideKey(e.target.value)} />
+                        </div>
+                        <div className="w-32">
+                            <Label>Rate (%)</Label>
+                            <Input type="number" min="0" max="100" value={overrideRate} onChange={(e) => setOverrideRate(e.target.value)} />
+                        </div>
+                        <Button
+                            onClick={() => addOverrideMutation.mutate()}
+                            disabled={!overrideKey.trim() || !overrideRate.trim() || addOverrideMutation.isPending}
+                            className="gap-2"
+                        >
+                            {addOverrideMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                            Set override
+                        </Button>
+                    </div>
+
+                    <div className="space-y-2">
+                        {overridesQuery.data?.map((o) => (
+                            <div key={o.id} className="flex items-center justify-between border rounded-md px-4 py-2 text-sm">
+                                <span>{o.scope_type === 'host' ? 'Host' : 'Property'} {o.scope_id} — {o.commission_rate}%</span>
+                                <Button variant="ghost" size="sm" onClick={() => removeOverrideMutation.mutate(o.id)} className="text-destructive gap-2">
+                                    <Trash2 className="h-4 w-4" /> Remove
+                                </Button>
+                            </div>
+                        ))}
+                    </div>
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
+function ManageAdminsTab() {
+    const { toast } = useToast();
+    const queryClient = useQueryClient();
+    const [email, setEmail] = useState('');
+
+    const opsAdminsQuery = useQuery({
+        queryKey: ['ops-admins'],
+        queryFn: () => adminAccessService.listOpsAdmins(),
+    });
+
+    const grantMutation = useMutation({
+        mutationFn: (e: string) => adminAccessService.grant(e),
+        onSuccess: () => {
+            toast({ title: 'Access granted', description: `${email} can now approve payouts and view platform stats.` });
+            setEmail('');
+            queryClient.invalidateQueries({ queryKey: ['ops-admins'] });
+        },
+        onError: (error) => toast({ title: 'Error', description: getErrorMessage(error, 'Could not grant access.'), variant: 'destructive' }),
+    });
+
+    const revokeMutation = useMutation({
+        mutationFn: (e: string) => adminAccessService.revoke(e),
+        onSuccess: () => {
+            toast({ title: 'Access revoked' });
+            queryClient.invalidateQueries({ queryKey: ['ops-admins'] });
+        },
+        onError: (error) => toast({ title: 'Error', description: getErrorMessage(error, 'Could not revoke access.'), variant: 'destructive' }),
+    });
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Delegated admins</CardTitle>
+                <CardDescription>
+                    Grant an email platform stats, live activity, payout approve/reject/request-on-behalf, and refunds —
+                    without full admin access (commission, offers, and admin management stay main-admin only).
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+                <div className="flex gap-2">
+                    <Input
+                        type="email"
+                        placeholder="teammate@trivara.com"
+                        value={email}
+                        onChange={(e) => setEmail(e.target.value)}
+                    />
+                    <Button
+                        onClick={() => grantMutation.mutate(email)}
+                        disabled={!email.trim() || grantMutation.isPending}
+                        className="gap-2 whitespace-nowrap"
+                    >
+                        {grantMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                        Grant access
+                    </Button>
+                </div>
+
+                {opsAdminsQuery.isLoading && <Loader2 className="h-5 w-5 animate-spin text-accent" />}
+
+                {opsAdminsQuery.data && opsAdminsQuery.data.length === 0 && (
+                    <p className="text-sm text-muted-foreground">No delegated admins yet.</p>
+                )}
+
+                <div className="space-y-2">
+                    {opsAdminsQuery.data?.map((profile) => (
+                        <div key={profile.id} className="flex items-center justify-between border rounded-md px-4 py-3">
+                            <div>
+                                <p className="font-medium">{profile.full_name || profile.email}</p>
+                                <p className="text-sm text-muted-foreground">{profile.email}</p>
+                            </div>
+                            <Button
+                                variant="outline"
+                                size="sm"
+                                className="gap-2 text-destructive hover:text-destructive"
+                                onClick={() => revokeMutation.mutate(profile.email)}
+                                disabled={revokeMutation.isPending}
+                            >
+                                <Trash2 className="h-4 w-4" />
+                                Revoke
+                            </Button>
+                        </div>
+                    ))}
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
+const RULE_TYPE_LABELS: Record<DiscountRuleType, string> = {
+    first_time_user: 'First-time user',
+    area: 'Area',
+    combo: 'Combo',
+};
+
+function OffersTab() {
+    const { toast } = useToast();
+    const queryClient = useQueryClient();
+
+    const [name, setName] = useState('');
+    const [ruleType, setRuleType] = useState<DiscountRuleType>('first_time_user');
+    const [locationContains, setLocationContains] = useState('');
+    const [listingIdsCsv, setListingIdsCsv] = useState('');
+    const [minNights, setMinNights] = useState('');
+    const [discountType, setDiscountType] = useState<DiscountValueType>('percentage');
+    const [discountValue, setDiscountValue] = useState('');
+
+    const rulesQuery = useQuery({ queryKey: ['discount-rules'], queryFn: () => discountService.list() });
+
+    const invalidate = () => queryClient.invalidateQueries({ queryKey: ['discount-rules'] });
+
+    const createMutation = useMutation({
+        mutationFn: async () => {
+            const value = Number(discountValue);
+            if (!Number.isFinite(value) || value <= 0) throw new Error('Enter a discount value greater than 0.');
+
+            const conditions: Record<string, unknown> = {};
+            if (ruleType === 'area') {
+                if (!locationContains.trim()) throw new Error('Enter the area to match.');
+                conditions.location_contains = locationContains.trim();
+            } else if (ruleType === 'combo') {
+                if (listingIdsCsv.trim()) conditions.listing_ids = listingIdsCsv.split(',').map(s => s.trim()).filter(Boolean);
+                if (minNights.trim()) conditions.min_nights = Number(minNights);
+                if (!conditions.listing_ids && !conditions.min_nights) {
+                    throw new Error('Enter listing IDs and/or a minimum nights condition for a combo rule.');
+                }
+            }
+
+            await discountService.create({
+                name,
+                rule_type: ruleType,
+                conditions,
+                discount_type: discountType,
+                discount_value: value,
+                active_from: null,
+                active_until: null,
+                is_active: true,
+            });
+        },
+        onSuccess: () => {
+            toast({ title: 'Offer created' });
+            setName('');
+            setLocationContains('');
+            setListingIdsCsv('');
+            setMinNights('');
+            setDiscountValue('');
+            invalidate();
+        },
+        onError: (error) => toast({ title: 'Error', description: getErrorMessage(error, 'Could not create offer.'), variant: 'destructive' }),
+    });
+
+    const toggleMutation = useMutation({
+        mutationFn: (rule: DiscountRule) => discountService.setActive(rule.id, !rule.is_active),
+        onSuccess: invalidate,
+        onError: (error) => toast({ title: 'Error', description: getErrorMessage(error, 'Could not update offer.'), variant: 'destructive' }),
+    });
+
+    const removeMutation = useMutation({
+        mutationFn: (id: string) => discountService.remove(id),
+        onSuccess: invalidate,
+        onError: (error) => toast({ title: 'Error', description: getErrorMessage(error, 'Could not remove offer.'), variant: 'destructive' }),
+    });
+
+    return (
+        <div className="space-y-6">
+            <Card>
+                <CardHeader>
+                    <CardTitle>New offer</CardTitle>
+                    <CardDescription>
+                        Only the single largest matching offer applies to a booking - offers never stack.
+                    </CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    <div>
+                        <Label>Name</Label>
+                        <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Welcome discount" />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-4">
+                        <div>
+                            <Label>Applies to</Label>
+                            <select
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                value={ruleType}
+                                onChange={(e) => setRuleType(e.target.value as DiscountRuleType)}
+                            >
+                                {Object.entries(RULE_TYPE_LABELS).map(([value, label]) => (
+                                    <option key={value} value={value}>{label}</option>
+                                ))}
+                            </select>
+                        </div>
+                        <div>
+                            <Label>Discount type</Label>
+                            <select
+                                className="flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                                value={discountType}
+                                onChange={(e) => setDiscountType(e.target.value as DiscountValueType)}
+                            >
+                                <option value="percentage">Percentage</option>
+                                <option value="flat_amount">Flat amount (₹)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    {ruleType === 'area' && (
+                        <div>
+                            <Label>Area (matches listing location)</Label>
+                            <Input value={locationContains} onChange={(e) => setLocationContains(e.target.value)} placeholder="e.g. Goa" />
+                        </div>
+                    )}
+
+                    {ruleType === 'combo' && (
+                        <div className="grid grid-cols-2 gap-4">
+                            <div>
+                                <Label>Listing IDs (comma-separated, optional)</Label>
+                                <Input value={listingIdsCsv} onChange={(e) => setListingIdsCsv(e.target.value)} placeholder="uuid, uuid" />
+                            </div>
+                            <div>
+                                <Label>Minimum nights (optional)</Label>
+                                <Input type="number" min="1" value={minNights} onChange={(e) => setMinNights(e.target.value)} />
+                            </div>
+                        </div>
+                    )}
+
+                    <div>
+                        <Label>{discountType === 'percentage' ? 'Percentage off' : 'Amount off (₹)'}</Label>
+                        <Input type="number" min="0" value={discountValue} onChange={(e) => setDiscountValue(e.target.value)} />
+                    </div>
+
+                    <Button
+                        onClick={() => createMutation.mutate()}
+                        disabled={!name.trim() || !discountValue.trim() || createMutation.isPending}
+                        className="gap-2"
+                    >
+                        {createMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Plus className="h-4 w-4" />}
+                        Create offer
+                    </Button>
+                </CardContent>
+            </Card>
+
+            <Card>
+                <CardHeader>
+                    <CardTitle>Existing offers</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-2">
+                    {rulesQuery.isLoading && <Loader2 className="h-5 w-5 animate-spin text-accent" />}
+                    {rulesQuery.data?.length === 0 && <p className="text-sm text-muted-foreground">No offers yet.</p>}
+                    {rulesQuery.data?.map((rule) => (
+                        <div key={rule.id} className="flex items-center justify-between border rounded-md px-4 py-3">
+                            <div>
+                                <p className="font-medium flex items-center gap-2">
+                                    {rule.name}
+                                    {!rule.is_active && <span className="text-xs text-muted-foreground">(inactive)</span>}
+                                </p>
+                                <p className="text-sm text-muted-foreground">
+                                    {RULE_TYPE_LABELS[rule.rule_type]} &middot; {rule.discount_type === 'percentage' ? `${rule.discount_value}%` : `₹${rule.discount_value}`} off
+                                </p>
+                            </div>
+                            <div className="flex gap-2">
+                                <Button variant="outline" size="sm" className="gap-2" onClick={() => toggleMutation.mutate(rule)}>
+                                    <Power className="h-4 w-4" />
+                                    {rule.is_active ? 'Deactivate' : 'Activate'}
+                                </Button>
+                                <Button variant="ghost" size="sm" className="text-destructive gap-2" onClick={() => removeMutation.mutate(rule.id)}>
+                                    <Trash2 className="h-4 w-4" /> Remove
+                                </Button>
+                            </div>
+                        </div>
+                    ))}
+                </CardContent>
+            </Card>
+        </div>
+    );
+}
+
 export default function AdminSettings() {
     const { user, loading: authLoading } = useAuth();
     const navigate = useNavigate();
@@ -343,7 +767,7 @@ export default function AdminSettings() {
                 </div>
 
                 <Tabs defaultValue="razorpay" className="space-y-6">
-                    <TabsList className="grid w-full grid-cols-3">
+                    <TabsList className="grid w-full grid-cols-6">
                         <TabsTrigger value="razorpay" className="flex items-center gap-2">
                             <CreditCard className="h-4 w-4" /> Razorpay
                         </TabsTrigger>
@@ -352,6 +776,15 @@ export default function AdminSettings() {
                         </TabsTrigger>
                         <TabsTrigger value="featured" className="flex items-center gap-2">
                             <Star className="h-4 w-4" /> Featured
+                        </TabsTrigger>
+                        <TabsTrigger value="commission" className="flex items-center gap-2">
+                            <Percent className="h-4 w-4" /> Commission
+                        </TabsTrigger>
+                        <TabsTrigger value="offers" className="flex items-center gap-2">
+                            <Tag className="h-4 w-4" /> Offers
+                        </TabsTrigger>
+                        <TabsTrigger value="admins" className="flex items-center gap-2">
+                            <Users className="h-4 w-4" /> Admins
                         </TabsTrigger>
                     </TabsList>
 
@@ -405,6 +838,18 @@ export default function AdminSettings() {
 
                     <TabsContent value="featured">
                         <FeaturedTab />
+                    </TabsContent>
+
+                    <TabsContent value="commission">
+                        <CommissionTab />
+                    </TabsContent>
+
+                    <TabsContent value="offers">
+                        <OffersTab />
+                    </TabsContent>
+
+                    <TabsContent value="admins">
+                        <ManageAdminsTab />
                     </TabsContent>
                 </Tabs>
             </div>

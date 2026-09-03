@@ -18,19 +18,33 @@ rejections and booking completions/cancellations), `00000000000005_messaging_and
 (host-guest `conversations`/`messages` + per-category review ratings),
 `00000000000006_booking_requests_pricing_and_settings.sql` (Instant Book vs.
 Request to Book, host-managed blackout dates + per-date price overrides,
-notification preferences, and an abandoned-booking cleanup job), and
+notification preferences, and an abandoned-booking cleanup job),
 `00000000000007_avatars_bucket.sql` (the `avatars` storage bucket for Account
-Settings) build on top of it. `00000000000012_home_curation.sql` adds a
-capped, admin-curated `is_featured` flag on listings (cap stored in
-`app_settings.featured_stays_max_slots`, default 25) and a
+Settings), `00000000000008_host_applications.sql` (the host application/
+verification-document flow — `host_applications` table, the private
+`host-verification-docs` bucket, `approve_host_application()`/
+`reject_host_application()` RPCs, and a `trigger_require_approved_host`
+trigger that replaces `promote_host_on_publish()`: publishing a listing no
+longer grants host status, it now requires an already-approved application),
+`00000000000009_ops_admin_role.sql` (a delegated `ops_admin` profile role,
+granted/revoked by the main admin, with a fixed bundle of read + payout/
+refund RPC access narrower than full admin — see the file header for
+exactly what's included), `00000000000010_commission_engine.sql` (replaces
+the hardcoded 18% platform fee with a configurable one: 3 default global
+tiers keyed by a host's trailing 30-day revenue, admin-set thresholds and
+rates, overridable per host or per property), `00000000000011_offers_discounts.sql`
+(an admin-managed `discount_rules` table + `find_best_discount()`
+resolver), and `00000000000012_home_curation.sql` (a capped, admin-curated
+`is_featured` flag on listings, cap stored in
+`app_settings.featured_stays_max_slots`, default 25, plus a
 `listing_booking_counts()` aggregate used to rank "Popular stays" by actual
-bookings and to pick each destination's most-booked photo. **To stand up a
-brand new project from zero** — e.g. after a project is deleted — run every
-migration file in this directory, in filename order, in the new project's
-SQL editor; nothing else needs to be created by hand in the database.
-Razorpay/SMTP config still needs to be entered through the Admin Settings
-page (or `update_app_setting`) afterward — the baseline only seeds disabled,
-blank placeholder rows for those.
+bookings and pick each destination's most-booked photo) build on top of it.
+**To stand up a brand new project from zero** — e.g. after a project is
+deleted — run every migration file in this directory, in filename order,
+in the new project's SQL editor; nothing else needs to be created by hand
+in the database. Razorpay/SMTP config still needs to be entered through
+the Admin Settings page (or `update_app_setting`) afterward — the baseline
+only seeds disabled, blank placeholder rows for those.
 
 Every other `*.sql` file in this repo — now moved into `deprecated/` and
 `deprecated/migrations/` — is **historical and superseded**. They are kept

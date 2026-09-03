@@ -21,6 +21,7 @@ const Saved = lazy(() => import("./pages/Saved"));
 const Account = lazy(() => import("./pages/Account"));
 const Login = lazy(() => import("./pages/Login"));
 const BecomeHost = lazy(() => import("./pages/host/BecomeHost"));
+const HostApplication = lazy(() => import("./pages/host/HostApplication"));
 const HostDashboard = lazy(() => import("./pages/host/HostDashboard"));
 const CreateListing = lazy(() => import("./pages/host/CreateListing"));
 const HostEarnings = lazy(() => import("./pages/host/HostEarnings"));
@@ -30,6 +31,7 @@ const AccountSettings = lazy(() => import("./pages/AccountSettings"));
 const NotificationSettings = lazy(() => import("./pages/NotificationSettings"));
 const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
+const AdminHostApplications = lazy(() => import("./pages/admin/HostApplications"));
 const NotFound = lazy(() => import("./pages/NotFound"));
 const AboutPage = lazy(() => import("./pages/info/InfoPage").then(m => ({ default: m.AboutPage })));
 const CareersPage = lazy(() => import("./pages/info/InfoPage").then(m => ({ default: m.CareersPage })));
@@ -70,28 +72,33 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/host" element={<BecomeHost />} />
-            <Route path="/host/dashboard" element={
+            <Route path="/host/apply" element={
               <ProtectedRoute>
+                <HostApplication />
+              </ProtectedRoute>
+            } />
+            <Route path="/host/dashboard" element={
+              <ProtectedRoute requiredRole="host">
                 <HostDashboard />
               </ProtectedRoute>
             } />
             <Route path="/host/listings/new" element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole="host">
                 <CreateListing />
               </ProtectedRoute>
             } />
             <Route path="/host/listings/:id/edit" element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole="host">
                 <CreateListing />
               </ProtectedRoute>
             } />
             <Route path="/host/earnings" element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole="host">
                 <HostEarnings />
               </ProtectedRoute>
             } />
             <Route path="/host/listings/:id/calendar" element={
-              <ProtectedRoute>
+              <ProtectedRoute requiredRole="host">
                 <ListingCalendar />
               </ProtectedRoute>
             } />
@@ -140,11 +147,14 @@ const App = () => (
                 dashboard rather than letting it fall through to the catch-all
                 NotFound route, since that's the URL people naturally try. */}
             <Route path="/admin" element={<Navigate to="/admin/dashboard" replace />} />
-            <Route path="/admin/dashboard" element={<ProtectedRoute requiredRole="admin">
+            <Route path="/admin/dashboard" element={<ProtectedRoute allowRoles={['admin', 'ops_admin']}>
               <AdminDashboard />
             </ProtectedRoute>} />
             <Route path="/admin/dashboard/settings" element={<ProtectedRoute requiredRole="admin">
               <AdminSettings />
+            </ProtectedRoute>} />
+            <Route path="/admin/host-applications" element={<ProtectedRoute requiredRole="admin">
+              <AdminHostApplications />
             </ProtectedRoute>} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
