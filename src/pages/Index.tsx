@@ -53,6 +53,9 @@ export default function Index() {
       <section className="relative py-16 md:py-24 lg:py-32">
         <div className="container">
           <div className="max-w-3xl mx-auto text-center mb-10">
+            <p className="font-script text-2xl text-accent mb-1 animate-fade-in">
+              wander well
+            </p>
             <h1 className="mb-4 animate-fade-in">
               Find your place
             </h1>
@@ -118,12 +121,18 @@ export default function Index() {
       {/* Become a Host CTA */}
       <section className="py-20 bg-surface-0">
         <div className="container">
-          <div className="max-w-3xl mx-auto text-center">
-            <h2 className="text-3xl md:text-4xl font-display font-medium mb-4">
+          <div className="max-w-3xl mx-auto text-center relative">
+            <span className="inline-block font-morderline text-[10px] tracking-wide bg-accent text-accent-foreground px-3 py-1 rounded-full mb-4">
+              share &amp; earn
+            </span>
+            <h2 className="text-3xl md:text-4xl font-pillar font-bold uppercase tracking-wide mb-4">
               Share your space
             </h2>
-            <p className="text-text-secondary mb-8 text-lg">
+            <p className="text-text-secondary mb-2 text-lg">
               Join hosts who earn by sharing their homes with travelers worldwide
+            </p>
+            <p className="font-bastliga text-2xl text-primary mb-8">
+              your home, your rules
             </p>
             <Link to="/host">
               <Button className="trivara-btn-primary px-8 py-6 text-base">

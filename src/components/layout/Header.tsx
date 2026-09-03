@@ -71,14 +71,31 @@ export function Header({ variant = 'default' }: HeaderProps) {
         {/* Right Side */}
         <div className="flex items-center gap-4">
           {/* Desktop Search */}
-          <Button 
-            variant="ghost" 
+          <Button
+            variant="ghost"
             size="icon"
             className="hidden md:flex hover:bg-surface-2"
             onClick={() => navigate('/search')}
           >
             <Search className="h-5 w-5" />
           </Button>
+
+          {/* Desktop Messages */}
+          {user && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="relative hidden md:flex hover:bg-surface-2"
+              onClick={() => navigate('/messages')}
+            >
+              <MessageCircle className="h-5 w-5" />
+              {unreadMessages > 0 && (
+                <span className="absolute -top-1 -right-1 h-4 min-w-4 px-1 rounded-full bg-accent text-accent-foreground text-[10px] font-morderline flex items-center justify-center">
+                  {unreadMessages}
+                </span>
+              )}
+            </Button>
+          )}
 
           {/* User Menu */}
           <DropdownMenu>
