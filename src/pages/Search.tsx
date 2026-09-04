@@ -1,10 +1,9 @@
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
-import { SlidersHorizontal, Map, List, X, Search as SearchIcon, Loader2, Crown } from 'lucide-react';
+import { SlidersHorizontal, X, Search as SearchIcon, Loader2, Crown } from 'lucide-react';
 import { SearchBar } from '@/components/search/SearchBar';
 import { GuestCounts } from '@/components/search/DateGuestsFields';
-import { ListingGrid } from '@/components/listings/ListingGrid';
 import { ListingCard } from '@/components/listings/ListingCard';
 import { ListingsMap } from '@/components/search/ListingsMap';
 import { listingService } from '@/services/listingService';
@@ -34,8 +33,9 @@ const CarouselSkeleton = () => (
 
 export default function Search() {
   const [searchParams, setSearchParams] = useSearchParams();
-  const [viewMode, setViewMode] = useState<'grid' | 'map'>('grid');
   const [showFilters, setShowFilters] = useState(false);
+  const [highlightedListingId, setHighlightedListingId] = useState<string | null>(null);
+  const listingRowRefs = useRef<Record<string, HTMLDivElement | null>>({});
   // The URL only ever stores a combined `guests` total (no adults/children
   // split), so on first load we can only best-effort restore it as all
   // adults - same limitation the old hero search bar's guest picker had.
@@ -239,28 +239,6 @@ export default function Search() {
                   <SelectItem value="newest">Newest</SelectItem>
                 </SelectContent>
               </Select>
-
-              {/* View Toggle */}
-              <div className="hidden md:flex items-center gap-1 bg-surface-2 rounded-lg p-1">
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={`px-3 hover:bg-surface-3 ${viewMode === 'grid' ? 'bg-surface-0 shadow-sm' : 'text-text-secondary hover:text-foreground'}`}
-                  onClick={() => setViewMode('grid')}
-                >
-                  <List className="h-4 w-4 mr-2" />
-                  Grid
-                </Button>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  className={`px-3 hover:bg-surface-3 ${viewMode === 'map' ? 'bg-surface-0 shadow-sm' : 'text-text-secondary hover:text-foreground'}`}
-                  onClick={() => setViewMode('map')}
-                >
-                  <Map className="h-4 w-4 mr-2" />
-                  Map
-                </Button>
-              </div>
 
               {/* Filters Button */}
               <Sheet open={showFilters} onOpenChange={setShowFilters}>
@@ -546,15 +524,9 @@ export default function Search() {
                 Clear all filters
               </Button>
             </div>
-          ) : viewMode === 'grid' ? (
-            <ListingGrid
-              listings={searchResults.listings}
-              isLoading={loading}
-              emptyMessage="" // Handled by custom empty state above
-            />
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-              {/* Listings Sidebar (Map Mode) */}
+              {/* Listings Sidebar */}
               <div className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto scrollbar-hide pr-2">
                 {loading ? (
                   [1, 2, 3].map((i) => (
@@ -568,7 +540,17 @@ export default function Search() {
                     </div>
                   ))
                 ) : searchResults.listings.map((listing: Listing) => (
-                  <div key={listing.id} className="flex flex-col sm:flex-row gap-4 p-4 rounded-xl border border-transparent hover:border-border hover:bg-surface-1 transition-all group">
+                  <div
+                    key={listing.id}
+                    ref={(el) => { listingRowRefs.current[listing.id] = el; }}
+                    onMouseEnter={() => setHighlightedListingId(listing.id)}
+                    onMouseLeave={() => setHighlightedListingId(null)}
+                    className={`flex flex-col sm:flex-row gap-4 p-4 rounded-xl border transition-all group ${
+                      listing.id === highlightedListingId
+                        ? 'border-foreground bg-surface-1 shadow-sm'
+                        : 'border-transparent hover:border-border hover:bg-surface-1'
+                    }`}
+                  >
                     <div className="w-full sm:w-48 h-48 sm:h-32 rounded-lg overflow-hidden flex-shrink-0 relative">
                       <img
                         src={listing.photos[0]}
@@ -606,7 +588,15 @@ export default function Search() {
                     <Loader2 className="h-6 w-6 animate-spin text-text-secondary" />
                   </div>
                 ) : (
-                  <ListingsMap listings={searchResults.listings} />
+                  <ListingsMap
+                    listings={searchResults.listings}
+                    highlightedListingId={highlightedListingId}
+                    onMarkerHover={setHighlightedListingId}
+                    onMarkerClick={(id) => {
+                      setHighlightedListingId(id);
+                      listingRowRefs.current[id]?.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+                    }}
+                  />
                 )}
               </div>
             </div>
