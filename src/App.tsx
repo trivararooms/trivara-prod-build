@@ -35,16 +35,10 @@ const AdminDashboard = lazy(() => import("./pages/AdminDashboard"));
 const AdminSettings = lazy(() => import("./pages/admin/AdminSettings"));
 const AdminHostApplications = lazy(() => import("./pages/admin/HostApplications"));
 const NotFound = lazy(() => import("./pages/NotFound"));
-const AboutPage = lazy(() => import("./pages/info/InfoPage").then(m => ({ default: m.AboutPage })));
-const CareersPage = lazy(() => import("./pages/info/InfoPage").then(m => ({ default: m.CareersPage })));
-const PressPage = lazy(() => import("./pages/info/InfoPage").then(m => ({ default: m.PressPage })));
 const PrivacyPage = lazy(() => import("./pages/info/InfoPage").then(m => ({ default: m.PrivacyPage })));
 const TermsPage = lazy(() => import("./pages/info/InfoPage").then(m => ({ default: m.TermsPage })));
-const HelpCenterPage = lazy(() => import("./pages/info/InfoPage").then(m => ({ default: m.HelpCenterPage })));
-const SafetyPage = lazy(() => import("./pages/info/InfoPage").then(m => ({ default: m.SafetyPage })));
+const TalkToUsPage = lazy(() => import("./pages/info/InfoPage").then(m => ({ default: m.TalkToUsPage })));
 const CancellationOptionsPage = lazy(() => import("./pages/info/InfoPage").then(m => ({ default: m.CancellationOptionsPage })));
-const ResourcesPage = lazy(() => import("./pages/info/InfoPage").then(m => ({ default: m.ResourcesPage })));
-const CommunityPage = lazy(() => import("./pages/info/InfoPage").then(m => ({ default: m.CommunityPage })));
 const Messages = lazy(() => import("./pages/Messages"));
 const BookingConfirmation = lazy(() => import("./pages/BookingConfirmation"));
 
@@ -129,16 +123,13 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/login" element={<Login />} />
-            <Route path="/about" element={<AboutPage />} />
-            <Route path="/careers" element={<CareersPage />} />
-            <Route path="/press" element={<PressPage />} />
+            {/* About's content now lives at the top of Talk to Us - redirect
+                rather than 404 for anyone with the old URL bookmarked. */}
+            <Route path="/about" element={<Navigate to="/help" replace />} />
             <Route path="/privacy" element={<PrivacyPage />} />
             <Route path="/terms" element={<TermsPage />} />
-            <Route path="/help" element={<HelpCenterPage />} />
-            <Route path="/safety" element={<SafetyPage />} />
+            <Route path="/help" element={<TalkToUsPage />} />
             <Route path="/cancellation-options" element={<CancellationOptionsPage />} />
-            <Route path="/resources" element={<ResourcesPage />} />
-            <Route path="/community" element={<CommunityPage />} />
             <Route path="/messages" element={
               <ProtectedRoute>
                 <Messages />

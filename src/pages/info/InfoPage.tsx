@@ -7,12 +7,11 @@ interface InfoPageProps {
 }
 
 /**
- * Shared shell for the footer's static content pages (About, Careers, Press,
- * Privacy, Terms, Help Center, Safety, Cancellation options, Resources,
- * Community). These used to all be `<Link to="#">` - dead links that did
- * nothing when clicked. Each page below carries real, honest content rather
- * than lorem-ipsum filler: where something genuinely isn't built yet (e.g.
- * a community forum), the page says so instead of pretending otherwise.
+ * Shared shell for the footer's static content pages (Privacy, Terms, Talk
+ * to Us, Cancellation options). Careers/Press/Safety/Resources/Community
+ * were scrapped - they had no real content to offer and nothing linked to
+ * them any more once the footer was trimmed down. About's content now lives
+ * at the top of Talk to Us instead of its own separate page.
  */
 export function InfoPage({ title, subtitle, children }: InfoPageProps) {
   return (
@@ -37,52 +36,6 @@ export function SupportContact() {
       </a>{' '}
       and a real person will get back to you.
     </p>
-  );
-}
-
-export function AboutPage() {
-  return (
-    <InfoPage title="About Trivara" subtitle="Find your place, wherever that is.">
-      <p>
-        Trivara is a marketplace that connects travelers with hosts who have a spare room, a whole
-        home, or something in between. We handle search, booking, and payment so hosts can focus on
-        their space and guests can focus on their trip.
-      </p>
-      <p>
-        We're a small, early-stage team, still building out the product feature by feature -
-        if something feels unfinished, it probably is, and we'd rather be upfront about that than
-        pretend otherwise.
-      </p>
-    </InfoPage>
-  );
-}
-
-export function CareersPage() {
-  return (
-    <InfoPage title="Careers">
-      <p>We're not actively hiring for any open roles right now.</p>
-      <p>
-        If you're excited about travel-tech and want to reach out anyway, email{' '}
-        <a href="mailto:careers@trivara.example" className="text-foreground underline underline-offset-2">
-          careers@trivara.example
-        </a>{' '}
-        and we'll keep your note on file.
-      </p>
-    </InfoPage>
-  );
-}
-
-export function PressPage() {
-  return (
-    <InfoPage title="Press">
-      <p>
-        For press or media inquiries, contact{' '}
-        <a href="mailto:press@trivara.example" className="text-foreground underline underline-offset-2">
-          press@trivara.example
-        </a>
-        . We don't have a press kit published yet.
-      </p>
-    </InfoPage>
   );
 }
 
@@ -147,9 +100,20 @@ export function TermsPage() {
   );
 }
 
-export function HelpCenterPage() {
+export function TalkToUsPage() {
   return (
-    <InfoPage title="Help Center" subtitle="Common questions, and how to reach us.">
+    <InfoPage title="Talk to Us" subtitle="About Trivara, common questions, and how to reach us.">
+      <h2>About Trivara</h2>
+      <p>
+        Trivara is a marketplace that connects travelers with hosts who have a spare room, a whole
+        home, or something in between. We handle search, booking, and payment so hosts can focus on
+        their space and guests can focus on their trip.
+      </p>
+      <p>
+        We're a small, early-stage team, still building out the product feature by feature -
+        if something feels unfinished, it probably is, and we'd rather be upfront about that than
+        pretend otherwise.
+      </p>
       <h2>How do I cancel a booking?</h2>
       <p>
         Guests can cancel from{' '}
@@ -188,31 +152,6 @@ export function HelpCenterPage() {
   );
 }
 
-export function SafetyPage() {
-  return (
-    <InfoPage title="Safety information">
-      <h2>Payments</h2>
-      <p>
-        All payments run through Razorpay's secure checkout. Trivara never sees or stores your card
-        details.
-      </p>
-      <h2>Before you book</h2>
-      <p>
-        Check the listing's reviews, house rules, and cancellation policy. Message the host with any
-        questions before booking if anything is unclear.
-      </p>
-      <h2>Verified hosts</h2>
-      <p>
-        Hosts with a "Verified" badge on their listing have completed identity verification.
-        An unverified host isn't necessarily untrustworthy - it just means verification hasn't
-        happened yet.
-      </p>
-      <h2>Report a problem</h2>
-      <SupportContact />
-    </InfoPage>
-  );
-}
-
 export function CancellationOptionsPage() {
   return (
     <InfoPage title="Cancellation options" subtitle="Every listing uses one of three policies, set by the host.">
@@ -230,58 +169,3 @@ export function CancellationOptionsPage() {
   );
 }
 
-export function ResourcesPage() {
-  return (
-    <InfoPage title="Hosting resources">
-      <h2>Getting started</h2>
-      <p>
-        New to hosting? Start with{' '}
-        <Link to="/host" className="text-foreground underline underline-offset-2">
-          Become a Host
-        </Link>
-        , then create your first listing from the{' '}
-        <Link to="/host/dashboard" className="text-foreground underline underline-offset-2">
-          Host Dashboard
-        </Link>
-        .
-      </p>
-      <h2>Pricing your place</h2>
-      <p>
-        Check what similar listings in your area charge per night before setting your price - you
-        can always adjust it later by editing your listing.
-      </p>
-      <h2>Cancellation policy</h2>
-      <p>
-        Pick flexible, moderate, or strict when you create your listing - see{' '}
-        <Link to="/cancellation-options" className="text-foreground underline underline-offset-2">
-          Cancellation options
-        </Link>{' '}
-        for what each one means for a guest.
-      </p>
-      <h2>Getting paid</h2>
-      <p>
-        Add your bank details under Account →{' '}
-        <Link to="/account/payment-methods" className="text-foreground underline underline-offset-2">
-          Payout account
-        </Link>{' '}
-        so completed bookings can be paid out.
-      </p>
-    </InfoPage>
-  );
-}
-
-export function CommunityPage() {
-  return (
-    <InfoPage title="Community">
-      <p>
-        There isn't a host community forum built yet - this page exists so the footer link isn't
-        dead, not to pretend one does. In the meantime, questions go to{' '}
-        <Link to="/help" className="text-foreground underline underline-offset-2">
-          Help Center
-        </Link>{' '}
-        or directly to support.
-      </p>
-      <SupportContact />
-    </InfoPage>
-  );
-}

@@ -47,9 +47,13 @@
     --destructive: 0 45% 32%;
     --destructive-foreground: 0 0% 98%;
 
-    /* Border - cool indigo line contrasting against warm chestnut fills */
-    --border: 233 32% 42%;
-    --input: 233 28% 38%;
+    /* Border - low-saturation warm neutral, close to the surface tones it
+       sits against, instead of the indigo line this used to be - every
+       bordered element sitewide (cards, inputs, buttons) reads as subtle
+       structure now, not a blue outline. --ring (keyboard focus) stays
+       indigo on purpose - it's an accessibility affordance, not decoration. */
+    --border: 20 10% 24%;
+    --input: 20 10% 22%;
     --ring: 239 50% 58%;
 
     /* Limited availability indicator */
@@ -127,7 +131,8 @@
 }
 
 @layer components {
-  /* Card with a cool indigo border - depth via border + color, chestnut-mock signature.
+  /* Card with a subtle neutral border - depth via border + surface color, not
+     a colored line (see --border in :root above).
      !important since these can be layered onto primitives (Card, Input, etc.) whose
      own base classes are plain Tailwind utilities, which otherwise always win over
      @layer components regardless of source order. */

@@ -6,6 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Switch } from '@/components/ui/switch';
+import { Slider } from '@/components/ui/slider';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
@@ -664,16 +665,30 @@ interface BackgroundImageCardProps {
     queryKey: string;
     getUrl: () => Promise<string | null>;
     upload: (file: File) => Promise<string>;
+    overlayKey: string;
+    defaultOverlay: number;
 }
 
 /** Shared shape for the hero and "Become a Host" background-image uploaders - same bucket, different setting key. */
-function BackgroundImageCard({ title, description, queryKey, getUrl, upload }: BackgroundImageCardProps) {
+function BackgroundImageCard({ title, description, queryKey, getUrl, upload, overlayKey, defaultOverlay }: BackgroundImageCardProps) {
     const { toast } = useToast();
     const queryClient = useQueryClient();
     const fileInputRef = useRef<HTMLInputElement>(null);
     const [uploading, setUploading] = useState(false);
+    const [overlay, setOverlay] = useState<number | null>(null);
 
     const imageQuery = useQuery({ queryKey: [queryKey], queryFn: getUrl });
+    const overlayQuery = useQuery({
+        queryKey: [overlayKey],
+        queryFn: async () => {
+            const raw = await siteSettingsService.getAppSetting(overlayKey);
+            return raw ? parseInt(raw, 10) : defaultOverlay;
+        },
+    });
+
+    useEffect(() => {
+        if (overlayQuery.data !== undefined && overlay === null) setOverlay(overlayQuery.data);
+    }, [overlayQuery.data, overlay]);
 
     const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
         const file = e.target.files?.[0];
@@ -692,6 +707,15 @@ function BackgroundImageCard({ title, description, queryKey, getUrl, upload }: B
         }
     };
 
+    const saveOverlayMutation = useMutation({
+        mutationFn: () => siteSettingsService.setAppSetting(overlayKey, (overlay ?? defaultOverlay).toString()),
+        onSuccess: () => {
+            toast({ title: 'Overlay darkness saved' });
+            queryClient.invalidateQueries({ queryKey: [overlayKey] });
+        },
+        onError: (error) => toast({ title: 'Error', description: getErrorMessage(error, 'Could not save.'), variant: 'destructive' }),
+    });
+
     return (
         <Card>
             <CardHeader>
@@ -707,6 +731,26 @@ function BackgroundImageCard({ title, description, queryKey, getUrl, upload }: B
                     {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
                     {imageQuery.data ? 'Replace image' : 'Upload image'}
                 </Button>
+
+                {imageQuery.data && (
+                    <div className="space-y-2 pt-2">
+                        <Label>Dark overlay ({overlay ?? defaultOverlay}%)</Label>
+                        <p className="text-xs text-text-meta">
+                            How much the text-legibility tint darkens the photo - lower for a brighter image, higher to dim it more.
+                        </p>
+                        <Slider
+                            value={[overlay ?? defaultOverlay]}
+                            onValueChange={(v) => setOverlay(v[0])}
+                            min={0}
+                            max={100}
+                            step={5}
+                        />
+                        <Button size="sm" onClick={() => saveOverlayMutation.mutate()} disabled={saveOverlayMutation.isPending} className="gap-2">
+                            {saveOverlayMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                            Save
+                        </Button>
+                    </div>
+                )}
             </CardContent>
         </Card>
     );
@@ -784,6 +828,8 @@ function BrandingTab() {
                 queryKey="hero-background-image"
                 getUrl={() => siteSettingsService.getHeroBackgroundImageUrl()}
                 upload={(file) => siteSettingsService.uploadHeroBackgroundImage(file)}
+                overlayKey="hero_overlay_opacity"
+                defaultOverlay={65}
             />
 
             <BackgroundImageCard
@@ -792,6 +838,8 @@ function BrandingTab() {
                 queryKey="host-cta-background-image"
                 getUrl={() => siteSettingsService.getHostCtaBackgroundImageUrl()}
                 upload={(file) => siteSettingsService.uploadHostCtaBackgroundImage(file)}
+                overlayKey="host_cta_overlay_opacity"
+                defaultOverlay={80}
             />
 
             <SiteBackgroundCard />

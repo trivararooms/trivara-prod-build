@@ -22,6 +22,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { getErrorMessage } from '@/lib/errors';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { FIXED_COUNTRY, FIXED_STATE, KARNATAKA_CITIES } from '@/data/karnatakaLocations';
+import { geocodeAddress, FALLBACK_COORDINATES } from '@/lib/geocode';
 
 const STEPS = [
   { id: 'type', label: 'Property type', icon: Home },
@@ -361,8 +362,11 @@ export default function CreateListing() {
             state: debouncedFormData.state,
             country: debouncedFormData.country,
             postalCode: debouncedFormData.postalCode,
-            lat: 37.7749, // Needs real geocoding eventually
-            lng: -122.4194,
+            // Draft autosave fires on every debounced keystroke, so it
+            // deliberately doesn't geocode (that only happens once, in
+            // handleSubmit, on an actual publish/update click) - this
+            // placeholder is overwritten with the real coordinates then.
+            ...FALLBACK_COORDINATES,
           },
           photos: validPhotos,
           amenities: debouncedFormData.amenities,
@@ -496,6 +500,18 @@ export default function CreateListing() {
         }
       }
 
+      // Real geocoding, not the SF placeholder - only done here (on an
+      // actual publish/update click), not in the debounced draft autosave
+      // above, so typing in an unrelated field never fires a network
+      // request against Nominatim's rate-limited public API.
+      const coords = (await geocodeAddress({
+        address: formData.address,
+        city: formData.city,
+        state: formData.state,
+        country: formData.country,
+        postalCode: formData.postalCode,
+      })) ?? FALLBACK_COORDINATES;
+
       if (isEditMode && urlId) {
         // UPDATE existing listing
         const updatedListing = await listingService.update(urlId, {
@@ -508,8 +524,8 @@ export default function CreateListing() {
             state: formData.state,
             country: formData.country,
             postalCode: formData.postalCode,
-            lat: 37.7749,
-            lng: -122.4194,
+            lat: coords.lat,
+            lng: coords.lng,
           },
           photos: finalPhotos,
           amenities: formData.amenities,
@@ -547,8 +563,8 @@ export default function CreateListing() {
             state: formData.state,
             country: formData.country,
             postalCode: formData.postalCode,
-            lat: 37.7749,
-            lng: -122.4194,
+            lat: coords.lat,
+            lng: coords.lng,
           },
           photos: finalPhotos,
           amenities: formData.amenities,
