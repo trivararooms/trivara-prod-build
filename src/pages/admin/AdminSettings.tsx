@@ -12,13 +12,14 @@ import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/lib/supabase';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/lib/errors';
-import { Loader2, Save, ShieldCheck, Mail, CreditCard, Users, Tag, Trash2, Plus, Power, Percent, Star, Search as SearchIcon, Image as ImageIcon } from 'lucide-react';
+import { Loader2, Save, ShieldCheck, Mail, CreditCard, Users, Tag, Trash2, Plus, Power, Percent, Star, Search as SearchIcon, Image as ImageIcon, Palette } from 'lucide-react';
 import { useQueryClient } from '@tanstack/react-query';
 import { adminAccessService } from '@/services/adminAccessService';
 import { discountService, DiscountRule, DiscountRuleType, DiscountValueType } from '@/services/discountService';
 import { commissionService, CommissionTier, OverrideScope, TierOperator } from '@/services/commissionService';
 import { listingService } from '@/services/listingService';
 import { siteSettingsService } from '@/services/siteSettingsService';
+import { applyThemeColor } from '@/lib/theme';
 import { WordStyleEditor } from '@/components/admin/WordStyleEditor';
 import { Listing } from '@/types';
 // NOTE: this page used to also gate on isAdminEmail(user.email) (a hardcoded-
@@ -879,6 +880,80 @@ function BrandingTab() {
     );
 }
 
+const DEFAULT_THEME_BACKGROUND_COLOR = '#EDE4D3';
+
+/**
+ * Admin Settings > Appearance - the single hex color that drives the
+ * site-wide neutral background/surface/text scale (src/lib/theme.ts,
+ * applied at startup by src/components/layout/ThemeColor.tsx). Distinct
+ * from Branding's "Site-wide background" (a raw CSS `background` value
+ * painted only over <body>/`.bg-background`): this one recomputes the
+ * whole --card/--popover/--surface-0..4/--border/--text-* scale and picks
+ * readable text automatically, so every themed surface sitewide tracks it.
+ */
+function AppearanceTab() {
+    const { toast } = useToast();
+    const queryClient = useQueryClient();
+    const [color, setColor] = useState(DEFAULT_THEME_BACKGROUND_COLOR);
+
+    const themeQuery = useQuery({
+        queryKey: ['theme-background-color'],
+        queryFn: async () => {
+            const { data, error } = await supabase.from('app_settings').select('value').eq('key', 'theme_background_color').single();
+            if (error) throw error;
+            return data?.value || DEFAULT_THEME_BACKGROUND_COLOR;
+        },
+    });
+
+    useEffect(() => {
+        if (themeQuery.data) setColor(themeQuery.data);
+    }, [themeQuery.data]);
+
+    const saveMutation = useMutation({
+        mutationFn: async () => {
+            const { error } = await supabase.rpc('update_app_setting', { p_key: 'theme_background_color', p_value: color });
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            toast({ title: 'Theme color saved' });
+            queryClient.invalidateQueries({ queryKey: ['theme-background-color'] });
+            // Apply immediately so the change is visible without a reload.
+            applyThemeColor(color);
+        },
+        onError: (error) => toast({ title: 'Error', description: getErrorMessage(error, 'Could not save the theme color.'), variant: 'destructive' }),
+    });
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Site background color</CardTitle>
+                <CardDescription>
+                    Sets the site-wide background and surface color scale. Text color (light or dark) is chosen
+                    automatically so it stays readable against whatever color you pick here.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                <div className="h-16 rounded-md border border-border" style={{ background: color }} />
+                <div className="flex flex-wrap items-end gap-3">
+                    <div>
+                        <Label>Background color</Label>
+                        <input
+                            type="color"
+                            className="h-10 w-20 border border-border rounded cursor-pointer bg-transparent"
+                            value={color}
+                            onChange={(e) => setColor(e.target.value)}
+                        />
+                    </div>
+                    <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="gap-2">
+                        {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                        Save
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
 export default function AdminSettings() {
     const { user, loading: authLoading } = useAuth();
     const navigate = useNavigate();
@@ -1053,6 +1128,9 @@ export default function AdminSettings() {
                         <TabsTrigger value="branding" className="justify-start gap-2 data-[state=active]:bg-surface-2">
                             <ImageIcon className="h-4 w-4" /> Branding
                         </TabsTrigger>
+                        <TabsTrigger value="appearance" className="justify-start gap-2 data-[state=active]:bg-surface-2">
+                            <Palette className="h-4 w-4" /> Appearance
+                        </TabsTrigger>
                         <TabsTrigger value="admins" className="justify-start gap-2 data-[state=active]:bg-surface-2">
                             <Users className="h-4 w-4" /> Admins
                         </TabsTrigger>
@@ -1122,6 +1200,10 @@ export default function AdminSettings() {
 
                     <TabsContent value="branding">
                         <BrandingTab />
+                    </TabsContent>
+
+                    <TabsContent value="appearance">
+                        <AppearanceTab />
                     </TabsContent>
 
                     <TabsContent value="admins">

@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Header } from "@/components/layout/Header";
 import { SiteBackground } from "@/components/layout/SiteBackground";
+import { ThemeColor } from "@/components/layout/ThemeColor";
 import { Loader2 } from "lucide-react";
 import Index from "./pages/Index";
 
@@ -57,6 +58,7 @@ const App = () => (
       <Sonner />
       <BrowserRouter>
         <SiteBackground />
+        <ThemeColor />
         {/* The one common navbar - every page gets it from here, no page
             renders its own <Header /> any more. */}
         <Header />
