@@ -48,8 +48,8 @@ export function Header() {
     navigate('/');
   };
 
-  const navLinkClass = 'text-[11px] font-bold uppercase tracking-wide text-[#0a0806] hover:text-foreground trivara-transition';
-  const iconButtonClass = 'hidden md:flex text-[#0a0806] hover:text-foreground hover:bg-transparent';
+  const navLinkClass = 'text-[11px] font-bold uppercase tracking-wide text-white hover:opacity-70 trivara-transition';
+  const iconButtonClass = 'hidden md:flex text-white hover:opacity-70 hover:bg-transparent';
 
   if (!isHome) {
     return (
@@ -78,7 +78,7 @@ export function Header() {
         {/* Logo - flush against the same side padding the footer's logo
             uses, so the two sit parallel to each other. */}
         <Link to="/" className="flex items-center gap-2 justify-self-start">
-          <Logo markClassName="h-11 w-11" nameClassName="text-2xl" />
+          <Logo markClassName="h-11 w-11" nameClassName="text-2xl" color="#000000" />
         </Link>
 
         {/* Desktop Navigation - centered in its own grid column; search and
@@ -147,7 +147,7 @@ export function Header() {
               separate avatar/dropdown menu at any breakpoint. */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden text-[#0a0806] hover:text-foreground hover:bg-transparent">
+              <Button variant="ghost" size="icon" className="md:hidden text-white hover:opacity-70 hover:bg-transparent">
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
