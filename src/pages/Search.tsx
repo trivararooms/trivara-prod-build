@@ -42,6 +42,7 @@ export default function Search() {
   const [adults, setAdults] = useState(() => parseInt(searchParams.get('guests') || '1') || 1);
   const [children, setChildren] = useState(0);
   const [infants, setInfants] = useState(() => parseInt(searchParams.get('infants') || '0') || 0);
+  const [pets, setPets] = useState(() => parseInt(searchParams.get('pets') || '0') || 0);
 
   // Sync state from URL
   const getParam = useCallback((key: string) => searchParams.get(key), [searchParams]);
@@ -160,6 +161,7 @@ export default function Search() {
     setAdults(1);
     setChildren(0);
     setInfants(0);
+    setPets(0);
   };
 
   const activeFilterCount = [
@@ -169,7 +171,7 @@ export default function Search() {
     minRating > 0,
     selectedCancellationPolicies.length > 0,
     !!filters.checkIn && !!filters.checkOut,
-    adults > 1 || children > 0 || infants > 0,
+    adults > 1 || children > 0 || infants > 0 || pets > 0,
   ].filter(Boolean).length;
 
   const propertyTypeOptions: { value: PropertyType; label: string }[] = [
@@ -199,7 +201,7 @@ export default function Search() {
                   location: getParam('location') || '',
                   checkIn: filters.checkIn,
                   checkOut: filters.checkOut,
-                  guests: { adults, children, infants },
+                  guests: { adults, children, infants, pets },
                   onLocationChange: (value) => updateFilter('location', value || null),
                   onCheckInChange: (date) => {
                     const updates: Record<string, string | null> = { checkIn: date ? date.toISOString() : null };
@@ -213,9 +215,11 @@ export default function Search() {
                     setAdults(g.adults);
                     setChildren(g.children);
                     setInfants(g.infants);
+                    setPets(g.pets);
                     updateFilters({
                       guests: (g.adults + g.children).toString(),
                       infants: g.infants > 0 ? g.infants.toString() : null,
+                      pets: g.pets > 0 ? g.pets.toString() : null,
                     });
                   },
                 }}
