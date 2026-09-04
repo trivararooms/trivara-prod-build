@@ -22,23 +22,29 @@ export default function Index() {
   const [featuredListings, setFeaturedListings] = useState<Listing[]>([]);
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [heroImage, setHeroImage] = useState<string | null>(null);
+  const [heroOverlay, setHeroOverlay] = useState(65);
   const [hostCtaImage, setHostCtaImage] = useState<string | null>(null);
+  const [hostCtaOverlay, setHostCtaOverlay] = useState(80);
   const [loading, setLoading] = useState(true);
   const [destCardWidth, setDestCardWidth] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [featured, popularDestinations, heroBackground, hostBackground] = await Promise.all([
+        const [featured, popularDestinations, heroBackground, hostBackground, heroOverlaySetting, hostCtaOverlaySetting] = await Promise.all([
           listingService.getFeatured(3),
           listingService.getPopularDestinations(),
           siteSettingsService.getHeroBackgroundImageUrl(),
           siteSettingsService.getHostCtaBackgroundImageUrl(),
+          siteSettingsService.getAppSetting('hero_overlay_opacity'),
+          siteSettingsService.getAppSetting('host_cta_overlay_opacity'),
         ]);
         setFeaturedListings(featured);
         setDestinations(popularDestinations);
         setHeroImage(heroBackground);
         setHostCtaImage(hostBackground);
+        if (heroOverlaySetting) setHeroOverlay(parseInt(heroOverlaySetting, 10));
+        if (hostCtaOverlaySetting) setHostCtaOverlay(parseInt(hostCtaOverlaySetting, 10));
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -91,11 +97,13 @@ export default function Index() {
         <div
           className="absolute inset-0"
           style={{
-            // One continuous diagonal blend between the two locked palette
-            // hues (indigo -> chestnut) instead of two separate radial
-            // "blobs" - a single wash, not two colored patches.
+            // With an admin-uploaded photo: a flat, single-tone dark tint
+            // (adjustable in Admin Settings > Branding) so the photo reads
+            // through cleanly - no indigo/chestnut color mixed into it.
+            // With no photo: the one continuous diagonal blend between the
+            // two locked palette hues that's the actual brand background.
             backgroundImage: heroImage
-              ? `linear-gradient(135deg, hsl(var(--primary) / 0.65) 0%, hsl(var(--accent) / 0.65) 100%), url(${heroImage})`
+              ? `linear-gradient(hsl(var(--surface-0) / ${heroOverlay / 100}), hsl(var(--surface-0) / ${heroOverlay / 100})), url(${heroImage})`
               : `linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%)`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
@@ -210,7 +218,9 @@ export default function Index() {
           <div
             className="relative min-h-[85vh] flex items-center justify-center text-center border border-border rounded-xl px-8 md:px-16 overflow-hidden"
             style={hostCtaImage ? {
-              backgroundImage: `linear-gradient(160deg, hsl(var(--surface-0) / 0.8), hsl(var(--surface-1) / 0.85)), url(${hostCtaImage})`,
+              // Flat single-tone dark tint (adjustable in Admin Settings >
+              // Branding), same as the hero - no colored gradient over the photo.
+              backgroundImage: `linear-gradient(hsl(var(--surface-0) / ${hostCtaOverlay / 100}), hsl(var(--surface-0) / ${hostCtaOverlay / 100})), url(${hostCtaImage})`,
               backgroundSize: 'cover',
               backgroundPosition: 'center',
             } : undefined}
