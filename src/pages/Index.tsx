@@ -88,12 +88,14 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero - the common <Header /> (rendered once in App.tsx, sticky and
-          transparent) floats over this section's own background. Admin-
-          uploaded background image (Admin Settings > Branding) layers under
-          the same gradient wash used when none is set. Height accounts for
-          the header's own 5rem (h-20) so hero + header together still fill
-          exactly one viewport. */}
-      <section className="relative min-h-[calc(100vh-5rem)] flex flex-col overflow-hidden">
+          transparent) still reserves its own 5rem of flow height above this
+          section (so nothing on any other page is ever covered/unclickable
+          behind it - see Header.tsx), but -mt-20 here pulls this section's
+          own box up underneath that reserved space, so its background image
+          extends behind the header instead of stopping below it. pt-20 on
+          the content wrapper below keeps the actual hero text roughly where
+          it was before, rather than drifting up into the header's row. */}
+      <section className="relative -mt-20 min-h-screen flex flex-col overflow-hidden">
         <div
           className="absolute inset-0"
           style={{
@@ -110,7 +112,7 @@ export default function Index() {
           }}
         />
 
-        <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6">
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6 pt-20">
           <EditableText
             settingKey="content_hero_eyebrow"
             fallback="wander well"
