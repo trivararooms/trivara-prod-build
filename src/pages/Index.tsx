@@ -88,12 +88,14 @@ export default function Index() {
   return (
     <div className="min-h-screen bg-background">
       {/* Hero - the common <Header /> (rendered once in App.tsx, sticky and
-          transparent) floats over this section's own background. Admin-
-          uploaded background image (Admin Settings > Branding) layers under
-          the same gradient wash used when none is set. Height accounts for
-          the header's own 5rem (h-20) so hero + header together still fill
-          exactly one viewport. */}
-      <section className="relative min-h-[calc(100vh-5rem)] flex flex-col overflow-hidden">
+          transparent) still reserves its own 5rem of flow height above this
+          section (so nothing on any other page is ever covered/unclickable
+          behind it - see Header.tsx), but -mt-20 here pulls this section's
+          own box up underneath that reserved space, so its background image
+          extends behind the header instead of stopping below it. pt-20 on
+          the content wrapper below keeps the actual hero text roughly where
+          it was before, rather than drifting up into the header's row. */}
+      <section className="relative -mt-20 min-h-screen flex flex-col overflow-hidden">
         <div
           className="absolute inset-0"
           style={{
@@ -110,7 +112,7 @@ export default function Index() {
           }}
         />
 
-        <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6">
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6 pt-20">
           <EditableText
             settingKey="content_hero_eyebrow"
             fallback="wander well"
@@ -263,14 +265,14 @@ export default function Index() {
       {/* Footer - legally/Razorpay-required links only, no full sitemap */}
       <footer className="py-8">
         <div className={`w-full ${SIDE_PAD} flex flex-wrap items-center justify-between gap-6`}>
-          <Logo markClassName="h-11 w-11" nameClassName="text-xl" />
+          <Logo markClassName="h-11 w-11" nameClassName="text-xl" color="#000000" />
           <div className="flex flex-wrap gap-1">
-            <Link to="/privacy" className="px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wide text-text-secondary hover:text-foreground hover:bg-surface-2 trivara-transition">Privacy</Link>
-            <Link to="/terms" className="px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wide text-text-secondary hover:text-foreground hover:bg-surface-2 trivara-transition">Terms</Link>
-            <Link to="/help" className="px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wide text-text-secondary hover:text-foreground hover:bg-surface-2 trivara-transition">Talk to Us</Link>
-            <Link to="/cancellation-options" className="px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wide text-text-secondary hover:text-foreground hover:bg-surface-2 trivara-transition">Cancellation options</Link>
+            <Link to="/privacy" className="px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wide text-black hover:opacity-70 hover:bg-surface-2 trivara-transition">Privacy</Link>
+            <Link to="/terms" className="px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wide text-black hover:opacity-70 hover:bg-surface-2 trivara-transition">Terms</Link>
+            <Link to="/help" className="px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wide text-black hover:opacity-70 hover:bg-surface-2 trivara-transition">Talk to Us</Link>
+            <Link to="/cancellation-options" className="px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wide text-black hover:opacity-70 hover:bg-surface-2 trivara-transition">Cancellation options</Link>
           </div>
-          <span className="text-xs text-text-meta">© {new Date().getFullYear()} Trivara. All rights reserved.</span>
+          <span className="text-xs text-black">© {new Date().getFullYear()} Trivara. All rights reserved.</span>
         </div>
       </footer>
     </div>
