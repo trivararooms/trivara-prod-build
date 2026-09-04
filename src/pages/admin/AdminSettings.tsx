@@ -819,6 +819,57 @@ function SiteBackgroundCard() {
     );
 }
 
+function SpacerImageCard() {
+    const { toast } = useToast();
+    const queryClient = useQueryClient();
+    const [value, setValue] = useState<string | null>(null);
+
+    const query = useQuery({
+        queryKey: ['homepage-spacer-image'],
+        queryFn: () => siteSettingsService.getAppSetting('homepage_spacer_image_url'),
+    });
+
+    useEffect(() => {
+        if (query.data !== undefined && query.data !== null && value === null) setValue(query.data);
+    }, [query.data, value]);
+
+    const saveMutation = useMutation({
+        mutationFn: async () => {
+            const { error } = await supabase.rpc('update_app_setting', { p_key: 'homepage_spacer_image_url', p_value: (value ?? '').trim() });
+            if (error) throw error;
+        },
+        onSuccess: () => {
+            toast({ title: 'Spacer image saved' });
+            queryClient.invalidateQueries({ queryKey: ['homepage-spacer-image'] });
+        },
+        onError: (error) => toast({ title: 'Error', description: getErrorMessage(error, 'Could not save.'), variant: 'destructive' }),
+    });
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Homepage spacer image</CardTitle>
+                <CardDescription>
+                    Full-bleed image shown in the plain gap between "Popular destinations" and "Featured stays" on the home page. Leave blank to show nothing there.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {value && (
+                    <img src={value} alt="Current homepage spacer" className="w-full max-w-md aspect-video object-cover" />
+                )}
+                <div>
+                    <Label>Image URL</Label>
+                    <Input value={value ?? ''} onChange={(e) => setValue(e.target.value)} placeholder="https://..." />
+                </div>
+                <Button onClick={() => saveMutation.mutate()} disabled={saveMutation.isPending} className="gap-2">
+                    {saveMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                    Save
+                </Button>
+            </CardContent>
+        </Card>
+    );
+}
+
 function BrandingTab() {
     return (
         <div className="space-y-6">
@@ -843,6 +894,8 @@ function BrandingTab() {
             />
 
             <SiteBackgroundCard />
+
+            <SpacerImageCard />
 
             <Card>
                 <CardHeader>

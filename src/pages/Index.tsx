@@ -25,19 +25,21 @@ export default function Index() {
   const [heroOverlay, setHeroOverlay] = useState(65);
   const [hostCtaImage, setHostCtaImage] = useState<string | null>(null);
   const [hostCtaOverlay, setHostCtaOverlay] = useState(80);
+  const [spacerImage, setSpacerImage] = useState<string>('');
   const [loading, setLoading] = useState(true);
   const [destCardWidth, setDestCardWidth] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [featured, popularDestinations, heroBackground, hostBackground, heroOverlaySetting, hostCtaOverlaySetting] = await Promise.all([
+        const [featured, popularDestinations, heroBackground, hostBackground, heroOverlaySetting, hostCtaOverlaySetting, spacerImageSetting] = await Promise.all([
           listingService.getFeatured(3),
           listingService.getPopularDestinations(),
           siteSettingsService.getHeroBackgroundImageUrl(),
           siteSettingsService.getHostCtaBackgroundImageUrl(),
           siteSettingsService.getAppSetting('hero_overlay_opacity'),
           siteSettingsService.getAppSetting('host_cta_overlay_opacity'),
+          siteSettingsService.getAppSetting('homepage_spacer_image_url'),
         ]);
         setFeaturedListings(featured);
         setDestinations(popularDestinations);
@@ -45,6 +47,7 @@ export default function Index() {
         setHostCtaImage(hostBackground);
         if (heroOverlaySetting) setHeroOverlay(parseInt(heroOverlaySetting, 10));
         if (hostCtaOverlaySetting) setHostCtaOverlay(parseInt(hostCtaOverlaySetting, 10));
+        setSpacerImage(spacerImageSetting || '');
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -179,6 +182,19 @@ export default function Index() {
               </div>
             </div>
           </div>
+        </section>
+      )}
+
+      {/* Homepage spacer image - full-bleed (no .container/SIDE_PAD wrapper,
+          so it runs edge to edge like the Hero section does), sized close to
+          the Hero's overall height but a little shorter since it's just a
+          breather between Popular Destinations and Featured Stays. Nothing
+          in here but the image itself - no border, no overlay, no text -
+          and if no image is configured in Admin Settings > Branding, the
+          whole section renders nothing at all. */}
+      {spacerImage && (
+        <section className="h-[60vh] md:h-[70vh] overflow-hidden">
+          <img src={spacerImage} alt="" className="w-full h-full object-cover" />
         </section>
       )}
 
