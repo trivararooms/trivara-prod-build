@@ -64,16 +64,11 @@ export function Header() {
   }
 
   return (
-    // sticky, not fixed: fixed would contribute zero height to the page's
-    // own flow, which sounds convenient but actually means the header's own
-    // box (transparent or not) sits on top of - and intercepts clicks on -
-    // whatever each page renders in that first ~80px, on every single page
-    // that doesn't already reserve space for it. sticky instead occupies
-    // real flow height like a normal element while still pinning to the top
-    // on scroll, so nothing underneath it is ever covered or unclickable;
-    // the only cost is a min-h-screen section running ~80px past one
-    // viewport, which is cosmetic, not functional.
-    <header className="sticky top-0 z-20 w-full bg-transparent">
+    // relative, not sticky: on the home page the header scrolls away with
+    // the hero instead of staying pinned - z-20 still needs a non-static
+    // position to actually take effect while it's in view, so this can't
+    // just be a plain unpositioned element.
+    <header className="relative z-20 w-full bg-transparent">
       <div className={`w-full ${sidePad} grid grid-cols-[1fr_auto_1fr] h-20 items-center`}>
         {/* Logo - flush against the same side padding the footer's logo
             uses, so the two sit parallel to each other. */}
