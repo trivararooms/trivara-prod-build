@@ -257,7 +257,7 @@ export default function Index() {
           <div className="flex flex-wrap gap-1">
             <Link to="/privacy" className="px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wide text-text-secondary hover:text-foreground hover:bg-surface-2 trivara-transition">Privacy</Link>
             <Link to="/terms" className="px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wide text-text-secondary hover:text-foreground hover:bg-surface-2 trivara-transition">Terms</Link>
-            <Link to="/help" className="px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wide text-text-secondary hover:text-foreground hover:bg-surface-2 trivara-transition">Contact Us</Link>
+            <Link to="/help" className="px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wide text-text-secondary hover:text-foreground hover:bg-surface-2 trivara-transition">Talk to Us</Link>
             <Link to="/cancellation-options" className="px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wide text-text-secondary hover:text-foreground hover:bg-surface-2 trivara-transition">Cancellation options</Link>
           </div>
           <span className="text-xs text-text-meta">© {new Date().getFullYear()} Trivara. All rights reserved.</span>
