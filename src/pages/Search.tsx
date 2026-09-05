@@ -22,7 +22,7 @@ const CarouselSkeleton = () => (
   <div className="flex gap-4 overflow-hidden pb-4">
     {[1, 2, 3, 4].map((i) => (
       <div key={i} className="min-w-[280px] w-[280px] flex-shrink-0 animate-pulse">
-        <div className="aspect-[4/3] bg-surface-2 rounded-xl mb-3"></div>
+        <div className="aspect-[4/3] bg-surface-2 mb-3"></div>
         <div className="h-4 bg-surface-2 rounded w-3/4 mb-2"></div>
         <div className="h-4 bg-surface-2 rounded w-1/2 mb-2"></div>
         <div className="h-4 bg-surface-2 rounded w-1/4"></div>
@@ -191,7 +191,7 @@ export default function Search() {
     <div className="min-h-screen bg-background pb-12">
 
       {/* Sticky Search Header */}
-      <div className="sticky top-0 z-40 border-b border-border bg-surface-0 shadow-sm transition-all duration-300">
+      <div className="sticky top-0 z-40 border-b border-border bg-surface-0 transition-all duration-300">
         <div className="container py-4">
           <div className="flex flex-col md:flex-row items-center gap-4">
             <div className="flex-1 w-full max-w-3xl">
@@ -446,14 +446,14 @@ export default function Search() {
         </div>
       </div>
 
-      <div className="container py-8 space-y-12">
+      <div className="container py-10 space-y-14">
         {/* EXPLORE SECTIONS (Only show if no active query constraints) */}
         {isExploring && (
           <div className="space-y-12">
             {/* Section A: Featured Stays */}
             <section>
-              <h2 className="text-2xl font-display font-medium mb-1">Featured Stays</h2>
-              <p className="text-text-secondary mb-6">Handpicked premium properties with exceptional ratings.</p>
+              <h2 className="text-3xl font-display font-medium mb-2">Featured Stays</h2>
+              <p className="text-text-secondary mb-8">Handpicked premium properties with exceptional ratings.</p>
 
               {loadingCarousels ? (
                 <CarouselSkeleton />
@@ -470,8 +470,8 @@ export default function Search() {
 
             {/* Section B: Popular Stays */}
             <section>
-              <h2 className="text-2xl font-display font-medium mb-1">Popular right now</h2>
-              <p className="text-text-secondary mb-6">The most booked and reviewed destinations this week.</p>
+              <h2 className="text-3xl font-display font-medium mb-2">Popular right now</h2>
+              <p className="text-text-secondary mb-8">The most booked and reviewed destinations this week.</p>
 
               {loadingCarousels ? (
                 <CarouselSkeleton />
@@ -481,7 +481,7 @@ export default function Search() {
                     <div key={`popular-${listing.id}`} className="relative min-w-[280px] w-[280px] md:min-w-[320px] md:w-[320px] flex-shrink-0 snap-start">
                       {idx < 3 && (
                         <div
-                          className={`absolute top-2 left-2 z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-background shadow ${
+                          className={`absolute top-2 left-2 z-10 flex h-8 w-8 items-center justify-center rounded-full border-2 border-background ${
                             idx === 0 ? 'bg-yellow-400 text-yellow-950' : idx === 1 ? 'bg-slate-300 text-slate-800' : 'bg-amber-600 text-amber-50'
                           }`}
                           title={`#${idx + 1} most booked`}
@@ -505,7 +505,7 @@ export default function Search() {
           {/* Results Header */}
           <div className="mb-6 flex flex-col md:flex-row md:items-end justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-display font-medium mb-1">{locationDisplay}</h1>
+              <h1 className="text-3xl font-display font-medium mb-2">{locationDisplay}</h1>
               {!loading && (
                 <p className="text-text-secondary">
                   {searchResults.total > 200 ? '200+' : searchResults.total} {searchResults.total === 1 ? 'stay' : 'stays'} available
@@ -516,7 +516,7 @@ export default function Search() {
 
           {/* Empty State / Error Layout */}
           {!loading && searchResults.listings.length === 0 ? (
-            <div className="py-20 flex flex-col items-center justify-center text-center bg-surface-1 rounded-2xl border border-border/50">
+            <div className="py-20 flex flex-col items-center justify-center text-center bg-surface-1 rounded-lg border border-border/50">
               <div className="h-16 w-16 bg-surface-2 rounded-full flex items-center justify-center mb-6">
                 <SearchIcon className="h-8 w-8 text-text-tertiary" />
               </div>
@@ -534,7 +534,7 @@ export default function Search() {
               <div className="space-y-4 max-h-[calc(100vh-200px)] overflow-y-auto scrollbar-hide pr-2">
                 {loading ? (
                   [1, 2, 3].map((i) => (
-                    <div key={i} className="flex gap-4 p-4 rounded-xl border border-border animate-pulse">
+                    <div key={i} className="flex gap-4 p-4 rounded-lg border border-border animate-pulse">
                       <div className="w-48 h-32 bg-surface-2 rounded-lg flex-shrink-0"></div>
                       <div className="flex-1 space-y-3 py-2">
                         <div className="h-4 bg-surface-2 rounded w-1/3"></div>
@@ -549,13 +549,13 @@ export default function Search() {
                     ref={(el) => { listingRowRefs.current[listing.id] = el; }}
                     onMouseEnter={() => setHighlightedListingId(listing.id)}
                     onMouseLeave={() => setHighlightedListingId(null)}
-                    className={`flex flex-col sm:flex-row gap-4 p-4 rounded-xl border transition-all group ${
+                    className={`flex flex-col sm:flex-row gap-4 p-4 rounded-lg border transition-all group ${
                       listing.id === highlightedListingId
-                        ? 'border-foreground bg-surface-1 shadow-sm'
+                        ? 'border-foreground bg-surface-1'
                         : 'border-transparent hover:border-border hover:bg-surface-1'
                     }`}
                   >
-                    <div className="w-full sm:w-48 h-48 sm:h-32 rounded-lg overflow-hidden flex-shrink-0 relative">
+                    <div className="w-full sm:w-48 h-48 sm:h-32 overflow-hidden flex-shrink-0 relative">
                       <img
                         src={listing.photos[0]}
                         alt={listing.title}
@@ -586,7 +586,7 @@ export default function Search() {
               </div>
 
               {/* Map */}
-              <div className="hidden lg:block sticky top-36 h-[calc(100vh-200px)] rounded-xl bg-surface-1 border border-border overflow-hidden">
+              <div className="hidden lg:block sticky top-36 h-[calc(100vh-200px)] rounded-lg bg-surface-1 border border-border overflow-hidden">
                 {loading ? (
                   <div className="w-full h-full flex items-center justify-center">
                     <Loader2 className="h-6 w-6 animate-spin text-text-secondary" />

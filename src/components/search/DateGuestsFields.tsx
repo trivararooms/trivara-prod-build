@@ -30,7 +30,7 @@ const totalGuests = (g: GuestCounts) => g.adults + g.children;
  * One implementation now, so both places behave identically.
  */
 export function DateGuestsFields({ checkIn, checkOut, guests, onCheckInChange, onCheckOutChange, onGuestsChange }: DateGuestsFieldsProps) {
-  const triggerClass = 'flex items-center gap-2 px-4 py-3 rounded-xl hover:bg-surface-3 trivara-transition cursor-pointer text-sm whitespace-nowrap';
+  const triggerClass = 'flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-surface-3 trivara-transition cursor-pointer text-sm whitespace-nowrap';
 
   return (
     <>

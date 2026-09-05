@@ -54,7 +54,7 @@ export function ListingCard({ listing, showSaveButton = true }: ListingCardProps
   return (
     <Link to={`/listing/${listing.id}`} className="group block">
       {/* Image Container */}
-      <div className="relative aspect-[4/3] rounded-xl overflow-hidden bg-surface-0 mb-3 border border-border">
+      <div className="relative aspect-[4/3] overflow-hidden bg-surface-0 mb-3">
         <img
           src={listing.photos[currentImageIndex]}
           alt={listing.title}
@@ -112,7 +112,7 @@ export function ListingCard({ listing, showSaveButton = true }: ListingCardProps
         <div className="flex items-start justify-between gap-2">
           <h3 className="font-medium text-sm line-clamp-1">{listing.location.city}, {listing.location.state}</h3>
           <div className="flex items-center gap-1 text-sm flex-shrink-0">
-            <Star className="h-3.5 w-3.5 fill-foreground" />
+            <Star className="h-3.5 w-3.5 fill-accent text-accent" />
             <span>{listing.rating.toFixed(2)}</span>
           </div>
         </div>

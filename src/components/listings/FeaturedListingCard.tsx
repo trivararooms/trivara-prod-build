@@ -89,7 +89,7 @@ export function FeaturedListingCard({ listing }: FeaturedListingCardProps) {
       <div className="flex items-center justify-between text-base font-semibold">
         <span className="truncate">{listing.location.city}, {listing.location.state}</span>
         <span className="flex items-center gap-1 flex-shrink-0">
-          <Star className="h-3.5 w-3.5 fill-foreground" /> {listing.rating.toFixed(2)}
+          <Star className="h-3.5 w-3.5 fill-accent text-accent" /> {listing.rating.toFixed(2)}
         </span>
       </div>
       <p className="text-text-meta text-sm mt-1 mb-1 line-clamp-1">{listing.title}</p>
