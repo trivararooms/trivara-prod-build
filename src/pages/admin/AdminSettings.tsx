@@ -756,6 +756,86 @@ function BackgroundImageCard({ title, description, queryKey, getUrl, upload, ove
     );
 }
 
+/** One of up to three homepage "collection" photo tiles (Branding tab) - an
+    image upload plus an optional destination link, no dark-overlay slider
+    since these are plain photo tiles, not text-over-photo hero sections. */
+function CollectionImageCard({ slot }: { slot: number }) {
+    const { toast } = useToast();
+    const queryClient = useQueryClient();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [uploading, setUploading] = useState(false);
+    const [link, setLink] = useState<string | null>(null);
+
+    const imageQueryKey = ['homepage-collection-image', slot];
+    const linkQueryKey = ['homepage-collection-link', slot];
+
+    const imageQuery = useQuery({ queryKey: imageQueryKey, queryFn: () => siteSettingsService.getHomepageCollectionImageUrl(slot) });
+    const linkQuery = useQuery({ queryKey: linkQueryKey, queryFn: () => siteSettingsService.getHomepageCollectionLinkUrl(slot) });
+
+    useEffect(() => {
+        if (linkQuery.data !== undefined && link === null) setLink(linkQuery.data ?? '');
+    }, [linkQuery.data, link]);
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploading(true);
+        try {
+            await siteSettingsService.uploadHomepageCollectionImage(slot, file);
+            toast({ title: `Collection ${slot} image updated` });
+            queryClient.invalidateQueries({ queryKey: imageQueryKey });
+        } catch (error) {
+            toast({ title: 'Error', description: getErrorMessage(error, 'Could not upload the image.'), variant: 'destructive' });
+        } finally {
+            setUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
+    const saveLinkMutation = useMutation({
+        mutationFn: () => siteSettingsService.setHomepageCollectionLinkUrl(slot, link ?? ''),
+        onSuccess: () => {
+            toast({ title: 'Link saved' });
+            queryClient.invalidateQueries({ queryKey: linkQueryKey });
+        },
+        onError: (error) => toast({ title: 'Error', description: getErrorMessage(error, 'Could not save.'), variant: 'destructive' }),
+    });
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>Homepage collection image {slot}</CardTitle>
+                <CardDescription>
+                    One of up to three photo tiles shown between Popular Destinations and Featured Stays. Leave unset to hide this slot.
+                </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {imageQuery.data && (
+                    <img src={imageQuery.data} alt={`Collection ${slot}`} className="w-full max-w-md aspect-[3/4] object-cover" />
+                )}
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                <Button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="gap-2">
+                    {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
+                    {imageQuery.data ? 'Replace image' : 'Upload image'}
+                </Button>
+
+                <div className="space-y-2 pt-2">
+                    <Label>Link (optional)</Label>
+                    <p className="text-xs text-text-meta">
+                        Where this tile goes when clicked, e.g. /search?location=Goa. Leave blank for a non-clickable image.
+                    </p>
+                    <Input value={link ?? ''} onChange={(e) => setLink(e.target.value)} placeholder="/search?location=Goa" />
+                    <Button size="sm" onClick={() => saveLinkMutation.mutate()} disabled={saveLinkMutation.isPending} className="gap-2">
+                        {saveLinkMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                        Save link
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
 function SiteBackgroundCard() {
     const { toast } = useToast();
     const queryClient = useQueryClient();
@@ -843,6 +923,10 @@ function BrandingTab() {
             />
 
             <SiteBackgroundCard />
+
+            <CollectionImageCard slot={1} />
+            <CollectionImageCard slot={2} />
+            <CollectionImageCard slot={3} />
 
             <Card>
                 <CardHeader>
