@@ -169,7 +169,7 @@ export default function PaymentMethods() {
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">
-          <h1 className="text-3xl font-pillar font-bold uppercase tracking-wide text-foreground mb-2">
+          <h1 className="text-3xl font-display font-medium text-foreground mb-2">
             Payout account
           </h1>
           <p className="text-text-secondary">

@@ -119,7 +119,7 @@ export default function NotificationSettings() {
 
                 <div className="flex justify-end gap-3 pt-4 border-t border-border">
                   <Button variant="outline" onClick={() => navigate('/account')}>Cancel</Button>
-                  <Button onClick={handleSave} disabled={saving} className="bg-accent text-accent-foreground hover:bg-accent-hover">
+                  <Button onClick={handleSave} disabled={saving} className="trivara-btn-primary">
                     {saving ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : null}
                     Save changes
                   </Button>

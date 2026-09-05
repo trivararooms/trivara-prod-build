@@ -70,7 +70,7 @@ const Login = () => {
 
         <button
           onClick={handleGoogleSignIn}
-          className="w-full py-3 px-4 bg-accent text-accent-foreground font-medium rounded-lg hover:bg-accent-hover transition-colors duration-200 text-base tracking-wide border border-accent-hover"
+          className="trivara-btn-primary w-full py-3 px-4 font-medium rounded-lg text-base tracking-wide"
         >
           Continue with Google
         </button>
