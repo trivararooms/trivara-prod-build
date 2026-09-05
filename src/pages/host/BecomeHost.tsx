@@ -14,7 +14,7 @@ export default function BecomeHost() {
       <section className="relative py-20 md:py-32">
         <div className="container">
           <div className="max-w-2xl">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-pillar font-bold uppercase tracking-wide mb-6 animate-fade-in">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-display font-medium mb-6 animate-fade-in">
               Share your space,{' '}
               <span className="font-bastliga italic lowercase tracking-normal text-accent text-[0.75em]">
                 earn on your terms
