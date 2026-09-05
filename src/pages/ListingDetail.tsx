@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { Calendar, MapPin, Wifi, Car, Snowflake, Tv, Loader2, Home, BadgeCheck, ShieldCheck, Share2, X, ChevronLeft, ChevronRight, MessageCircle } from 'lucide-react';
+import { Calendar, MapPin, Wifi, Car, Snowflake, Tv, Loader2, BadgeCheck, ShieldCheck, Share2, X, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
@@ -12,6 +12,8 @@ import { CounterInput } from '@/components/ui/CounterInput';
 import { Checkbox } from '@/components/ui/checkbox';
 import { ReviewsList } from '@/components/reviews/ReviewsList';
 import { ListingCard } from '@/components/listings/ListingCard';
+import { ListingGallery } from '@/components/listings/ListingGallery';
+import { PricingBreakdown, PricingBreakdownData } from '@/components/listings/PricingBreakdown';
 import { useToast } from '@/hooks/use-toast';
 import { listingService } from '@/services/listingService';
 import { bookingService } from '@/services/bookingService';
@@ -25,14 +27,6 @@ import { getErrorMessage } from '@/lib/errors';
 import { payForBooking } from '@/lib/razorpayCheckout';
 import { discountService, AppliedDiscount } from '@/services/discountService';
 import { Listing } from '@/types';
-
-interface PricingBreakdown {
-  nights: number;
-  subtotal: number;
-  cleaningFee: number;
-  serviceFee: number;
-  total: number;
-}
 
 const amenitiesMap = {
   wifi: { icon: Wifi, label: 'WiFi' },
@@ -75,15 +69,13 @@ export default function ListingDetail() {
   const [loading, setLoading] = useState(true);
   const [checkIn, setCheckIn] = useState<Date>();
   const [checkOut, setCheckOut] = useState<Date>();
-  const [pricing, setPricing] = useState<PricingBreakdown | null>(null);
+  const [pricing, setPricing] = useState<PricingBreakdownData | null>(null);
   const [appliedDiscount, setAppliedDiscount] = useState<AppliedDiscount | null>(null);
   const [unavailableDates, setUnavailableDates] = useState<Date[]>([]);
   const [isBooking, setIsBooking] = useState(false);
   const [host, setHost] = useState<{ first_name: string; last_name: string; avatar_url?: string; is_verified?: boolean } | null>(null);
   const [similarListings, setSimilarListings] = useState<Listing[]>([]);
   const [priceOverrides, setPriceOverrides] = useState<PriceOverride[]>([]);
-  const [galleryOpen, setGalleryOpen] = useState(false);
-  const [galleryIndex, setGalleryIndex] = useState(0);
   const [messageOpen, setMessageOpen] = useState(false);
   const [messageDraft, setMessageDraft] = useState('');
   const [sendingMessage, setSendingMessage] = useState(false);
@@ -410,89 +402,9 @@ export default function ListingDetail() {
         </div>
 
         {/* Image Gallery */}
-        <div className="relative grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-2 mb-8">
-          <button
-            type="button"
-            className="lg:col-span-2 lg:row-span-2 block cursor-pointer"
-            onClick={() => { setGalleryIndex(0); setGalleryOpen(true); }}
-            disabled={!listing.photos?.[0]}
-          >
-            {listing.photos && listing.photos[0] ? (
-              <img
-                src={listing.photos[0]}
-                alt={listing.title}
-                className="w-full h-full object-cover rounded-lg"
-              />
-            ) : (
-              <div className="w-full h-full bg-surface-2 rounded-lg flex items-center justify-center min-h-96">
-                <div className="text-center text-text-secondary">
-                  <Home className="h-12 w-12 mx-auto mb-4 opacity-50" />
-                  <p>No image available</p>
-                </div>
-              </div>
-            )}
-          </button>
-          {listing.photos && listing.photos.slice(1, 5).map((photo: string, index: number) => (
-            <button
-              type="button"
-              key={index}
-              className="aspect-square block cursor-pointer"
-              onClick={() => { setGalleryIndex(index + 1); setGalleryOpen(true); }}
-            >
-              <img
-                src={photo}
-                alt={`${listing.title} ${index + 2}`}
-                className="w-full h-full object-cover rounded-lg"
-              />
-            </button>
-          ))}
-          {listing.photos && listing.photos.length > 1 && (
-            <Button
-              variant="outline"
-              size="sm"
-              className="absolute bottom-3 right-3 bg-background/90"
-              onClick={() => { setGalleryIndex(0); setGalleryOpen(true); }}
-            >
-              Show all {listing.photos.length} photos
-            </Button>
-          )}
+        <div className="mb-10">
+          <ListingGallery title={listing.title} photos={listing.photos} />
         </div>
-
-        {/* Photo Lightbox */}
-        <Dialog open={galleryOpen} onOpenChange={setGalleryOpen}>
-          <DialogContent className="max-w-4xl w-full bg-background p-0 overflow-hidden">
-            {listing.photos && listing.photos.length > 0 && (
-              <div className="relative bg-black/90 flex items-center justify-center h-[70vh]">
-                <img
-                  src={listing.photos[galleryIndex]}
-                  alt={`${listing.title} ${galleryIndex + 1}`}
-                  className="max-h-full max-w-full object-contain"
-                />
-                {listing.photos.length > 1 && (
-                  <>
-                    <button
-                      type="button"
-                      onClick={() => setGalleryIndex((i) => (i - 1 + listing.photos.length) % listing.photos.length)}
-                      className="absolute left-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-background/80 hover:bg-background flex items-center justify-center"
-                    >
-                      <ChevronLeft className="h-5 w-5" />
-                    </button>
-                    <button
-                      type="button"
-                      onClick={() => setGalleryIndex((i) => (i + 1) % listing.photos.length)}
-                      className="absolute right-3 top-1/2 -translate-y-1/2 h-10 w-10 rounded-full bg-background/80 hover:bg-background flex items-center justify-center"
-                    >
-                      <ChevronRight className="h-5 w-5" />
-                    </button>
-                    <span className="absolute bottom-3 left-1/2 -translate-x-1/2 text-xs text-white bg-black/60 px-2 py-1 rounded-full">
-                      {galleryIndex + 1} / {listing.photos.length}
-                    </span>
-                  </>
-                )}
-              </div>
-            )}
-          </DialogContent>
-        </Dialog>
 
         {/* Message host */}
         <Dialog open={messageOpen} onOpenChange={setMessageOpen}>
@@ -518,14 +430,14 @@ export default function ListingDetail() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
           {/* Main Content */}
           <div className="lg:col-span-2">
-            <div className="mb-8">
+            <div>
               <h2 className="text-2xl font-medium text-foreground mb-4">About this place</h2>
               <p className="text-text-secondary leading-relaxed">{listing.description}</p>
             </div>
 
             {/* Amenities */}
             {listing.amenities && listing.amenities.length > 0 && (
-              <div className="mb-8">
+              <div className="mt-10 pt-10 border-t border-border">
                 <h3 className="text-xl font-medium text-foreground mb-4">What this place offers</h3>
                 <div className="grid grid-cols-2 gap-4">
                   {listing.amenities.map((amenity: string) => {
@@ -535,7 +447,9 @@ export default function ListingDetail() {
                     const Icon = amenityInfo.icon;
                     return (
                       <div key={amenity} className="flex items-center gap-3">
-                        <Icon className="h-5 w-5 text-accent" />
+                        <span className="flex h-9 w-9 flex-shrink-0 items-center justify-center rounded-full bg-surface-2">
+                          <Icon className="h-4 w-4 text-accent" />
+                        </span>
                         <span className="text-foreground">{amenityInfo.label}</span>
                       </div>
                     );
@@ -546,7 +460,7 @@ export default function ListingDetail() {
 
             {/* House Rules */}
             {listing.houseRules && listing.houseRules.length > 0 && (
-              <div className="mb-8">
+              <div className="mt-10 pt-10 border-t border-border">
                 <h3 className="text-xl font-medium text-foreground mb-4">House rules</h3>
                 <ul className="space-y-2">
                   {listing.houseRules.map((rule: string, index: number) => (
@@ -560,7 +474,7 @@ export default function ListingDetail() {
             )}
 
             {/* Cancellation Policy */}
-            <div className="mb-8">
+            <div className="mt-10 pt-10 border-t border-border">
               <h3 className="text-xl font-medium text-foreground mb-4 flex items-center gap-2">
                 <ShieldCheck className="h-5 w-5 text-accent" />
                 Cancellation policy
@@ -576,14 +490,14 @@ export default function ListingDetail() {
             </div>
 
             {/* Reviews */}
-            <div className="mb-8">
+            <div className="mt-10 pt-10 border-t border-border">
               <ReviewsList listingId={listing.id} />
             </div>
           </div>
 
           {/* Booking Panel */}
           <div className="lg:col-span-1">
-            <Card className="bg-card border-border sticky top-24">
+            <Card className="bg-card border-border shadow-none sticky top-24">
               <CardContent className="p-6">
                 <div className="flex items-center justify-between mb-4">
                   <span className="text-2xl font-semibold text-foreground">
@@ -690,44 +604,18 @@ export default function ListingDetail() {
 
                 {/* Pricing Breakdown */}
                 {pricing && (
-                  <div className="mb-6 space-y-2 text-sm">
-                    <div className="flex justify-between">
-                      <span className="text-text-secondary">
-                        {formatINR(listing.pricePerNight)} × {pricing.nights} nights
-                      </span>
-                      <span className="text-foreground">{formatINR(pricing.subtotal)}</span>
-                    </div>
-                    {listing.cleaningFee > 0 && (
-                      <div className="flex justify-between">
-                        <span className="text-text-secondary">Cleaning fee</span>
-                        <span className="text-foreground">{formatINR(listing.cleaningFee)}</span>
-                      </div>
-                    )}
-                    {listing.serviceFee > 0 && (
-                      <div className="flex justify-between">
-                        <span className="text-text-secondary">Service fee</span>
-                        <span className="text-foreground">{formatINR(listing.serviceFee)}</span>
-                      </div>
-                    )}
-                    {appliedDiscount && (
-                      <div className="flex justify-between">
-                        <span className="text-accent">{appliedDiscount.name}</span>
-                        <span className="text-accent">-{formatINR(appliedDiscount.amount)}</span>
-                      </div>
-                    )}
-                    <hr className="border-border my-2" />
-                    <div className="flex justify-between items-baseline font-pillar font-bold uppercase tracking-wide text-base">
-                      <span className="text-foreground">Total</span>
-                      <span className="text-accent">
-                        {formatINR(appliedDiscount ? pricing.total - appliedDiscount.amount : pricing.total)}
-                      </span>
-                    </div>
-                  </div>
+                  <PricingBreakdown
+                    pricePerNight={listing.pricePerNight}
+                    cleaningFee={listing.cleaningFee}
+                    serviceFee={listing.serviceFee}
+                    pricing={pricing}
+                    appliedDiscount={appliedDiscount}
+                  />
                 )}
 
                 {/* Book Button */}
                 <Button
-                  className="w-full bg-accent text-accent-foreground hover:bg-accent-hover"
+                  className="w-full trivara-btn-primary"
                   disabled={!checkIn || !checkOut || !user || isBooking}
                   onClick={handleBook}
                 >
@@ -766,7 +654,7 @@ export default function ListingDetail() {
 
         {/* Similar Stays */}
         {similarListings.length > 0 && (
-          <div className="mt-12 pt-8 border-t border-border">
+          <div className="mt-12 pt-10 border-t border-border">
             <h2 className="text-2xl font-medium text-foreground mb-6">Similar stays</h2>
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
               {similarListings.map((similar) => (
