@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Link, useNavigate, useLocation } from 'react-router-dom';
-import { Search, Menu, Home, MessageCircle } from 'lucide-react';
+import { Menu, Home, MessageCircle } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
 import { useAuth } from '@/hooks/useAuth';
@@ -90,9 +90,6 @@ export function Header() {
               Logout
             </button>
           )}
-          <Link to="/search" className={navLinkClass}>
-            Explore
-          </Link>
           {user ? (
             <>
               <Link to="/trips" className={navLinkClass}>Your Trips</Link>
@@ -112,9 +109,6 @@ export function Header() {
             </button>
           )}
 
-          <Button variant="ghost" size="icon" className={iconButtonClass} onClick={() => navigate('/search')}>
-            <Search className="h-5 w-5" />
-          </Button>
           {user && (
             <Button
               variant="ghost"
@@ -153,12 +147,6 @@ export function Header() {
             </SheetTrigger>
             <SheetContent side="right" className="w-80 bg-surface-0 border-border">
               <div className="flex flex-col gap-6 mt-8">
-                <SheetClose asChild>
-                  <Link to="/search" className="flex items-center gap-3 text-lg">
-                    <Search className="h-5 w-5" />
-                    Explore
-                  </Link>
-                </SheetClose>
                 {user ? (
                   <>
                     {!isHost && (

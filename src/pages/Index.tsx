@@ -33,7 +33,7 @@ export default function Index() {
     const fetchData = async () => {
       try {
         const [featured, popularDestinations, heroBackground, hostBackground, heroOverlaySetting, hostCtaOverlaySetting, spacerImageSetting] = await Promise.all([
-          listingService.getFeatured(3),
+          listingService.getFeatured(5),
           listingService.getPopularDestinations(),
           siteSettingsService.getHeroBackgroundImageUrl(),
           siteSettingsService.getHostCtaBackgroundImageUrl(),
@@ -219,7 +219,7 @@ export default function Index() {
           {featuredListings.length === 0 ? (
             <p className="text-text-secondary py-12 text-center">No featured stays yet - check back soon.</p>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
               {featuredListings.map((listing) => (
                 <FeaturedListingCard key={listing.id} listing={listing} />
               ))}
@@ -228,52 +228,56 @@ export default function Index() {
         </div>
       </section>
 
-      {/* Become a Host CTA - admin-uploaded background image (Admin
-          Settings > Branding) shows through a dark wash behind the text,
-          the same layering pattern as the hero. */}
-      <section className="py-16 md:py-20">
-        <div className={`w-full ${SIDE_PAD}`}>
-          <div
-            className="relative min-h-[85vh] flex items-center justify-center text-center border border-border rounded-xl px-8 md:px-16 overflow-hidden"
-            style={hostCtaImage ? {
-              // Flat single-tone dark tint (adjustable in Admin Settings >
-              // Branding), same as the hero - no colored gradient over the photo.
-              backgroundImage: `linear-gradient(hsl(var(--surface-0) / ${hostCtaOverlay / 100}), hsl(var(--surface-0) / ${hostCtaOverlay / 100})), url(${hostCtaImage})`,
-              backgroundSize: 'cover',
-              backgroundPosition: 'center',
-            } : undefined}
-          >
-            <div className="max-w-2xl">
-              <EditableText
-                settingKey="content_host_ribbon"
-                fallback="share & earn"
-                as="span"
-                className="inline-block font-morderline text-xs tracking-wide bg-accent text-accent-foreground px-5 py-2 rounded-full mb-10"
-              />
-              <EditableText
-                settingKey="content_host_heading"
-                fallback="Share your space"
-                as="h2"
-                className="text-4xl md:text-6xl font-display font-medium mb-8"
-              />
-              <EditableText
-                settingKey="content_host_subtitle"
-                fallback="Join hosts who earn by sharing their homes with travelers worldwide"
-                as="p"
-                className="text-text-secondary mb-4 text-xl"
-              />
-              <EditableText
-                settingKey="content_host_aside"
-                fallback="your home, your rules"
-                as="p"
-                className="font-bastliga text-3xl text-primary mb-12"
-              />
-              <Link to="/host">
-                <Button className="trivara-btn-primary rounded-full px-12 py-7 text-base uppercase tracking-wide font-bold">
-                  <EditableText settingKey="content_host_button" fallback="Become a Host" as="span" />
-                </Button>
-              </Link>
-            </div>
+      {/* Become a Host CTA - full-bleed section sized and structured just
+          like the Hero above: the background image spans edge-to-edge
+          (no bordered/rounded card floating inside the page margins) and
+          the section fills the viewport the same way, only `.container`-
+          style horizontal padding is applied to the actual content. */}
+      <section className="relative min-h-screen flex flex-col overflow-hidden">
+        <div
+          className="absolute inset-0"
+          style={{
+            // Flat single-tone dark tint (adjustable in Admin Settings >
+            // Branding), same as the hero - no colored gradient over the photo.
+            backgroundImage: hostCtaImage
+              ? `linear-gradient(hsl(var(--surface-0) / ${hostCtaOverlay / 100}), hsl(var(--surface-0) / ${hostCtaOverlay / 100})), url(${hostCtaImage})`
+              : `linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%)`,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+          }}
+        />
+
+        <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6">
+          <div className="max-w-2xl">
+            <EditableText
+              settingKey="content_host_ribbon"
+              fallback="share & earn"
+              as="span"
+              className="inline-block font-morderline text-xs tracking-wide bg-accent text-accent-foreground px-5 py-2 rounded-full mb-10"
+            />
+            <EditableText
+              settingKey="content_host_heading"
+              fallback="Share your space"
+              as="h2"
+              className="text-4xl md:text-6xl font-display font-medium mb-8"
+            />
+            <EditableText
+              settingKey="content_host_subtitle"
+              fallback="Join hosts who earn by sharing their homes with travelers worldwide"
+              as="p"
+              className="text-text-secondary mb-4 text-xl"
+            />
+            <EditableText
+              settingKey="content_host_aside"
+              fallback="your home, your rules"
+              as="p"
+              className="font-bastliga text-3xl text-primary mb-12"
+            />
+            <Link to="/host">
+              <Button className="trivara-btn-primary rounded-full px-12 py-7 text-base uppercase tracking-wide font-bold">
+                <EditableText settingKey="content_host_button" fallback="Become a Host" as="span" />
+              </Button>
+            </Link>
           </div>
         </div>
       </section>

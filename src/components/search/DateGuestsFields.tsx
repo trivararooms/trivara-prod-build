@@ -1,5 +1,6 @@
 import { Calendar as CalendarIcon, Users } from 'lucide-react';
-import { format, addDays } from 'date-fns';
+import { format } from 'date-fns';
+import { DateRange } from 'react-day-picker';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
 import { CounterInput } from '@/components/ui/CounterInput';
@@ -8,6 +9,7 @@ export interface GuestCounts {
   adults: number;
   children: number;
   infants: number;
+  pets: number;
 }
 
 interface DateGuestsFieldsProps {
@@ -42,26 +44,18 @@ export function DateGuestsFields({ checkIn, checkOut, guests, onCheckInChange, o
           </button>
         </PopoverTrigger>
         <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
-          <div className="flex">
-            <CalendarComponent
-              mode="single"
-              selected={checkIn}
-              onSelect={(date) => {
-                onCheckInChange(date);
-                if (date && (!checkOut || checkOut <= date)) onCheckOutChange(addDays(date, 1));
-              }}
-              disabled={(date) => date < new Date()}
-              initialFocus
-              className="pointer-events-auto"
-            />
-            <CalendarComponent
-              mode="single"
-              selected={checkOut}
-              onSelect={onCheckOutChange}
-              disabled={(date) => date < (checkIn || new Date())}
-              className="pointer-events-auto"
-            />
-          </div>
+          <CalendarComponent
+            mode="range"
+            selected={{ from: checkIn, to: checkOut } as DateRange}
+            onSelect={(range: DateRange | undefined) => {
+              onCheckInChange(range?.from);
+              onCheckOutChange(range?.to);
+            }}
+            disabled={(date) => date < new Date()}
+            initialFocus
+            numberOfMonths={2}
+            className="pointer-events-auto"
+          />
           {checkIn && (
             <div className="p-2 border-t border-border">
               <button
@@ -80,7 +74,7 @@ export function DateGuestsFields({ checkIn, checkOut, guests, onCheckInChange, o
         <PopoverTrigger asChild>
           <button type="button" className={triggerClass}>
             <Users className="h-4 w-4 text-text-secondary flex-shrink-0" />
-            <span className={totalGuests(guests) > 1 || guests.infants > 0 ? 'text-foreground' : 'text-text-secondary'}>
+            <span className={totalGuests(guests) > 1 || guests.infants > 0 || guests.pets > 0 ? 'text-foreground' : 'text-text-secondary'}>
               {totalGuests(guests) > 1 ? `${totalGuests(guests)} guests` : 'Guests'}
             </span>
           </button>
@@ -106,6 +100,13 @@ export function DateGuestsFields({ checkIn, checkOut, guests, onCheckInChange, o
               <p className="text-xs text-text-meta">Under 2</p>
             </div>
             <CounterInput value={guests.infants} onChange={(v) => onGuestsChange({ ...guests, infants: v })} min={0} max={5} />
+          </div>
+          <div className="flex items-center justify-between">
+            <div>
+              <p className="text-sm font-medium">Pets</p>
+              <p className="text-xs text-text-meta">Bringing a service animal?</p>
+            </div>
+            <CounterInput value={guests.pets} onChange={(v) => onGuestsChange({ ...guests, pets: v })} min={0} max={5} />
           </div>
         </PopoverContent>
       </Popover>
