@@ -172,7 +172,7 @@ const Account = () => {
                 </p>
                 <Badge
                   variant={isHost ? "default" : "secondary"}
-                  className={isHost ? "bg-accent" : "bg-surface-3"}
+                  className={isHost ? "bg-accent text-accent-foreground hover:bg-accent" : "bg-surface-3 text-foreground"}
                 >
                   {isHost ? 'Host' : 'Guest'}
                 </Badge>

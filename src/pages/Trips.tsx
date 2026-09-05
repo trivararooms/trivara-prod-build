@@ -100,6 +100,20 @@ const REVIEW_CATEGORIES: { key: keyof ReviewCategoryRatings; label: string }[] =
   { key: 'location', label: 'Location' },
 ];
 
+function BookingThumbnail({ photo, title }: { photo?: string; title?: string }) {
+  return (
+    <div className="aspect-video md:aspect-[4/3]">
+      {photo ? (
+        <img src={photo} alt={title} className="w-full h-full object-cover" />
+      ) : (
+        <div className="w-full h-full bg-surface-2 flex items-center justify-center">
+          <Home className="h-12 w-12 text-text-secondary" />
+        </div>
+      )}
+    </div>
+  );
+}
+
 function MiniStarInput({ value, onChange }: { value: number; onChange: (v: number) => void }) {
   const [hovered, setHovered] = useState(0);
   return (
@@ -113,7 +127,7 @@ function MiniStarInput({ value, onChange }: { value: number; onChange: (v: numbe
           onMouseLeave={() => setHovered(0)}
           onClick={() => onChange(star)}
         >
-          <Star className={`h-4 w-4 ${star <= (hovered || value) ? 'fill-yellow-400 text-yellow-400' : 'text-text-secondary'}`} />
+          <Star className={`h-4 w-4 ${star <= (hovered || value) ? 'fill-accent text-accent' : 'text-text-secondary'}`} />
         </button>
       ))}
     </div>
@@ -157,7 +171,7 @@ function ReviewModal({ booking, listing, onClose, onSubmit, submitting }: Review
                 <Star
                   className={`h-8 w-8 ${
                     star <= (hoveredRating || rating)
-                      ? 'fill-yellow-400 text-yellow-400'
+                      ? 'fill-accent text-accent'
                       : 'text-text-secondary'
                   }`}
                 />
@@ -199,7 +213,7 @@ function ReviewModal({ booking, listing, onClose, onSubmit, submitting }: Review
             <Button
               type="submit"
               disabled={rating === 0 || submitting}
-              className="bg-accent text-accent-foreground hover:bg-accent-hover"
+              className="trivara-btn-primary"
             >
               {submitting ? (
                 <>
@@ -417,21 +431,9 @@ export default function Trips() {
             {upcomingBookings.length > 0 ? (
               <div className="grid gap-6">
                 {upcomingBookings.map(({ booking, listing }) => (
-                  <div key={booking.id} className="bg-card rounded-xl overflow-hidden">
+                  <div key={booking.id} className="bg-card rounded-xl overflow-hidden border border-border">
                     <div className="grid grid-cols-1 md:grid-cols-3">
-                      <div className="aspect-video md:aspect-[4/3]">
-                        {listing?.photos && listing.photos[0] ? (
-                          <img
-                            src={listing.photos[0]}
-                            alt={listing.title}
-                            className="w-full h-full object-cover"
-                          />
-                        ) : (
-                          <div className="w-full h-full bg-surface-2 flex items-center justify-center">
-                            <Home className="h-12 w-12 text-text-secondary" />
-                          </div>
-                        )}
-                      </div>
+                      <BookingThumbnail photo={listing?.photos?.[0]} title={listing?.title} />
                       <div className="md:col-span-2 p-6">
                         <div className="flex items-start justify-between mb-4">
                           <div>
@@ -443,11 +445,11 @@ export default function Trips() {
                           </div>
                           <span className={`px-3 py-1 rounded-full font-morderline text-[10px] tracking-wide border border-border ${
                             booking.status === 'confirmed'
-                              ? 'bg-accent/20 text-accent-foreground'
+                              ? 'bg-accent/20 text-foreground'
                               : booking.status === 'completed'
                                 ? 'bg-surface-3 text-foreground'
                                 : booking.status === 'pending' || booking.status === 'pending_payment'
-                                  ? 'bg-yellow-500/20 text-yellow-700 dark:text-yellow-400'
+                                  ? 'bg-surface-2 text-text-secondary'
                                   : 'bg-destructive/20 text-destructive-foreground'
                           }`}>
                             {booking.status === 'pending' ? 'Awaiting host approval'
@@ -478,7 +480,7 @@ export default function Trips() {
                         {booking.status === 'pending_payment' && (
                           <div className="flex gap-3 flex-wrap mb-3">
                             <Button
-                              className="bg-accent text-accent-foreground hover:bg-accent-hover"
+                              className="trivara-btn-primary"
                               disabled={payingBookingId === booking.id}
                               onClick={() => handlePayNow(booking, listing)}
                             >
@@ -586,7 +588,7 @@ export default function Trips() {
                 <Calendar className="h-12 w-12 text-text-secondary mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-foreground mb-2">No upcoming trips</h3>
                 <p className="text-text-secondary mb-6">Start planning your next adventure</p>
-                <Button onClick={() => navigate('/search')}>
+                <Button className="trivara-btn-primary" onClick={() => navigate('/search')}>
                   Explore listings
                 </Button>
               </div>
@@ -600,21 +602,9 @@ export default function Trips() {
                   const canReview = booking.status === 'completed' && !reviewedBookings.has(booking.id);
 
                   return (
-                    <div key={booking.id} className="bg-card rounded-xl overflow-hidden">
+                    <div key={booking.id} className="bg-card rounded-xl overflow-hidden border border-border">
                       <div className="grid grid-cols-1 md:grid-cols-3">
-                        <div className="aspect-video md:aspect-[4/3]">
-                          {listing?.photos && listing.photos[0] ? (
-                            <img
-                              src={listing.photos[0]}
-                              alt={listing.title}
-                              className="w-full h-full object-cover"
-                            />
-                          ) : (
-                            <div className="w-full h-full bg-surface-2 flex items-center justify-center">
-                              <Home className="h-12 w-12 text-text-secondary" />
-                            </div>
-                          )}
-                        </div>
+                        <BookingThumbnail photo={listing?.photos?.[0]} title={listing?.title} />
                         <div className="md:col-span-2 p-6">
                           <div className="flex items-start justify-between mb-4">
                             <div>
@@ -677,7 +667,7 @@ export default function Trips() {
                                 disabled
                                 className="text-text-secondary"
                               >
-                                <Star className="h-4 w-4 mr-2 fill-yellow-400 text-yellow-400" />
+                                <Star className="h-4 w-4 mr-2 fill-accent text-accent" />
                                 Reviewed
                               </Button>
                             ) : null}
@@ -693,7 +683,7 @@ export default function Trips() {
                 <Calendar className="h-12 w-12 text-text-secondary mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-foreground mb-2">No past trips yet</h3>
                 <p className="text-text-secondary mb-6">Your trip history will appear here</p>
-                <Button onClick={() => navigate('/search')}>
+                <Button className="trivara-btn-primary" onClick={() => navigate('/search')}>
                   Start exploring
                 </Button>
               </div>
