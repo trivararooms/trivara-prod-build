@@ -1,7 +1,6 @@
-import { useEffect, useState, useRef, useCallback } from 'react';
+import { useEffect, useState, useRef, useCallback, type ComponentType } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -22,7 +21,18 @@ import { supabase } from '@/lib/supabase';
 import { formatINR } from '@/lib/utils';
 import { useToast } from '@/hooks/use-toast';
 import { getErrorMessage } from '@/lib/errors';
-import { Loader2, RefreshCw, Settings, UserCheck } from 'lucide-react';
+import {
+  Loader2,
+  RefreshCw,
+  Settings,
+  UserCheck,
+  Home,
+  CalendarCheck2,
+  Activity,
+  CheckCircle2,
+  TrendingUp,
+  Wallet,
+} from 'lucide-react';
 import { adminAccessService } from '@/services/adminAccessService';
 
 type DashboardStats = {
@@ -60,6 +70,34 @@ type PayoutRequest = {
     ifsc_code: string;
   } | null;
 };
+
+function StatCard({
+  icon: Icon,
+  label,
+  value,
+  valueClassName = 'text-3xl font-semibold text-foreground',
+}: {
+  icon: ComponentType<{ className?: string }>;
+  label: string;
+  value: React.ReactNode;
+  valueClassName?: string;
+}) {
+  return (
+    <Card className="bg-card border-border">
+      <CardContent className="p-6">
+        <div className="flex items-center gap-4">
+          <div className="h-12 w-12 rounded-lg bg-accent/10 flex items-center justify-center flex-shrink-0">
+            <Icon className="h-6 w-6 text-accent" />
+          </div>
+          <div>
+            <p className={valueClassName}>{value}</p>
+            <p className="text-sm text-text-secondary">{label}</p>
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 // Admins only ever see a masked account number - get_bank_details_for_payout()
 // is admin-only (checked inside the function) and returns just the last 4
@@ -512,15 +550,17 @@ export default function AdminDashboard() {
 
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
-          <h1 className="text-3xl font-pillar font-bold uppercase tracking-wide">
-            Admin Dashboard
-          </h1>
-          <div className="flex items-center gap-4">
-            <div className="text-sm text-text-secondary flex items-center gap-2">
+          <div>
+            <h1 className="text-3xl font-pillar font-bold uppercase tracking-wide text-foreground">
+              Admin Dashboard
+            </h1>
+            <div className="mt-2 text-sm text-text-secondary flex items-center gap-2">
               <span className="h-2 w-2 rounded-full bg-green-500 animate-pulse"></span>
               Live updates enabled
-              <span className="text-xs">• Last updated: {lastUpdated.toLocaleTimeString()}</span>
+              <span className="text-xs text-text-meta">• Last updated: {lastUpdated.toLocaleTimeString()}</span>
             </div>
+          </div>
+          <div className="flex flex-wrap items-center gap-2">
             {profile?.role === 'admin' && (
               <>
                 <Button
@@ -555,53 +595,28 @@ export default function AdminDashboard() {
 
         {/* Stats Cards Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-sm text-text-secondary">Total Listings</p>
-              <p className="text-3xl font-semibold">{stats?.total_listings || 0}</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-sm text-text-secondary">Total Bookings</p>
-              <p className="text-3xl font-semibold">{stats?.total_bookings || 0}</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-sm text-text-secondary">Active Bookings</p>
-              <p className="text-3xl font-semibold">{stats?.active_bookings || 0}</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-sm text-text-secondary">Completed Bookings</p>
-              <p className="text-3xl font-semibold">{stats?.completed_bookings || 0}</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-sm text-text-secondary">Platform Revenue</p>
-              <p className="text-3xl font-pillar font-bold text-accent">{formatINR(stats?.platform_revenue || 0)}</p>
-            </CardContent>
-          </Card>
-
-          <Card>
-            <CardContent className="p-6">
-              <p className="text-sm text-text-secondary">Pending Host Payouts</p>
-              <p className="text-3xl font-pillar font-bold text-primary">{formatINR(stats?.pending_payouts || 0)}</p>
-            </CardContent>
-          </Card>
+          <StatCard icon={Home} label="Total Listings" value={stats?.total_listings || 0} />
+          <StatCard icon={CalendarCheck2} label="Total Bookings" value={stats?.total_bookings || 0} />
+          <StatCard icon={Activity} label="Active Bookings" value={stats?.active_bookings || 0} />
+          <StatCard icon={CheckCircle2} label="Completed Bookings" value={stats?.completed_bookings || 0} />
+          <StatCard
+            icon={TrendingUp}
+            label="Platform Revenue"
+            value={formatINR(stats?.platform_revenue || 0)}
+            valueClassName="text-3xl font-pillar font-bold text-accent"
+          />
+          <StatCard
+            icon={Wallet}
+            label="Pending Host Payouts"
+            value={formatINR(stats?.pending_payouts || 0)}
+            valueClassName="text-3xl font-pillar font-bold text-primary"
+          />
         </div>
 
         {/* Payout Requests Section */}
-        <Card>
+        <Card className="bg-card border-border">
           <CardHeader>
-            <CardTitle>Payout Requests</CardTitle>
+            <CardTitle className="font-pillar uppercase tracking-wide text-xl">Payout Requests</CardTitle>
           </CardHeader>
           <CardContent>
             {(payoutRequests ?? []).length === 0 ? (
@@ -609,23 +624,23 @@ export default function AdminDashboard() {
             ) : (
               <div className="space-y-4">
                 {payoutRequests.map(request => (
-                  <Card key={request.id} className="border p-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div key={request.id} className="rounded-lg border border-border bg-surface-1 p-6">
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                       <div>
                         {/* Booking Context */}
-                        <div className="mb-4 p-3 bg-muted/50 rounded-md">
-                          <h4 className="font-medium text-sm mb-1">Booking Context</h4>
+                        <div className="mb-4 p-3 bg-surface-2 rounded-md">
+                          <h4 className="text-xs font-semibold uppercase tracking-wide text-text-secondary mb-1">Booking Context</h4>
                           {request.bookings ? (
                             <>
                               <p className="text-sm"><span className="font-medium">Property:</span> {request.bookings.listings?.title || 'Unknown'}</p>
-                              <p className="text-xs text-muted-foreground">Booking ID: {request.booking_id}</p>
+                              <p className="text-xs text-text-meta">Booking ID: {request.booking_id}</p>
                             </>
                           ) : (
-                            <p className="text-sm text-muted-foreground">General Payout Request (No Booking ID)</p>
+                            <p className="text-sm text-text-secondary">General Payout Request (No Booking ID)</p>
                           )}
                         </div>
 
-                        <h4 className="font-medium mb-2">Host Information</h4>
+                        <h4 className="text-xs font-semibold uppercase tracking-wide text-text-secondary mb-2">Host Information</h4>
                         <p className="text-sm mb-1">
                           <span className="font-medium">Email:</span> N/A
                         </p>
@@ -636,11 +651,12 @@ export default function AdminDashboard() {
                           <span className="font-medium">Host ID:</span> {request.host_id}
                         </p>
                         <p className="text-sm mb-4">
-                          <span className="font-medium">Amount:</span> {formatINR(request.amount)} ({request.currency})
+                          <span className="font-medium">Amount:</span>{' '}
+                          <span className="font-pillar font-semibold text-accent">{formatINR(request.amount)}</span> ({request.currency})
                         </p>
                       </div>
                       <div>
-                        <h4 className="font-medium mb-2">Bank Details</h4>
+                        <h4 className="text-xs font-semibold uppercase tracking-wide text-text-secondary mb-2">Bank Details</h4>
                         <p className="text-sm mb-1">
                           <span className="font-medium">Account Holder:</span> {request.host_bank_account?.account_holder_name || 'N/A'}
                         </p>
@@ -656,14 +672,14 @@ export default function AdminDashboard() {
                       </div>
                     </div>
 
-                    <div className="flex flex-wrap items-center justify-between pt-4 border-t mt-4">
-                      <div className="flex items-center space-x-4">
-                        <p className="text-sm">
+                    <div className="flex flex-wrap items-center justify-between gap-4 pt-4 border-t border-border mt-4">
+                      <div className="flex flex-wrap items-center gap-4">
+                        <div className="flex items-center gap-2 text-sm">
                           <span className="font-medium">Status:</span>
                           <Badge variant={request.status === 'paid' ? 'secondary' : request.status === 'rejected' ? 'destructive' : 'default'}>
                             {request.status}
                           </Badge>
-                        </p>
+                        </div>
                         <p className="text-sm">
                           <span className="font-medium">Requested:</span> {new Date(request.requested_at).toLocaleDateString()}
                         </p>
@@ -674,7 +690,7 @@ export default function AdminDashboard() {
                           }
                         </p>
                         {request.status === 'rejected' && request.notes && (
-                          <p className="text-sm text-muted-foreground">
+                          <p className="text-sm text-text-secondary">
                             <span className="font-medium">Reason:</span> {request.notes}
                           </p>
                         )}
@@ -777,7 +793,7 @@ export default function AdminDashboard() {
                         )}
                       </div>
                     </div>
-                  </Card>
+                  </div>
                 ))}
               </div>
             )}
