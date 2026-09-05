@@ -96,9 +96,9 @@ export default function BookingConfirmation() {
           </Button>
         </div>
 
-        <Card className="print-card">
+        <Card className="print-card shadow-none border-border">
           <CardContent className="p-8">
-            <div className="flex items-center gap-2 mb-6">
+            <div className="flex items-center gap-2 mb-8">
               {isConfirmed ? (
                 <CheckCircle2 className="h-6 w-6 text-accent" />
               ) : (
@@ -111,7 +111,7 @@ export default function BookingConfirmation() {
             </div>
 
             {listing && (
-              <div className="flex gap-4 mb-6 pb-6 border-b border-border">
+              <div className="flex gap-4 pb-8 border-b border-border">
                 {listing.photos?.[0] && (
                   <img src={listing.photos[0]} alt={listing.title} className="w-24 h-24 rounded-lg object-cover flex-shrink-0" />
                 )}
@@ -128,7 +128,7 @@ export default function BookingConfirmation() {
               </div>
             )}
 
-            <div className="grid grid-cols-2 gap-4 text-sm mb-6 pb-6 border-b border-border">
+            <div className="grid grid-cols-2 gap-4 text-sm py-8 border-b border-border">
               <div>
                 <p className="text-text-secondary">Check-in</p>
                 <p className="font-medium">{booking.checkIn.toLocaleDateString(undefined, { dateStyle: 'medium' })}</p>
@@ -147,7 +147,7 @@ export default function BookingConfirmation() {
               </div>
             </div>
 
-            <div className="flex justify-between items-center mb-2">
+            <div className="flex justify-between items-center pt-8 mb-2">
               <span className="text-text-secondary">Total paid</span>
               <span className="text-xl font-pillar font-bold uppercase tracking-wide text-accent">{formatINR(booking.totalPrice)}</span>
             </div>
@@ -156,7 +156,7 @@ export default function BookingConfirmation() {
               {booking.razorpayPaymentId && ` · Razorpay ID ${booking.razorpayPaymentId}`}
             </p>
 
-            <div className="mt-8 pt-6 border-t border-border flex gap-3 no-print">
+            <div className="mt-8 pt-8 border-t border-border flex gap-3 no-print">
               {listing && (
                 <Button variant="outline" onClick={() => navigate(`/listing/${listing.id}`)}>
                   View listing
