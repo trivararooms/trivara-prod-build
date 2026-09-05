@@ -25,12 +25,14 @@ export default function Index() {
   const [hostCtaImage, setHostCtaImage] = useState<string | null>(null);
   const [hostCtaOverlay, setHostCtaOverlay] = useState(80);
   const [collectionSlots, setCollectionSlots] = useState<{ image: string | null; link: string | null }[]>([]);
+  const [banner75, setBanner75] = useState<{ image: string | null; link: string | null }>({ image: null, link: null });
+  const [bannerHero, setBannerHero] = useState<{ image: string | null; link: string | null }>({ image: null, link: null });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [featured, popularDestinations, heroBackground, hostBackground, heroOverlaySetting, hostCtaOverlaySetting, collections] = await Promise.all([
+        const [featured, popularDestinations, heroBackground, hostBackground, heroOverlaySetting, hostCtaOverlaySetting, collections, banner75Data, bannerHeroData] = await Promise.all([
           listingService.getFeatured(3),
           listingService.getPopularDestinations(),
           siteSettingsService.getHeroBackgroundImageUrl(),
@@ -41,6 +43,8 @@ export default function Index() {
             image: await siteSettingsService.getHomepageCollectionImageUrl(slot),
             link: await siteSettingsService.getHomepageCollectionLinkUrl(slot),
           }))),
+          Promise.all([siteSettingsService.getHomepage75BannerImageUrl(), siteSettingsService.getHomepage75BannerLinkUrl()]),
+          Promise.all([siteSettingsService.getHomepageHeroBannerImageUrl(), siteSettingsService.getHomepageHeroBannerLinkUrl()]),
         ]);
         setFeaturedListings(featured);
         setDestinations(popularDestinations);
@@ -49,6 +53,8 @@ export default function Index() {
         if (heroOverlaySetting) setHeroOverlay(parseInt(heroOverlaySetting, 10));
         if (hostCtaOverlaySetting) setHostCtaOverlay(parseInt(hostCtaOverlaySetting, 10));
         setCollectionSlots(collections);
+        setBanner75({ image: banner75Data[0], link: banner75Data[1] });
+        setBannerHero({ image: bannerHeroData[0], link: bannerHeroData[1] });
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -165,35 +171,19 @@ export default function Index() {
         </section>
       )}
 
-      {/* Collections - up to three admin-uploaded photo tiles (Admin
-          Settings > Branding), each optionally linking somewhere. A slot
-          with no image renders nothing; the whole section is hidden if
-          none of the three are set. */}
-      {collectionSlots.some((slot) => slot.image) && (
-        <section className="pt-4 md:pt-6 pb-16 md:pb-20">
-          <div className={`w-full ${SIDE_PAD}`}>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              {collectionSlots
-                .filter((slot): slot is { image: string; link: string | null } => !!slot.image)
-                .map((slot, i) => {
-                  const tile = (
-                    <div className="group relative aspect-[3/4] overflow-hidden bg-surface-2">
-                      <img
-                        src={slot.image}
-                        alt=""
-                        className="w-full h-full object-cover group-hover:scale-105 trivara-transition duration-500"
-                      />
-                    </div>
-                  );
-                  return slot.link ? (
-                    <a key={i} href={slot.link} className="block">{tile}</a>
-                  ) : (
-                    <div key={i}>{tile}</div>
-                  );
-                })}
-            </div>
+      {/* 75% banner - full-bleed image+link, same width as Hero, 75% of
+          Hero's height. Admin-configurable (Admin Settings > Branding);
+          renders nothing if no image is set. */}
+      {banner75.image && (
+        banner75.link ? (
+          <a href={banner75.link} className="block h-[75vh] overflow-hidden">
+            <img src={banner75.image} alt="" className="w-full h-full object-cover" />
+          </a>
+        ) : (
+          <div className="h-[75vh] overflow-hidden">
+            <img src={banner75.image} alt="" className="w-full h-full object-cover" />
           </div>
-        </section>
+        )
       )}
 
       {/* Featured Listings - tight top padding to match the destinations
@@ -281,6 +271,53 @@ export default function Index() {
           </div>
         </div>
       </section>
+
+      {/* Collections - up to three admin-uploaded photo tiles (Admin
+          Settings > Branding), each optionally linking somewhere. A slot
+          with no image renders nothing; the whole section is hidden if
+          none of the three are set. */}
+      {collectionSlots.some((slot) => slot.image) && (
+        <section className="pt-16 md:pt-20 pb-16 md:pb-20">
+          <div className={`w-full ${SIDE_PAD}`}>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {collectionSlots
+                .filter((slot): slot is { image: string; link: string | null } => !!slot.image)
+                .map((slot, i) => {
+                  const tile = (
+                    <div className="group relative aspect-[3/4] overflow-hidden bg-surface-2">
+                      <img
+                        src={slot.image}
+                        alt=""
+                        className="w-full h-full object-cover group-hover:scale-105 trivara-transition duration-500"
+                      />
+                    </div>
+                  );
+                  return slot.link ? (
+                    <a key={i} href={slot.link} className="block">{tile}</a>
+                  ) : (
+                    <div key={i}>{tile}</div>
+                  );
+                })}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Hero-size banner - full-bleed image+link, same width and height
+          treatment as Hero (100vh). Admin-configurable (Admin Settings >
+          Branding); renders nothing if no image is set. Last section
+          before the footer. */}
+      {bannerHero.image && (
+        bannerHero.link ? (
+          <a href={bannerHero.link} className="block h-screen overflow-hidden">
+            <img src={bannerHero.image} alt="" className="w-full h-full object-cover" />
+          </a>
+        ) : (
+          <div className="h-screen overflow-hidden">
+            <img src={bannerHero.image} alt="" className="w-full h-full object-cover" />
+          </div>
+        )
+      )}
     </div>
   );
 }

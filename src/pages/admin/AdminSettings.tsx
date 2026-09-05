@@ -836,6 +836,94 @@ function CollectionImageCard({ slot }: { slot: number }) {
     );
 }
 
+interface HomepageBannerCardProps {
+    title: string;
+    description: string;
+    queryKeyPrefix: string;
+    getImageUrl: () => Promise<string | null>;
+    uploadImage: (file: File) => Promise<string>;
+    getLinkUrl: () => Promise<string | null>;
+    setLinkUrl: (url: string) => Promise<void>;
+}
+
+/** One of the two full-bleed homepage image banners (75%-height and hero-size) -
+    same shape as CollectionImageCard (image upload + optional link), just
+    parametrized instead of keyed by numeric slot since there's only one of each. */
+function HomepageBannerCard({ title, description, queryKeyPrefix, getImageUrl, uploadImage, getLinkUrl, setLinkUrl }: HomepageBannerCardProps) {
+    const { toast } = useToast();
+    const queryClient = useQueryClient();
+    const fileInputRef = useRef<HTMLInputElement>(null);
+    const [uploading, setUploading] = useState(false);
+    const [link, setLink] = useState<string | null>(null);
+
+    const imageQueryKey = [`${queryKeyPrefix}-image`];
+    const linkQueryKey = [`${queryKeyPrefix}-link`];
+
+    const imageQuery = useQuery({ queryKey: imageQueryKey, queryFn: getImageUrl });
+    const linkQuery = useQuery({ queryKey: linkQueryKey, queryFn: getLinkUrl });
+
+    useEffect(() => {
+        if (linkQuery.data !== undefined && link === null) setLink(linkQuery.data ?? '');
+    }, [linkQuery.data, link]);
+
+    const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+        const file = e.target.files?.[0];
+        if (!file) return;
+
+        setUploading(true);
+        try {
+            await uploadImage(file);
+            toast({ title: `${title} updated` });
+            queryClient.invalidateQueries({ queryKey: imageQueryKey });
+        } catch (error) {
+            toast({ title: 'Error', description: getErrorMessage(error, 'Could not upload the image.'), variant: 'destructive' });
+        } finally {
+            setUploading(false);
+            if (fileInputRef.current) fileInputRef.current.value = '';
+        }
+    };
+
+    const saveLinkMutation = useMutation({
+        mutationFn: () => setLinkUrl(link ?? ''),
+        onSuccess: () => {
+            toast({ title: 'Link saved' });
+            queryClient.invalidateQueries({ queryKey: linkQueryKey });
+        },
+        onError: (error) => toast({ title: 'Error', description: getErrorMessage(error, 'Could not save.'), variant: 'destructive' }),
+    });
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle>{title}</CardTitle>
+                <CardDescription>{description}</CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+                {imageQuery.data && (
+                    <img src={imageQuery.data} alt={title} className="w-full max-w-md aspect-video object-cover" />
+                )}
+                <input ref={fileInputRef} type="file" accept="image/*" className="hidden" onChange={handleFileChange} />
+                <Button onClick={() => fileInputRef.current?.click()} disabled={uploading} className="gap-2">
+                    {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4" />}
+                    {imageQuery.data ? 'Replace image' : 'Upload image'}
+                </Button>
+
+                <div className="space-y-2 pt-2">
+                    <Label>Link (optional)</Label>
+                    <p className="text-xs text-text-meta">
+                        Where this banner goes when clicked, e.g. /search?location=Goa. Leave blank for a non-clickable image.
+                    </p>
+                    <Input value={link ?? ''} onChange={(e) => setLink(e.target.value)} placeholder="/search?location=Goa" />
+                    <Button size="sm" onClick={() => saveLinkMutation.mutate()} disabled={saveLinkMutation.isPending} className="gap-2">
+                        {saveLinkMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
+                        Save link
+                    </Button>
+                </div>
+            </CardContent>
+        </Card>
+    );
+}
+
 function SiteBackgroundCard() {
     const { toast } = useToast();
     const queryClient = useQueryClient();
@@ -927,6 +1015,26 @@ function BrandingTab() {
             <CollectionImageCard slot={1} />
             <CollectionImageCard slot={2} />
             <CollectionImageCard slot={3} />
+
+            <HomepageBannerCard
+                title="75% banner"
+                description="Full-width image shown between Popular Destinations and Featured Stays, 75% of the Hero's height. Leave unset to hide it."
+                queryKeyPrefix="homepage-75-banner"
+                getImageUrl={() => siteSettingsService.getHomepage75BannerImageUrl()}
+                uploadImage={(file) => siteSettingsService.uploadHomepage75BannerImage(file)}
+                getLinkUrl={() => siteSettingsService.getHomepage75BannerLinkUrl()}
+                setLinkUrl={(url) => siteSettingsService.setHomepage75BannerLinkUrl(url)}
+            />
+
+            <HomepageBannerCard
+                title="Hero-size banner"
+                description="Full-width image shown after the Become a Host section, same height as Hero. Leave unset to hide it."
+                queryKeyPrefix="homepage-hero-banner"
+                getImageUrl={() => siteSettingsService.getHomepageHeroBannerImageUrl()}
+                uploadImage={(file) => siteSettingsService.uploadHomepageHeroBannerImage(file)}
+                getLinkUrl={() => siteSettingsService.getHomepageHeroBannerLinkUrl()}
+                setLinkUrl={(url) => siteSettingsService.setHomepageHeroBannerLinkUrl(url)}
+            />
 
             <Card>
                 <CardHeader>
