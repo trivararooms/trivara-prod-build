@@ -84,6 +84,44 @@ export const siteSettingsService = {
     await this.setAppSetting(`homepage_collection_${slot}_link_url`, url);
   },
 
+  /** Full-bleed banner between Popular Destinations and Featured Stays, 75% of Hero's height. */
+  async getHomepage75BannerImageUrl(): Promise<string | null> {
+    return this.getAppSetting('homepage_75_banner_image_url');
+  },
+
+  async uploadHomepage75BannerImage(file: File): Promise<string> {
+    const url = await uploadSiteAsset(file, 'banner-75');
+    await this.setAppSetting('homepage_75_banner_image_url', url);
+    return url;
+  },
+
+  async getHomepage75BannerLinkUrl(): Promise<string | null> {
+    return this.getAppSetting('homepage_75_banner_link_url');
+  },
+
+  async setHomepage75BannerLinkUrl(url: string): Promise<void> {
+    await this.setAppSetting('homepage_75_banner_link_url', url);
+  },
+
+  /** Full-bleed banner after the Become-a-Host CTA, same height as Hero (100vh). */
+  async getHomepageHeroBannerImageUrl(): Promise<string | null> {
+    return this.getAppSetting('homepage_hero_banner_image_url');
+  },
+
+  async uploadHomepageHeroBannerImage(file: File): Promise<string> {
+    const url = await uploadSiteAsset(file, 'banner-hero');
+    await this.setAppSetting('homepage_hero_banner_image_url', url);
+    return url;
+  },
+
+  async getHomepageHeroBannerLinkUrl(): Promise<string | null> {
+    return this.getAppSetting('homepage_hero_banner_link_url');
+  },
+
+  async setHomepageHeroBannerLinkUrl(url: string): Promise<void> {
+    await this.setAppSetting('homepage_hero_banner_link_url', url);
+  },
+
   /** Raw CSS `background` value (solid color or gradient) applied to <body> sitewide. */
   async getSiteBackground(): Promise<string | null> {
     return this.getAppSetting('site_background_css');
