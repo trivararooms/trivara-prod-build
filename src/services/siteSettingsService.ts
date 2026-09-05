@@ -13,12 +13,11 @@ export interface ContentRun {
   color?: string | null;
 }
 
-// Deliberately excludes tailwind.config.ts's "beast" font - it's just an
-// alias for the same Anton family "display" already uses, and (unlike
-// every option below) it never appears as a literal className anywhere in
-// this codebase, so Tailwind's JIT scanner would never generate its CSS in
-// the first place.
-export const CONTENT_FONT_OPTIONS = ['sans', 'display', 'script', 'pillar', 'bastliga', 'morderline'] as const;
+// Only the two fonts that still look visually distinct from each other
+// post-redesign: "script"/"bastliga"/"morderline" all now point at the
+// same Fraunces/Inter stacks as "display"/"sans" (see tailwind.config.ts),
+// so offering them here would just be duplicate-looking picker entries.
+export const CONTENT_FONT_OPTIONS = ['sans', 'display'] as const;
 
 export function textToRuns(text: string): ContentRun[] {
   return text.split(/\s+/).filter(Boolean).map((word) => ({ text: word, font: null, color: null }));

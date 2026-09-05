@@ -21,12 +21,11 @@ export default {
     extend: {
       fontFamily: {
         sans: ["Inter", "system-ui", "sans-serif"],
-        display: ["Anton", "system-ui", "sans-serif"],
-        script: ["Caveat", "cursive"],
+        display: ["Fraunces", "Georgia", "serif"],
+        script: ["Fraunces", "Georgia", "serif"],
         pillar: ["Big Shoulders Display", "system-ui", "sans-serif"],
-        bastliga: ["Yellowtail", "cursive"],
-        morderline: ["Bungee", "cursive"],
-        beast: ["Anton", "system-ui", "sans-serif"],
+        bastliga: ["Fraunces", "Georgia", "serif"],
+        morderline: ["Inter", "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
