@@ -473,7 +473,7 @@ class ListingService {
 
       return Array.from(destinationMap.values())
         .sort((a, b) => b.listings - a.listings)
-        .slice(0, 6)
+        .slice(0, 5)
         .map(({ city, state, listings, image }) => ({ city, state, listings, image }));
     } catch (err) {
       console.error('Unexpected error in getPopularDestinations:', err);

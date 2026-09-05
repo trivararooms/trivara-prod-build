@@ -66,11 +66,8 @@ export function FeaturedListingCard({ listing }: FeaturedListingCardProps) {
 
   return (
     <Link to={`/listing/${listing.id}`} className="group block">
-      {/* "feat-media" is a plain measurement hook - Index.tsx reads its
-          rendered width to size the destination marquee cards at exactly
-          half, the same way the mock's own vanilla-JS syncDestCardSize()
-          did. No rounded corners, per the redesign. */}
-      <div ref={mediaRef} className="feat-media relative aspect-[4/5] overflow-hidden bg-surface-0 mb-4">
+      {/* No rounded corners, per the redesign. */}
+      <div ref={mediaRef} className="relative aspect-[4/5] overflow-hidden bg-surface-0 mb-4">
         <div ref={layerRef} className="absolute left-0 right-0 -top-[15%] h-[130%] will-change-transform">
           <img
             src={listing.photos[0]}
