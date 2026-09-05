@@ -303,7 +303,7 @@ export default function HostDashboard() {
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-8">
           <div>
-            <h1 className="text-3xl font-pillar font-bold uppercase tracking-wide text-foreground mb-2">
+            <h1 className="text-3xl font-display font-medium text-foreground mb-2">
               Host Dashboard
             </h1>
             <p className="text-lg text-text-secondary">

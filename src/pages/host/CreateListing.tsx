@@ -4,25 +4,28 @@ import { useQuery } from '@tanstack/react-query';
 import {
   Home, MapPin, Image, Sparkles, DollarSign,
   CalendarDays, ClipboardList, FileCheck, ChevronRight, ChevronLeft,
-  Building, Warehouse, TreePine, Hotel, Loader2
+  Loader2
 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Textarea } from '@/components/ui/textarea';
-import { Checkbox } from '@/components/ui/checkbox';
 import { listingService } from '@/services/listingService';
-import { amenitiesList, accessibilityList } from '@/data/amenities';
 import { PropertyType, CancellationPolicy } from '@/types';
 import { useToast } from '@/hooks/use-toast';
-import { formatINR } from '@/lib/utils';
-import { CounterInput } from '@/components/ui/CounterInput';
 import { useDebounce } from '@/hooks/useDebounce';
 import { supabase } from '@/lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
 import { getErrorMessage } from '@/lib/errors';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { FIXED_COUNTRY, FIXED_STATE, KARNATAKA_CITIES } from '@/data/karnatakaLocations';
+import { FIXED_COUNTRY, FIXED_STATE } from '@/data/karnatakaLocations';
 import { geocodeAddress, FALLBACK_COORDINATES } from '@/lib/geocode';
+import { ListingFormData } from './create-listing-steps/types';
+import { PropertyTypeStep } from './create-listing-steps/PropertyTypeStep';
+import { LocationStep } from './create-listing-steps/LocationStep';
+import { PhotosStep } from './create-listing-steps/PhotosStep';
+import { DetailsStep } from './create-listing-steps/DetailsStep';
+import { AmenitiesStep } from './create-listing-steps/AmenitiesStep';
+import { PricingStep } from './create-listing-steps/PricingStep';
+import { AvailabilityStep } from './create-listing-steps/AvailabilityStep';
+import { RulesStep } from './create-listing-steps/RulesStep';
+import { ReviewStep } from './create-listing-steps/ReviewStep';
 
 const STEPS = [
   { id: 'type', label: 'Property type', icon: Home },
@@ -35,49 +38,6 @@ const STEPS = [
   { id: 'rules', label: 'House rules', icon: ClipboardList },
   { id: 'review', label: 'Review', icon: FileCheck },
 ];
-
-const propertyTypes: { value: PropertyType; label: string; description: string; icon: React.ReactNode }[] = [
-  { value: 'entire_place', label: 'Entire place', description: 'Guests have the whole place to themselves', icon: <Home className="h-6 w-6" /> },
-  { value: 'private_room', label: 'Private room', description: 'Guests have their own room, shared spaces', icon: <Building className="h-6 w-6" /> },
-  { value: 'shared_room', label: 'Shared room', description: 'Guests sleep in a shared space', icon: <Warehouse className="h-6 w-6" /> },
-  { value: 'hotel_room', label: 'Hotel room', description: 'Professional hospitality business', icon: <Hotel className="h-6 w-6" /> },
-];
-
-const cancellationPolicies: { value: CancellationPolicy; label: string; description: string }[] = [
-  { value: 'flexible', label: 'Flexible', description: 'Full refund up to 24 hours before check-in' },
-  { value: 'moderate', label: 'Moderate', description: 'Full refund up to 5 days before check-in' },
-  { value: 'strict', label: 'Strict', description: 'Full refund up to 14 days before check-in' },
-];
-
-const COUNTER_FIELDS: { key: 'maxGuests' | 'bedrooms' | 'beds' | 'bathrooms'; label: string; min: number; max: number }[] = [
-  { key: 'maxGuests', label: 'Max guests', min: 1, max: 16 },
-  { key: 'bedrooms', label: 'Bedrooms', min: 0, max: 10 },
-  { key: 'beds', label: 'Beds', min: 1, max: 20 },
-  { key: 'bathrooms', label: 'Bathrooms', min: 1, max: 10 },
-];
-
-interface ListingFormData {
-  propertyType: PropertyType | '';
-  title: string;
-  description: string;
-  address: string;
-  city: string;
-  state: string;
-  country: string;
-  postalCode: string;
-  photos: string[];
-  maxGuests: number;
-  bedrooms: number;
-  beds: number;
-  bathrooms: number;
-  amenities: string[];
-  pricePerNight: number;
-  cleaningFee: number;
-  serviceFee: number;
-  houseRules: string[];
-  cancellationPolicy: CancellationPolicy;
-  instantBook: boolean;
-}
 
 // Result of loading either an existing listing (edit mode) or an in-progress
 // draft (create mode, if one exists) - see fetchListingEditData below.
@@ -619,403 +579,39 @@ export default function CreateListing() {
   const renderStepContent = () => {
     switch (STEPS[currentStep].id) {
       case 'type':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-pillar font-bold uppercase tracking-wide mb-2">What type of property?</h2>
-              <p className="text-text-secondary">Choose the option that best describes your place</p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {propertyTypes.map((type) => (
-                <button
-                  key={type.value}
-                  onClick={() => updateForm({ propertyType: type.value })}
-                  className={`p-6 rounded-xl text-left trivara-transition ${formData.propertyType === type.value
-                    ? 'bg-accent ring-2 ring-accent'
-                    : 'bg-card hover:bg-surface-3'
-                    }`}
-                >
-                  <div className="mb-4">{type.icon}</div>
-                  <h3 className="font-medium mb-1">{type.label}</h3>
-                  <p className="text-sm text-text-secondary">{type.description}</p>
-                </button>
-              ))}
-            </div>
-          </div>
-        );
+        return <PropertyTypeStep formData={formData} updateForm={updateForm} />;
 
       case 'location':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-pillar font-bold uppercase tracking-wide mb-2">Where is your property?</h2>
-              <p className="text-text-secondary">Your address is only shared with guests after they book</p>
-            </div>
-            <div className="space-y-4 max-w-xl">
-              <div>
-                <label className="block text-sm text-text-secondary mb-2">Street address</label>
-                <Input
-                  value={formData.address}
-                  onChange={(e) => updateForm({ address: e.target.value })}
-                  placeholder="123 Main Street"
-                  className="trivara-input"
-                />
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-text-secondary mb-2">City / town</label>
-                  <Select value={formData.city} onValueChange={(value) => updateForm({ city: value })}>
-                    <SelectTrigger className="trivara-input">
-                      <SelectValue placeholder="Select a city or town" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {KARNATAKA_CITIES.map((city) => (
-                        <SelectItem key={city} value={city}>{city}</SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="block text-sm text-text-secondary mb-2">State</label>
-                  <Select value={FIXED_STATE} disabled>
-                    <SelectTrigger className="trivara-input">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={FIXED_STATE}>{FIXED_STATE}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <label className="block text-sm text-text-secondary mb-2">Country</label>
-                  <Select value={FIXED_COUNTRY} disabled>
-                    <SelectTrigger className="trivara-input">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value={FIXED_COUNTRY}>{FIXED_COUNTRY}</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div>
-                  <label className="block text-sm text-text-secondary mb-2">Postal code</label>
-                  <Input
-                    value={formData.postalCode}
-                    onChange={(e) => updateForm({ postalCode: e.target.value })}
-                    placeholder="560001"
-                    className="trivara-input"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        );
+        return <LocationStep formData={formData} updateForm={updateForm} />;
 
       case 'photos':
         return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-pillar font-bold uppercase tracking-wide mb-2">Add photos</h2>
-              <p className="text-text-secondary">Photos help guests imagine staying at your place</p>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {formData.photos.map((photo, idx) => (
-                <div key={idx} className="aspect-[4/3] rounded-xl overflow-hidden bg-surface-0 relative group">
-                  <img src={photo} alt={`Photo ${idx + 1}`} className="w-full h-full object-cover" />
-                  <button
-                    type="button"
-                    onClick={() => removePhoto(idx)}
-                    className="absolute top-2 right-2 bg-red-500 text-white rounded-full w-6 h-6 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                  >
-                    ×
-                  </button>
-                </div>
-              ))}
-              <button
-                type="button"
-                onClick={handleAddPhotos}
-                className="aspect-[4/3] rounded-xl bg-card hover:bg-surface-3 trivara-transition flex flex-col items-center justify-center gap-2"
-              >
-                <Image className="h-8 w-8 text-text-secondary" />
-                <span className="text-sm text-text-secondary">Add photos</span>
-              </button>
-              <input
-                type="file"
-                ref={fileInputRef}
-                multiple
-                accept="image/*"
-                onChange={handleFileChange}
-                className="hidden"
-              />
-            </div>
-            {formData.photos.length === 0 && (
-              <div className="text-sm text-destructive">
-                At least one photo is required to save a listing draft
-              </div>
-            )}
-          </div>
+          <PhotosStep
+            formData={formData}
+            fileInputRef={fileInputRef}
+            onAddPhotos={handleAddPhotos}
+            onFileChange={handleFileChange}
+            onRemovePhoto={removePhoto}
+          />
         );
 
       case 'details':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-pillar font-bold uppercase tracking-wide mb-2">Tell guests about your place</h2>
-              <p className="text-text-secondary">Share what makes your place special</p>
-            </div>
-            <div className="space-y-4 max-w-xl">
-              <div>
-                <label className="block text-sm text-text-secondary mb-2">Title</label>
-                <Input
-                  value={formData.title}
-                  onChange={(e) => updateForm({ title: e.target.value })}
-                  placeholder="Cozy mountain retreat with stunning views"
-                  className="trivara-input"
-                />
-              </div>
-              <div>
-                <label className="block text-sm text-text-secondary mb-2">Description</label>
-                <Textarea
-                  value={formData.description}
-                  onChange={(e) => updateForm({ description: e.target.value })}
-                  placeholder="Describe the unique features and atmosphere of your place..."
-                  rows={6}
-                  className="trivara-input resize-none"
-                />
-              </div>
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
-                {COUNTER_FIELDS.map(({ key, label, min, max }) => (
-                  <CounterInput
-                    key={key}
-                    label={label}
-                    value={formData[key]}
-                    onChange={(val) => updateForm({ [key]: val })}
-                    min={min}
-                    max={max}
-                  />
-                ))}
-              </div>
-            </div>
-          </div>
-        );
+        return <DetailsStep formData={formData} updateForm={updateForm} />;
 
       case 'amenities':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-pillar font-bold uppercase tracking-wide mb-2">What amenities do you offer?</h2>
-              <p className="text-text-secondary">Select all that apply</p>
-            </div>
-            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              {amenitiesList.map((amenity) => (
-                <label
-                  key={amenity.id}
-                  className={`flex items-center gap-3 p-4 rounded-xl cursor-pointer trivara-transition ${formData.amenities.includes(amenity.id)
-                    ? 'bg-accent'
-                    : 'bg-card hover:bg-surface-3'
-                    }`}
-                >
-                  <Checkbox
-                    checked={formData.amenities.includes(amenity.id)}
-                    onCheckedChange={(checked) => {
-                      if (checked) {
-                        updateForm({ amenities: [...formData.amenities, amenity.id] });
-                      } else {
-                        updateForm({ amenities: formData.amenities.filter(a => a !== amenity.id) });
-                      }
-                    }}
-                  />
-                  <span>{amenity.label}</span>
-                </label>
-              ))}
-            </div>
-
-            <div>
-              <h3 className="text-lg font-medium mb-2 mt-4">Accessibility</h3>
-              <p className="text-text-secondary mb-4">Select any that apply - these show up as filters for guests who need them</p>
-              <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-                {accessibilityList.map((feature) => (
-                  <label
-                    key={feature.id}
-                    className={`flex items-center gap-3 p-4 rounded-xl cursor-pointer trivara-transition ${formData.amenities.includes(feature.id)
-                      ? 'bg-accent'
-                      : 'bg-card hover:bg-surface-3'
-                      }`}
-                  >
-                    <Checkbox
-                      checked={formData.amenities.includes(feature.id)}
-                      onCheckedChange={(checked) => {
-                        if (checked) {
-                          updateForm({ amenities: [...formData.amenities, feature.id] });
-                        } else {
-                          updateForm({ amenities: formData.amenities.filter(a => a !== feature.id) });
-                        }
-                      }}
-                    />
-                    <span>{feature.label}</span>
-                  </label>
-                ))}
-              </div>
-            </div>
-          </div>
-        );
+        return <AmenitiesStep formData={formData} updateForm={updateForm} />;
 
       case 'pricing':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-pillar font-bold uppercase tracking-wide mb-2">Set your price</h2>
-              <p className="text-text-secondary">You can adjust your pricing anytime</p>
-            </div>
-            <div className="space-y-6 max-w-md">
-              <div>
-                <label className="block text-sm text-text-secondary mb-2">Price per night</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary">₹</span>
-                  <Input
-                    type="number"
-                    value={formData.pricePerNight}
-                    onChange={(e) => updateForm({ pricePerNight: parseInt(e.target.value) || 0 })}
-                    className="trivara-input pl-8 text-2xl font-semibold"
-                  />
-                </div>
-              </div>
-              <div>
-                <label className="block text-sm text-text-secondary mb-2">Cleaning fee</label>
-                <div className="relative">
-                  <span className="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary">₹</span>
-                  <Input
-                    type="number"
-                    value={formData.cleaningFee}
-                    onChange={(e) => updateForm({ cleaningFee: parseInt(e.target.value) || 0 })}
-                    className="trivara-input pl-8"
-                  />
-                </div>
-              </div>
-            </div>
-          </div>
-        );
+        return <PricingStep formData={formData} updateForm={updateForm} />;
 
       case 'availability':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-pillar font-bold uppercase tracking-wide mb-2">Set availability</h2>
-              <p className="text-text-secondary">You can update your calendar after publishing</p>
-            </div>
-            <div className="bg-card rounded-xl p-8 text-center">
-              <CalendarDays className="h-12 w-12 mx-auto mb-4 text-text-secondary" />
-              <p className="text-text-secondary">Calendar management will be available after publishing</p>
-            </div>
-          </div>
-        );
+        return <AvailabilityStep />;
 
       case 'rules':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-pillar font-bold uppercase tracking-wide mb-2">Set house rules</h2>
-              <p className="text-text-secondary">Let guests know what to expect</p>
-            </div>
-            <div className="space-y-4 max-w-xl">
-              <div>
-                <label className="block text-sm text-text-secondary mb-2">Cancellation policy</label>
-                <div className="space-y-3">
-                  {cancellationPolicies.map((policy) => (
-                    <label
-                      key={policy.value}
-                      className={`flex items-start gap-3 p-4 rounded-xl cursor-pointer trivara-transition ${formData.cancellationPolicy === policy.value
-                        ? 'bg-accent'
-                        : 'bg-card hover:bg-surface-3'
-                        }`}
-                    >
-                      <input
-                        type="radio"
-                        name="cancellationPolicy"
-                        checked={formData.cancellationPolicy === policy.value}
-                        onChange={() => updateForm({ cancellationPolicy: policy.value })}
-                        className="mt-1"
-                      />
-                      <div>
-                        <p className="font-medium">{policy.label}</p>
-                        <p className="text-sm text-text-secondary">{policy.description}</p>
-                      </div>
-                    </label>
-                  ))}
-                </div>
-              </div>
-
-              <div>
-                <label className="block text-sm text-text-secondary mb-2">Booking type</label>
-                <div className="space-y-3">
-                  <label
-                    className={`flex items-start gap-3 p-4 rounded-xl cursor-pointer trivara-transition ${formData.instantBook ? 'bg-accent' : 'bg-card hover:bg-surface-3'}`}
-                  >
-                    <input
-                      type="radio"
-                      name="instantBook"
-                      checked={formData.instantBook}
-                      onChange={() => updateForm({ instantBook: true })}
-                      className="mt-1"
-                    />
-                    <div>
-                      <p className="font-medium">Instant Book</p>
-                      <p className="text-sm text-text-secondary">Guests can book and pay immediately, no approval needed.</p>
-                    </div>
-                  </label>
-                  <label
-                    className={`flex items-start gap-3 p-4 rounded-xl cursor-pointer trivara-transition ${!formData.instantBook ? 'bg-accent' : 'bg-card hover:bg-surface-3'}`}
-                  >
-                    <input
-                      type="radio"
-                      name="instantBook"
-                      checked={!formData.instantBook}
-                      onChange={() => updateForm({ instantBook: false })}
-                      className="mt-1"
-                    />
-                    <div>
-                      <p className="font-medium">Request to Book</p>
-                      <p className="text-sm text-text-secondary">You review and approve each request before the guest pays.</p>
-                    </div>
-                  </label>
-                </div>
-              </div>
-            </div>
-          </div>
-        );
+        return <RulesStep formData={formData} updateForm={updateForm} />;
 
       case 'review':
-        return (
-          <div className="space-y-6">
-            <div>
-              <h2 className="text-2xl font-pillar font-bold uppercase tracking-wide mb-2">Review your listing draft</h2>
-              <p className="text-text-secondary">Make sure everything looks good before saving as draft</p>
-            </div>
-            <div className="bg-card rounded-xl overflow-hidden">
-              {formData.photos[0] && (
-                <div className="aspect-video">
-                  <img src={formData.photos[0]} alt="Preview" className="w-full h-full object-cover" />
-                </div>
-              )}
-              <div className="p-6 space-y-4">
-                <h3 className="text-xl font-medium">{formData.title || 'Untitled listing'}</h3>
-                <p className="text-text-secondary">
-                  {formData.city}, {formData.state}, {formData.country}
-                </p>
-                <div className="flex items-center gap-4 text-sm text-text-secondary">
-                  <span>{formData.propertyType?.replace('_', ' ')}</span>
-                  <span>{formData.maxGuests} guests</span>
-                  <span>{formData.bedrooms} bedrooms</span>
-                  <span>{formData.beds} beds</span>
-                  <span>{formData.bathrooms} baths</span>
-                </div>
-                <p className="text-lg font-semibold">{formatINR(formData.pricePerNight)}/night</p>
-              </div>
-            </div>
-          </div>
-        );
+        return <ReviewStep formData={formData} />;
 
       default:
         return null;
@@ -1029,7 +625,7 @@ export default function CreateListing() {
         {/* Loading state for edit mode */}
         {isEditMode && isLoading && (
           <div className="fixed inset-0 bg-background/80 backdrop-blur-sm z-50 flex items-center justify-center">
-            <div className="bg-card rounded-xl p-8 text-center border border-border">
+            <div className="bg-card rounded-lg p-8 text-center border border-border">
               <Loader2 className="h-8 w-8 animate-spin text-accent mx-auto mb-4" />
               <p className="text-foreground">Loading listing data...</p>
             </div>
