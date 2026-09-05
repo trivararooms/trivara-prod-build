@@ -26,13 +26,12 @@ export default function Index() {
   const [hostCtaImage, setHostCtaImage] = useState<string | null>(null);
   const [hostCtaOverlay, setHostCtaOverlay] = useState(80);
   const [loading, setLoading] = useState(true);
-  const [destCardWidth, setDestCardWidth] = useState<number | null>(null);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [featured, popularDestinations, heroBackground, hostBackground, heroOverlaySetting, hostCtaOverlaySetting] = await Promise.all([
-          listingService.getFeatured(5),
+          listingService.getFeatured(3),
           listingService.getPopularDestinations(),
           siteSettingsService.getHeroBackgroundImageUrl(),
           siteSettingsService.getHostCtaBackgroundImageUrl(),
@@ -55,21 +54,6 @@ export default function Index() {
     fetchData();
   }, []);
 
-  // Destination cards are sized to 0.75x the width of a featured-stay card
-  // (both share the same 4:5 aspect ratio, so this is a true proportional
-  // scale, not just a crop) - measured live off the rendered featured card,
-  // the same way the mock's own vanilla-JS syncDestCardSize() did.
-  useEffect(() => {
-    const sync = () => {
-      const featMedia = document.querySelector('.feat-media');
-      if (!featMedia) return;
-      setDestCardWidth(featMedia.getBoundingClientRect().width * 0.75);
-    };
-    sync();
-    window.addEventListener('resize', sync);
-    return () => window.removeEventListener('resize', sync);
-  }, [featuredListings]);
-
   if (loading) {
     return (
       <div className="min-h-screen bg-background">
@@ -79,11 +63,6 @@ export default function Index() {
       </div>
     );
   }
-
-  // Marquee needs at least two rows to loop seamlessly; below that it just
-  // renders once, statically.
-  const marqueeDestinations = destinations.length > 1 ? [...destinations, ...destinations] : destinations;
-  const marqueeDuration = Math.max(destinations.length * 6.5, 16);
 
   return (
     <div className="min-h-screen bg-background">
@@ -151,32 +130,25 @@ export default function Index() {
               className="text-[27px] sm:text-[42px] lg:text-[55px] font-display font-medium text-center mb-10"
             />
 
-            <div className="marquee-mask">
-              <div
-                className={`flex gap-4 w-max ${destinations.length > 1 ? 'marquee-track' : ''}`}
-                style={destinations.length > 1 ? { animationDuration: `${marqueeDuration}s` } : undefined}
-              >
-                {marqueeDestinations.map((dest, i) => (
-                  <Link
-                    key={`${dest.city}-${i}`}
-                    to={`/search?location=${encodeURIComponent(dest.city)}`}
-                    aria-hidden={i >= destinations.length ? true : undefined}
-                    className="group relative flex-shrink-0 aspect-[4/5] overflow-hidden bg-surface-2"
-                    style={{ width: destCardWidth ? `${destCardWidth}px` : '180px' }}
-                  >
-                    <img
-                      src={dest.image}
-                      alt={dest.city}
-                      className="w-full h-full object-cover group-hover:scale-105 trivara-transition duration-500"
-                    />
-                    <div className="absolute inset-0 bg-gradient-to-t from-surface-0/85 via-transparent to-transparent" />
-                    <div className="absolute bottom-3 left-3 right-3">
-                      <h3 className="font-bold text-xs uppercase tracking-wide">{dest.city}</h3>
-                      <p className="text-[11px] text-text-meta mt-0.5">{dest.listings} {dest.listings === 1 ? 'stay' : 'stays'}</p>
-                    </div>
-                  </Link>
-                ))}
-              </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
+              {destinations.map((dest) => (
+                <Link
+                  key={dest.city}
+                  to={`/search?location=${encodeURIComponent(dest.city)}`}
+                  className="group relative aspect-[4/5] overflow-hidden bg-surface-2"
+                >
+                  <img
+                    src={dest.image}
+                    alt={dest.city}
+                    className="w-full h-full object-cover group-hover:scale-105 trivara-transition duration-500"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-surface-0/85 via-transparent to-transparent" />
+                  <div className="absolute bottom-3 left-3 right-3">
+                    <h3 className="font-bold text-xs uppercase tracking-wide">{dest.city}</h3>
+                    <p className="text-[11px] text-text-meta mt-0.5">{dest.listings} {dest.listings === 1 ? 'stay' : 'stays'}</p>
+                  </div>
+                </Link>
+              ))}
             </div>
           </div>
         </section>
@@ -203,7 +175,7 @@ export default function Index() {
           {featuredListings.length === 0 ? (
             <p className="text-text-secondary py-12 text-center">No featured stays yet - check back soon.</p>
           ) : (
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
               {featuredListings.map((listing) => (
                 <FeaturedListingCard key={listing.id} listing={listing} />
               ))}
