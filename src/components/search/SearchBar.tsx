@@ -4,7 +4,7 @@ import { Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { DateGuestsFields, GuestCounts } from '@/components/search/DateGuestsFields';
 
-const EMPTY_GUESTS: GuestCounts = { adults: 1, children: 0, infants: 0 };
+const EMPTY_GUESTS: GuestCounts = { adults: 1, children: 0, infants: 0, pets: 0 };
 
 interface ControlledProps {
   location: string;
@@ -56,6 +56,7 @@ export function SearchBar({ variant = 'hero', className = '', controlled }: Sear
     const totalGuests = guestsValue.adults + guestsValue.children;
     if (totalGuests > 1) params.set('guests', totalGuests.toString());
     if (guestsValue.infants > 0) params.set('infants', guestsValue.infants.toString());
+    if (guestsValue.pets > 0) params.set('pets', guestsValue.pets.toString());
     navigate(`/search?${params.toString()}`);
   };
 
