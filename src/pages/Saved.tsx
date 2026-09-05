@@ -34,13 +34,15 @@ export default function Saved() {
     <div className="min-h-screen bg-background">
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
-        <div className="mb-8">
-          <h1 className="text-3xl font-display font-medium text-foreground mb-2">
-            Saved
-          </h1>
-          <p className="text-text-secondary">
-            Listings you've saved for later
-          </p>
+        <div className="sticky top-20 z-10 bg-background pb-4 mb-4 border-b border-border">
+          <div className="mb-2 pt-2">
+            <h1 className="text-3xl font-display font-medium text-foreground mb-2">
+              Saved
+            </h1>
+            <p className="text-text-secondary">
+              Listings you've saved for later
+            </p>
+          </div>
         </div>
 
         <ListingGrid
