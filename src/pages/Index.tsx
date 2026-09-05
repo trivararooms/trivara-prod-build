@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
-import { Logo } from '@/components/layout/Logo';
 import { SearchBar } from '@/components/search/SearchBar';
 import { FeaturedListingCard } from '@/components/listings/FeaturedListingCard';
 import { EditableText } from '@/components/content/EditableText';
@@ -79,12 +78,15 @@ export default function Index() {
           className="absolute inset-0"
           style={{
             // With an admin-uploaded photo: a flat, single-tone dark tint
-            // (adjustable in Admin Settings > Branding) so the photo reads
-            // through cleanly - no indigo/chestnut color mixed into it.
-            // With no photo: the one continuous diagonal blend between the
-            // two locked palette hues that's the actual brand background.
+            // (adjustable in Admin Settings > Branding), pinned to
+            // --foreground rather than --surface-0 - foreground is the one
+            // token guaranteed to stay near-black across themes, so the
+            // photo always reads through a dark scrim regardless of which
+            // way the site palette is currently set. With no photo: the one
+            // continuous diagonal blend between the two locked palette hues
+            // that's the actual brand background.
             backgroundImage: heroImage
-              ? `linear-gradient(hsl(var(--surface-0) / ${heroOverlay / 100}), hsl(var(--surface-0) / ${heroOverlay / 100})), url(${heroImage})`
+              ? `linear-gradient(hsl(var(--foreground) / ${heroOverlay / 100}), hsl(var(--foreground) / ${heroOverlay / 100})), url(${heroImage})`
               : `linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%)`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
@@ -96,19 +98,19 @@ export default function Index() {
             settingKey="content_hero_eyebrow"
             fallback="wander well"
             as="p"
-            className="font-script text-2xl text-accent-hover mb-3 animate-fade-in"
+            className="font-script italic text-2xl text-accent mb-4 animate-fade-in"
           />
           <EditableText
             settingKey="content_hero_heading"
             fallback="Find your place"
             as="h1"
-            className="mb-8 animate-fade-in"
+            className="text-white mb-8 animate-fade-in"
           />
           <EditableText
             settingKey="content_hero_subtitle"
             fallback="Discover extraordinary stays around the world"
             as="p"
-            className="text-xl text-text-secondary animate-fade-in"
+            className="text-xl text-white/70 animate-fade-in"
             style={{ animationDelay: '0.1s' }}
           />
 
@@ -142,10 +144,13 @@ export default function Index() {
                     alt={dest.city}
                     className="w-full h-full object-cover group-hover:scale-105 trivara-transition duration-500"
                   />
-                  <div className="absolute inset-0 bg-gradient-to-t from-surface-0/85 via-transparent to-transparent" />
-                  <div className="absolute bottom-3 left-3 right-3">
-                    <h3 className="font-bold text-xs uppercase tracking-wide">{dest.city}</h3>
-                    <p className="text-[11px] text-text-meta mt-0.5">{dest.listings} {dest.listings === 1 ? 'stay' : 'stays'}</p>
+                  {/* Dark scrim pinned to --foreground (always near-black,
+                      unlike --surface-0 which now flips with the palette)
+                      so the caption stays legible over any photo. */}
+                  <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/5 to-transparent" />
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <h3 className="font-bold text-xs uppercase tracking-wide text-white">{dest.city}</h3>
+                    <p className="text-[11px] text-white/70 mt-0.5">{dest.listings} {dest.listings === 1 ? 'stay' : 'stays'}</p>
                   </div>
                 </Link>
               ))}
@@ -194,9 +199,11 @@ export default function Index() {
           className="absolute inset-0"
           style={{
             // Flat single-tone dark tint (adjustable in Admin Settings >
-            // Branding), same as the hero - no colored gradient over the photo.
+            // Branding), pinned to --foreground same as the hero above - see
+            // that section's comment for why --surface-0 no longer works
+            // here now that it tracks the light canvas instead of the dark one.
             backgroundImage: hostCtaImage
-              ? `linear-gradient(hsl(var(--surface-0) / ${hostCtaOverlay / 100}), hsl(var(--surface-0) / ${hostCtaOverlay / 100})), url(${hostCtaImage})`
+              ? `linear-gradient(hsl(var(--foreground) / ${hostCtaOverlay / 100}), hsl(var(--foreground) / ${hostCtaOverlay / 100})), url(${hostCtaImage})`
               : `linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%)`,
             backgroundSize: 'cover',
             backgroundPosition: 'center',
@@ -209,25 +216,25 @@ export default function Index() {
               settingKey="content_host_ribbon"
               fallback="share & earn"
               as="span"
-              className="inline-block font-morderline text-xs tracking-wide bg-accent text-accent-foreground px-5 py-2 rounded-full mb-10"
+              className="inline-block font-morderline text-xs uppercase tracking-wide bg-accent text-accent-foreground px-5 py-2 rounded-full mb-10"
             />
             <EditableText
               settingKey="content_host_heading"
               fallback="Share your space"
               as="h2"
-              className="text-4xl md:text-6xl font-display font-medium mb-8"
+              className="text-4xl md:text-6xl font-display font-medium text-white mb-8"
             />
             <EditableText
               settingKey="content_host_subtitle"
               fallback="Join hosts who earn by sharing their homes with travelers worldwide"
               as="p"
-              className="text-text-secondary mb-4 text-xl"
+              className="text-white/70 mb-4 text-xl"
             />
             <EditableText
               settingKey="content_host_aside"
               fallback="your home, your rules"
               as="p"
-              className="font-bastliga italic text-3xl text-primary mb-12"
+              className="font-bastliga italic text-3xl text-accent mb-12"
             />
             <Link to="/host">
               <Button className="trivara-btn-primary rounded-full px-12 py-7 text-base uppercase tracking-wide font-bold">
@@ -237,20 +244,6 @@ export default function Index() {
           </div>
         </div>
       </section>
-
-      {/* Footer - legally/Razorpay-required links only, no full sitemap */}
-      <footer className="py-8">
-        <div className={`w-full ${SIDE_PAD} flex flex-wrap items-center justify-between gap-6`}>
-          <Logo markClassName="h-11 w-11" nameClassName="text-xl" color="#000000" />
-          <div className="flex flex-wrap gap-1">
-            <Link to="/privacy" className="px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wide text-black hover:opacity-70 hover:bg-surface-2 trivara-transition">Privacy</Link>
-            <Link to="/terms" className="px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wide text-black hover:opacity-70 hover:bg-surface-2 trivara-transition">Terms</Link>
-            <Link to="/help" className="px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wide text-black hover:opacity-70 hover:bg-surface-2 trivara-transition">Talk to Us</Link>
-            <Link to="/cancellation-options" className="px-4 py-2 rounded-md text-xs font-semibold uppercase tracking-wide text-black hover:opacity-70 hover:bg-surface-2 trivara-transition">Cancellation options</Link>
-          </div>
-          <span className="text-xs text-black">© {new Date().getFullYear()} Trivara. All rights reserved.</span>
-        </div>
-      </footer>
     </div>
   );
 }

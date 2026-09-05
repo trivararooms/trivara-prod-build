@@ -28,6 +28,15 @@ export function Header() {
   const isHost = profile?.is_host ?? false;
   const isAdmin = profile?.role === 'admin';
   const [unreadMessages, setUnreadMessages] = useState(0);
+  // The home hero (and the full-bleed Host CTA further down the page) sit
+  // under a dark photo scrim, so the transparent header needs light text to
+  // read against them - but once the visitor scrolls past that first
+  // viewport onto the plain light page canvas, white-on-white would make
+  // the whole nav vanish. Track scroll position so the home variant can
+  // flip itself to a solid light bar with dark text at that point (and
+  // stay that way - a header that's already opaque reads fine over any
+  // section further down, dark photo included).
+  const [scrolled, setScrolled] = useState(false);
 
   useEffect(() => {
     if (!user?.id) {
@@ -43,13 +52,29 @@ export function Header() {
     return () => { cancelled = true; };
   }, [user?.id]);
 
+  useEffect(() => {
+    if (!isHome) return;
+    const threshold = () => Math.max(window.innerHeight - 160, 200);
+    const onScroll = () => setScrolled(window.scrollY > threshold());
+    onScroll();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, [isHome]);
+
   const handleLogout = async () => {
     await signOut();
     navigate('/');
   };
 
-  const navLinkClass = 'text-[11px] font-bold uppercase tracking-wide text-white hover:opacity-70 trivara-transition';
-  const iconButtonClass = 'hidden md:flex text-white hover:opacity-70 hover:bg-transparent';
+  // Home variant only - solid/light once scrolled past the hero photo,
+  // transparent/light-on-dark-scrim while still over it.
+  const homeIsSolid = isHome && scrolled;
+  const navLinkClass = `text-[11px] font-bold uppercase tracking-wide trivara-transition hover:opacity-70 ${homeIsSolid ? 'text-foreground' : 'text-white'}`;
+  const iconButtonClass = `hidden md:flex hover:bg-transparent hover:opacity-70 ${homeIsSolid ? 'text-foreground' : 'text-white'}`;
 
   if (!isHome) {
     return (
@@ -73,12 +98,14 @@ export function Header() {
     // on scroll, so nothing underneath it is ever covered or unclickable;
     // the only cost is a min-h-screen section running ~80px past one
     // viewport, which is cosmetic, not functional.
-    <header className="sticky top-0 z-20 w-full bg-transparent">
+    <header className={`sticky top-0 z-20 w-full trivara-transition ${homeIsSolid ? 'bg-background/95 backdrop-blur-sm border-b border-border' : 'bg-transparent'}`}>
       <div className={`w-full ${sidePad} grid grid-cols-[1fr_auto_1fr] h-20 items-center`}>
         {/* Logo - flush against the same side padding the footer's logo
-            uses, so the two sit parallel to each other. */}
+            uses, so the two sit parallel to each other. White while the
+            hero photo's dark scrim is still behind it, near-black once the
+            header has gone solid past the hero. */}
         <Link to="/" className="flex items-center gap-2 justify-self-start">
-          <Logo markClassName="h-11 w-11" nameClassName="text-2xl" color="#000000" />
+          <Logo markClassName="h-11 w-11" nameClassName="text-2xl" color={homeIsSolid ? undefined : '#ffffff'} />
         </Link>
 
         {/* Desktop Navigation - centered in its own grid column; search and
@@ -141,7 +168,7 @@ export function Header() {
               separate avatar/dropdown menu at any breakpoint. */}
           <Sheet>
             <SheetTrigger asChild>
-              <Button variant="ghost" size="icon" className="md:hidden text-white hover:opacity-70 hover:bg-transparent">
+              <Button variant="ghost" size="icon" className={`md:hidden hover:opacity-70 hover:bg-transparent ${homeIsSolid ? 'text-foreground' : 'text-white'}`}>
                 <Menu className="h-5 w-5" />
               </Button>
             </SheetTrigger>
