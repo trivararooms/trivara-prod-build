@@ -127,7 +127,7 @@ function FeaturedTab() {
                         {saveCapMutation.isPending ? <Loader2 className="h-4 w-4 animate-spin" /> : <Save className="h-4 w-4" />}
                         Save
                     </Button>
-                    <p className="text-sm text-muted-foreground pb-2">{usedSlots} / {capQuery.data ?? '25'} slots used</p>
+                    <p className="text-sm text-text-secondary pb-2">{usedSlots} / {capQuery.data ?? '25'} slots used</p>
                 </CardContent>
             </Card>
 
@@ -175,7 +175,7 @@ function FeaturedTab() {
                 </CardHeader>
                 <CardContent className="space-y-2">
                     {featuredQuery.isLoading && <Loader2 className="h-5 w-5 animate-spin text-accent" />}
-                    {featuredQuery.data?.length === 0 && <p className="text-sm text-muted-foreground">No featured listings yet.</p>}
+                    {featuredQuery.data?.length === 0 && <p className="text-sm text-text-secondary">No featured listings yet.</p>}
                     {featuredQuery.data?.map((listing) => (
                         <div key={listing.id} className="flex items-center justify-between border rounded-md px-4 py-2">
                             <span className="text-sm">{listing.title}</span>
@@ -445,7 +445,7 @@ function ManageAdminsTab() {
                 {opsAdminsQuery.isLoading && <Loader2 className="h-5 w-5 animate-spin text-accent" />}
 
                 {opsAdminsQuery.data && opsAdminsQuery.data.length === 0 && (
-                    <p className="text-sm text-muted-foreground">No delegated admins yet.</p>
+                    <p className="text-sm text-text-secondary">No delegated admins yet.</p>
                 )}
 
                 <div className="space-y-2">
@@ -453,7 +453,7 @@ function ManageAdminsTab() {
                         <div key={profile.id} className="flex items-center justify-between border rounded-md px-4 py-3">
                             <div>
                                 <p className="font-medium">{profile.full_name || profile.email}</p>
-                                <p className="text-sm text-muted-foreground">{profile.email}</p>
+                                <p className="text-sm text-text-secondary">{profile.email}</p>
                             </div>
                             <Button
                                 variant="outline"
@@ -630,15 +630,15 @@ function OffersTab() {
                 </CardHeader>
                 <CardContent className="space-y-2">
                     {rulesQuery.isLoading && <Loader2 className="h-5 w-5 animate-spin text-accent" />}
-                    {rulesQuery.data?.length === 0 && <p className="text-sm text-muted-foreground">No offers yet.</p>}
+                    {rulesQuery.data?.length === 0 && <p className="text-sm text-text-secondary">No offers yet.</p>}
                     {rulesQuery.data?.map((rule) => (
                         <div key={rule.id} className="flex items-center justify-between border rounded-md px-4 py-3">
                             <div>
                                 <p className="font-medium flex items-center gap-2">
                                     {rule.name}
-                                    {!rule.is_active && <span className="text-xs text-muted-foreground">(inactive)</span>}
+                                    {!rule.is_active && <span className="text-xs text-text-secondary">(inactive)</span>}
                                 </p>
-                                <p className="text-sm text-muted-foreground">
+                                <p className="text-sm text-text-secondary">
                                     {RULE_TYPE_LABELS[rule.rule_type]} &middot; {rule.discount_type === 'percentage' ? `${rule.discount_value}%` : `₹${rule.discount_value}`} off
                                 </p>
                             </div>
@@ -961,7 +961,7 @@ export default function AdminSettings() {
                 <div key={setting.key} className="flex items-center justify-between py-4 border-b last:border-0">
                     <div className="space-y-0.5">
                         <Label className="text-base">{setting.description}</Label>
-                        <p className="text-sm text-muted-foreground">Toggle this feature on or off</p>
+                        <p className="text-sm text-text-secondary">Toggle this feature on or off</p>
                     </div>
                     <Switch
                         checked={setting.value === 'true'}
@@ -982,7 +982,7 @@ export default function AdminSettings() {
                     onChange={(e) => handleUpdateSetting(setting.key, e.target.value)}
                 />
                 {setting.is_secret && setting.value && (
-                    <p className="text-xs text-muted-foreground flex items-center gap-1">
+                    <p className="text-xs text-text-secondary flex items-center gap-1">
                         <ShieldCheck className="h-3 w-3" /> Encrypted and stored securely
                     </p>
                 )}
