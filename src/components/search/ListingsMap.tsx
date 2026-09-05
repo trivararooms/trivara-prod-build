@@ -27,7 +27,7 @@ const defaultIcon = new L.Icon.Default();
 const highlightedIcon = L.divIcon({
   className: '',
   html: `<svg width="34" height="34" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 2px 3px rgba(0,0,0,0.4))">
-    <path d="M12 0C7.6 0 4 3.6 4 8c0 6 8 16 8 16s8-10 8-16c0-4.4-3.6-8-8-8z" fill="#e11d48" stroke="#ffffff" stroke-width="1"/>
+    <path d="M12 0C7.6 0 4 3.6 4 8c0 6 8 16 8 16s8-10 8-16c0-4.4-3.6-8-8-8z" fill="#fdbb30" stroke="#171717" stroke-width="1"/>
     <circle cx="12" cy="8" r="3" fill="#ffffff"/>
   </svg>`,
   iconSize: [34, 34],
