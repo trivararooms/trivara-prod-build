@@ -32,7 +32,7 @@ export default function Index() {
     const fetchData = async () => {
       try {
         const [featured, popularDestinations, heroBackground, hostBackground, heroOverlaySetting, hostCtaOverlaySetting] = await Promise.all([
-          listingService.getFeatured(3),
+          listingService.getFeatured(5),
           listingService.getPopularDestinations(),
           siteSettingsService.getHeroBackgroundImageUrl(),
           siteSettingsService.getHostCtaBackgroundImageUrl(),
@@ -203,7 +203,7 @@ export default function Index() {
           {featuredListings.length === 0 ? (
             <p className="text-text-secondary py-12 text-center">No featured stays yet - check back soon.</p>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
               {featuredListings.map((listing) => (
                 <FeaturedListingCard key={listing.id} listing={listing} />
               ))}
