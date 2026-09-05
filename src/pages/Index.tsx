@@ -227,7 +227,7 @@ export default function Index() {
               settingKey="content_host_aside"
               fallback="your home, your rules"
               as="p"
-              className="font-bastliga text-3xl text-primary mb-12"
+              className="font-bastliga italic text-3xl text-primary mb-12"
             />
             <Link to="/host">
               <Button className="trivara-btn-primary rounded-full px-12 py-7 text-base uppercase tracking-wide font-bold">
