@@ -24,18 +24,23 @@ export default function Index() {
   const [heroOverlay, setHeroOverlay] = useState(65);
   const [hostCtaImage, setHostCtaImage] = useState<string | null>(null);
   const [hostCtaOverlay, setHostCtaOverlay] = useState(80);
+  const [collectionSlots, setCollectionSlots] = useState<{ image: string | null; link: string | null }[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [featured, popularDestinations, heroBackground, hostBackground, heroOverlaySetting, hostCtaOverlaySetting] = await Promise.all([
+        const [featured, popularDestinations, heroBackground, hostBackground, heroOverlaySetting, hostCtaOverlaySetting, collections] = await Promise.all([
           listingService.getFeatured(3),
           listingService.getPopularDestinations(),
           siteSettingsService.getHeroBackgroundImageUrl(),
           siteSettingsService.getHostCtaBackgroundImageUrl(),
           siteSettingsService.getAppSetting('hero_overlay_opacity'),
           siteSettingsService.getAppSetting('host_cta_overlay_opacity'),
+          Promise.all([1, 2, 3].map(async (slot) => ({
+            image: await siteSettingsService.getHomepageCollectionImageUrl(slot),
+            link: await siteSettingsService.getHomepageCollectionLinkUrl(slot),
+          }))),
         ]);
         setFeaturedListings(featured);
         setDestinations(popularDestinations);
@@ -43,6 +48,7 @@ export default function Index() {
         setHostCtaImage(hostBackground);
         if (heroOverlaySetting) setHeroOverlay(parseInt(heroOverlaySetting, 10));
         if (hostCtaOverlaySetting) setHostCtaOverlay(parseInt(hostCtaOverlaySetting, 10));
+        setCollectionSlots(collections);
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
@@ -154,6 +160,37 @@ export default function Index() {
                   </div>
                 </Link>
               ))}
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Collections - up to three admin-uploaded photo tiles (Admin
+          Settings > Branding), each optionally linking somewhere. A slot
+          with no image renders nothing; the whole section is hidden if
+          none of the three are set. */}
+      {collectionSlots.some((slot) => slot.image) && (
+        <section className="pt-4 md:pt-6 pb-16 md:pb-20">
+          <div className={`w-full ${SIDE_PAD}`}>
+            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+              {collectionSlots
+                .filter((slot): slot is { image: string; link: string | null } => !!slot.image)
+                .map((slot, i) => {
+                  const tile = (
+                    <div className="group relative aspect-[3/4] overflow-hidden bg-surface-2">
+                      <img
+                        src={slot.image}
+                        alt=""
+                        className="w-full h-full object-cover group-hover:scale-105 trivara-transition duration-500"
+                      />
+                    </div>
+                  );
+                  return slot.link ? (
+                    <a key={i} href={slot.link} className="block">{tile}</a>
+                  ) : (
+                    <div key={i}>{tile}</div>
+                  );
+                })}
             </div>
           </div>
         </section>

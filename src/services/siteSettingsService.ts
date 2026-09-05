@@ -66,6 +66,24 @@ export const siteSettingsService = {
     return url;
   },
 
+  async getHomepageCollectionImageUrl(slot: number): Promise<string | null> {
+    return this.getAppSetting(`homepage_collection_${slot}_image_url`);
+  },
+
+  async uploadHomepageCollectionImage(slot: number, file: File): Promise<string> {
+    const url = await uploadSiteAsset(file, `collection-${slot}`);
+    await this.setAppSetting(`homepage_collection_${slot}_image_url`, url);
+    return url;
+  },
+
+  async getHomepageCollectionLinkUrl(slot: number): Promise<string | null> {
+    return this.getAppSetting(`homepage_collection_${slot}_link_url`);
+  },
+
+  async setHomepageCollectionLinkUrl(slot: number, url: string): Promise<void> {
+    await this.setAppSetting(`homepage_collection_${slot}_link_url`, url);
+  },
+
   /** Raw CSS `background` value (solid color or gradient) applied to <body> sitewide. */
   async getSiteBackground(): Promise<string | null> {
     return this.getAppSetting('site_background_css');
