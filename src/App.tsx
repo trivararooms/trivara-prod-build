@@ -6,6 +6,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Header } from "@/components/layout/Header";
+import { Footer } from "@/components/layout/Footer";
 import { SiteBackground } from "@/components/layout/SiteBackground";
 import { ThemeColor } from "@/components/layout/ThemeColor";
 import { Loader2 } from "lucide-react";
@@ -159,6 +160,11 @@ const App = () => (
             <Route path="*" element={<NotFound />} />
           </Routes>
         </Suspense>
+        {/* The one common footer - every page gets it from here, no page
+            renders its own <footer> any more. Mounted after the routed
+            content (rather than beside <Header /> above) so it stays at the
+            true bottom of every page instead of floating above it. */}
+        <Footer />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
