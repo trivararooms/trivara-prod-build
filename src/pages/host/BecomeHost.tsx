@@ -16,7 +16,7 @@ export default function BecomeHost() {
           <div className="max-w-2xl">
             <h1 className="text-4xl md:text-5xl lg:text-6xl font-pillar font-bold uppercase tracking-wide mb-6 animate-fade-in">
               Share your space,{' '}
-              <span className="font-bastliga lowercase tracking-normal text-accent text-[0.75em]">
+              <span className="font-bastliga italic lowercase tracking-normal text-accent text-[0.75em]">
                 earn on your terms
               </span>
             </h1>
