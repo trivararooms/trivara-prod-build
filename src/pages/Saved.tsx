@@ -1,5 +1,6 @@
 import { Navigate } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { SEO } from '@/components/SEO';
 import { ListingGrid } from '@/components/listings/ListingGrid';
 import { useAuth } from '@/hooks/useAuth';
 import { savedListingsService } from '@/services/savedListingsService';
@@ -32,6 +33,7 @@ export default function Saved() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Saved" description="Listings you've saved for later." noIndex />
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <div className="sticky top-20 z-10 bg-background pb-4 mb-4 border-b border-border">

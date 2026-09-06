@@ -1,5 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Navigate, useNavigate } from 'react-router-dom';
+import { SEO } from '@/components/SEO';
 import { useAuth } from '@/hooks/useAuth';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -140,7 +141,8 @@ const Account = () => {
 
   return (
     <div className="min-h-screen bg-background">
-      
+      <SEO title="Account" description="Manage your Trivara account." noIndex />
+
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Page Header */}
         <div className="mb-12">

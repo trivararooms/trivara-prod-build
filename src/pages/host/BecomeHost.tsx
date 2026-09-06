@@ -1,4 +1,5 @@
 import { Link } from 'react-router-dom';
+import { SEO } from '@/components/SEO';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/hooks/useAuth';
 import { ArrowRight, Check, Home, DollarSign, Calendar, Shield } from 'lucide-react';
@@ -9,6 +10,11 @@ export default function BecomeHost() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Become a Host"
+        description="Share your space and earn on your terms - list your property on Trivara."
+        path="/host"
+      />
 
       {/* Hero Section */}
       <section className="relative py-20 md:py-32">

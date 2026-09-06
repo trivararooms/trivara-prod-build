@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { useQuery, useMutation } from '@tanstack/react-query';
+import { SEO } from '@/components/SEO';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -1214,6 +1215,7 @@ export default function AdminSettings() {
 
     return (
         <div className="min-h-screen bg-background pb-12">
+            <SEO title="System Settings" description="Trivara admin settings." noIndex />
             <div className="container mx-auto px-4 py-8 max-w-4xl">
                 <div className="flex items-center justify-between mb-8">
                     <div>

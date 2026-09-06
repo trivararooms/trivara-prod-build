@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Loader2, Clock, CheckCircle2, XCircle, Upload } from 'lucide-react';
+import { SEO } from '@/components/SEO';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -166,6 +167,7 @@ export default function HostApplicationPage() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Host application" description="Apply to become a Trivara host." noIndex />
       <div className="container max-w-2xl py-12">
         {showStatusScreen && <StatusScreen application={existing as HostApplication} onReapply={() => setForceNewForm(true)} />}
         {showRejectedScreen && <StatusScreen application={existing as HostApplication} onReapply={() => setForceNewForm(true)} />}

@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useSearchParams } from 'react-router-dom';
 import { SlidersHorizontal, X, Search as SearchIcon, Loader2, Crown } from 'lucide-react';
+import { SEO } from '@/components/SEO';
 import { SearchBar } from '@/components/search/SearchBar';
 import { GuestCounts } from '@/components/search/DateGuestsFields';
 import { ListingCard } from '@/components/listings/ListingCard';
@@ -187,8 +188,19 @@ export default function Search() {
     { value: 'strict', label: 'Strict' },
   ];
 
+  const searchLocation = getParam('location');
+
   return (
     <div className="min-h-screen bg-background pb-12">
+      <SEO
+        title={searchLocation ? `Stays in ${searchLocation}` : 'Search stays'}
+        description={
+          searchLocation
+            ? `Browse vacation rentals and short-term stays in ${searchLocation} on Trivara.`
+            : 'Browse and filter vacation rentals and short-term stays on Trivara.'
+        }
+        path={searchLocation ? `/search?location=${encodeURIComponent(searchLocation)}` : '/search'}
+      />
 
       {/* Sticky Search Header */}
       <div className="sticky top-0 z-40 border-b border-border bg-surface-0 transition-all duration-300">
@@ -559,6 +571,7 @@ export default function Search() {
                       <img
                         src={listing.photos[0]}
                         alt={listing.title}
+                        loading="lazy"
                         className="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500"
                       />
                     </div>

@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { Loader2, Trash2, Ban, Tag } from 'lucide-react';
+import { SEO } from '@/components/SEO';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -145,6 +146,7 @@ export default function ListingCalendar() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Calendar" description="Manage blocked dates and custom pricing for your listing." noIndex />
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">
           <h1 className="text-3xl font-display font-medium text-foreground mb-2">Calendar</h1>

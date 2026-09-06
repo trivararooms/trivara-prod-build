@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
+import { SEO } from '@/components/SEO';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { Calendar, MapPin, Star, Loader2, Home } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -408,6 +409,7 @@ export default function Trips() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Your Trips" description="View and manage your upcoming and past stays." noIndex />
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <Tabs defaultValue="upcoming" className="w-full">

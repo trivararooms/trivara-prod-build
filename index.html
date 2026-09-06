@@ -5,17 +5,25 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="/trivara-favicon.png" />
     <title>TRIVARA</title>
-    <meta name="description" content="TRIVARA Stays" />
-    <meta name="author" content="TRIVARA" />
+    <meta name="description" content="Trivara handpicks extraordinary vacation rentals and short-term stays around the world." />
+    <meta name="author" content="Trivara" />
+    <meta name="robots" content="index, follow" />
 
-    <meta property="og:title" content="TRIVARA" />
-    <meta property="og:description" content="TRIVARA Stays" />
+    <!-- Pre-hydration fallback only - every route overrides these via the
+         <SEO> component (src/components/SEO.tsx) once React mounts. A
+         crawler that can't execute JS (most social-media link previews)
+         only ever sees this static version, which is why it points at our
+         own favicon rather than a placeholder image. -->
+    <meta property="og:title" content="Trivara" />
+    <meta property="og:description" content="Trivara handpicks extraordinary vacation rentals and short-term stays around the world." />
     <meta property="og:type" content="website" />
-    <meta property="og:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta property="og:image" content="/trivara-favicon.png" />
+    <meta property="og:site_name" content="Trivara" />
 
     <meta name="twitter:card" content="summary_large_image" />
-    <meta name="twitter:site" content="@TRIVARA" />
-    <meta name="twitter:image" content="https://lovable.dev/opengraph-image-p98pqg.png" />
+    <meta name="twitter:title" content="Trivara" />
+    <meta name="twitter:description" content="Trivara handpicks extraordinary vacation rentals and short-term stays around the world." />
+    <meta name="twitter:image" content="/trivara-favicon.png" />
   </head>
 
   <body>

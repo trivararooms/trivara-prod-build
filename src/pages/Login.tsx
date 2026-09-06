@@ -2,6 +2,7 @@ import React, { useEffect } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { supabase } from '../lib/supabase';
 import { useAuth } from '@/hooks/useAuth';
+import { SEO } from '@/components/SEO';
 
 const Login = () => {
   const navigate = useNavigate();
@@ -57,6 +58,7 @@ const Login = () => {
 
   return (
     <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <SEO title="Sign in" description="Sign in to Trivara." noIndex />
       <div className="w-full max-w-md border border-border rounded-xl px-8 py-10">
         <div className="text-center mb-8">
           <p className="font-script text-xl text-accent mb-1">welcome back</p>

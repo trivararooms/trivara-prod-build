@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Navigate } from 'react-router-dom';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { SEO } from '@/components/SEO';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -166,6 +167,7 @@ export default function PaymentMethods() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Payout account" description="Manage your Trivara payout bank account." noIndex />
 
       <div className="container mx-auto px-4 py-8 max-w-4xl">
         <div className="mb-8">

@@ -1,6 +1,7 @@
 import { useState, useRef, useEffect } from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { useQuery } from '@tanstack/react-query';
+import { SEO } from '@/components/SEO';
 import {
   Home, MapPin, Image, Sparkles, DollarSign,
   CalendarDays, ClipboardList, FileCheck, ChevronRight, ChevronLeft,
@@ -620,6 +621,7 @@ export default function CreateListing() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title={isEditMode ? 'Edit listing' : 'Create listing'} description="Create or edit a Trivara listing." noIndex />
 
       <div className="container py-8">
         {/* Loading state for edit mode */}
