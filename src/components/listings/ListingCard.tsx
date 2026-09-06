@@ -58,6 +58,7 @@ export function ListingCard({ listing, showSaveButton = true }: ListingCardProps
         <img
           src={listing.photos[currentImageIndex]}
           alt={listing.title}
+          loading="lazy"
           className="w-full h-full object-cover group-hover:scale-105 trivara-transition duration-500"
         />
         

@@ -52,6 +52,7 @@ export function ListingGallery({ title, photos }: ListingGalleryProps) {
             <img
               src={photo}
               alt={`${title} ${index + 2}`}
+              loading="lazy"
               className="w-full h-full object-cover rounded-lg"
             />
           </button>

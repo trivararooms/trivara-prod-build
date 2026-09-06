@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Navigate, useNavigate } from 'react-router-dom';
 import { Loader2 } from 'lucide-react';
+import { SEO } from '@/components/SEO';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
@@ -91,6 +92,7 @@ export default function NotificationSettings() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Notifications" description="Choose what Trivara emails you about." noIndex />
       <div className="container mx-auto px-4 py-8 max-w-2xl">
         <div className="mb-8">
           <h1 className="text-3xl font-display font-medium text-foreground mb-2">Notifications</h1>

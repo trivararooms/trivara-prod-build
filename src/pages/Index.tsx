@@ -1,5 +1,6 @@
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
+import { SEO } from '@/components/SEO';
 import { SearchBar } from '@/components/search/SearchBar';
 import { FeaturedListingCard } from '@/components/listings/FeaturedListingCard';
 import { EditableText } from '@/components/content/EditableText';
@@ -77,6 +78,17 @@ export default function Index() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title="Trivara"
+        description="Trivara handpicks extraordinary vacation rentals and short-term stays around the world."
+        path="/"
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'Organization',
+          name: 'Trivara',
+          url: typeof window !== 'undefined' ? window.location.origin : undefined,
+        }}
+      />
       {/* Hero - the common <Header /> (rendered once in App.tsx, sticky and
           transparent) still reserves its own 5rem of flow height above this
           section (so nothing on any other page is ever covered/unclickable
@@ -154,6 +166,7 @@ export default function Index() {
                   <img
                     src={dest.image}
                     alt={dest.city}
+                    loading="lazy"
                     className="w-full h-full object-cover group-hover:scale-105 trivara-transition duration-500"
                   />
                   {/* Dark scrim pinned to --foreground (always near-black,
@@ -177,11 +190,11 @@ export default function Index() {
       {banner75.image && (
         banner75.link ? (
           <a href={banner75.link} className="block h-[75vh] overflow-hidden">
-            <img src={banner75.image} alt="" className="w-full h-full object-cover" />
+            <img src={banner75.image} alt="" loading="lazy" className="w-full h-full object-cover" />
           </a>
         ) : (
           <div className="h-[75vh] overflow-hidden">
-            <img src={banner75.image} alt="" className="w-full h-full object-cover" />
+            <img src={banner75.image} alt="" loading="lazy" className="w-full h-full object-cover" />
           </div>
         )
       )}
@@ -310,11 +323,11 @@ export default function Index() {
       {bannerHero.image && (
         bannerHero.link ? (
           <a href={bannerHero.link} className="block h-screen overflow-hidden">
-            <img src={bannerHero.image} alt="" className="w-full h-full object-cover" />
+            <img src={bannerHero.image} alt="" loading="lazy" className="w-full h-full object-cover" />
           </a>
         ) : (
           <div className="h-screen overflow-hidden">
-            <img src={bannerHero.image} alt="" className="w-full h-full object-cover" />
+            <img src={bannerHero.image} alt="" loading="lazy" className="w-full h-full object-cover" />
           </div>
         )
       )}

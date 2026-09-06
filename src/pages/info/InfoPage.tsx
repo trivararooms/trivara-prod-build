@@ -1,8 +1,11 @@
 import { Link } from 'react-router-dom';
+import { SEO } from '@/components/SEO';
 
 interface InfoPageProps {
   title: string;
   subtitle?: string;
+  seoDescription: string;
+  path: string;
   children: React.ReactNode;
 }
 
@@ -13,9 +16,10 @@ interface InfoPageProps {
  * them any more once the footer was trimmed down. About's content now lives
  * at the top of Talk to Us instead of its own separate page.
  */
-export function InfoPage({ title, subtitle, children }: InfoPageProps) {
+export function InfoPage({ title, subtitle, seoDescription, path, children }: InfoPageProps) {
   return (
     <div className="min-h-screen bg-background">
+      <SEO title={title} description={seoDescription} path={path} />
       <div className="container mx-auto px-4 py-12 max-w-3xl">
         <h1 className="text-3xl font-display font-medium text-foreground mb-2">{title}</h1>
         {subtitle && <p className="text-text-secondary mb-8">{subtitle}</p>}
@@ -41,7 +45,12 @@ export function SupportContact() {
 
 export function PrivacyPage() {
   return (
-    <InfoPage title="Privacy Policy" subtitle="Last updated 2026">
+    <InfoPage
+      title="Privacy Policy"
+      subtitle="Last updated 2026"
+      seoDescription="How Trivara collects, uses, and shares your data."
+      path="/privacy"
+    >
       <p>
         This page describes, in plain terms, what we collect and why. It's a working policy for an
         early-stage product, not a substitute for legal advice.
@@ -72,7 +81,12 @@ export function PrivacyPage() {
 
 export function TermsPage() {
   return (
-    <InfoPage title="Terms of Service" subtitle="Last updated 2026">
+    <InfoPage
+      title="Terms of Service"
+      subtitle="Last updated 2026"
+      seoDescription="The terms governing bookings, hosting, and conduct on Trivara."
+      path="/terms"
+    >
       <p>By using Trivara, you agree to the following:</p>
       <h2>Bookings</h2>
       <p>
@@ -102,7 +116,12 @@ export function TermsPage() {
 
 export function TalkToUsPage() {
   return (
-    <InfoPage title="Talk to Us" subtitle="About Trivara, common questions, and how to reach us.">
+    <InfoPage
+      title="Talk to Us"
+      subtitle="About Trivara, common questions, and how to reach us."
+      seoDescription="About Trivara, plus answers to common questions about bookings, hosting, and messaging."
+      path="/help"
+    >
       <h2>About Trivara</h2>
       <p>
         Trivara is a marketplace that connects travelers with hosts who have a spare room, a whole
@@ -154,7 +173,12 @@ export function TalkToUsPage() {
 
 export function CancellationOptionsPage() {
   return (
-    <InfoPage title="Cancellation options" subtitle="Every listing uses one of three policies, set by the host.">
+    <InfoPage
+      title="Cancellation options"
+      subtitle="Every listing uses one of three policies, set by the host."
+      seoDescription="Trivara's three cancellation policies - flexible, moderate, and strict - explained."
+      path="/cancellation-options"
+    >
       <h2>Flexible</h2>
       <p>Full refund if you cancel at least 24 hours before check-in; no refund after that.</p>
       <h2>Moderate</h2>

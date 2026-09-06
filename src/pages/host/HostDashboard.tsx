@@ -1,4 +1,5 @@
 import { Navigate, useNavigate } from 'react-router-dom';
+import { SEO } from '@/components/SEO';
 import {
   Home,
   Calendar,
@@ -298,6 +299,7 @@ export default function HostDashboard() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Host Dashboard" description="Manage your Trivara listings and bookings." noIndex />
 
       <div className="container mx-auto px-4 py-8 max-w-7xl">
         {/* Page Header */}

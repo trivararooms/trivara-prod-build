@@ -1,6 +1,7 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { Send, Loader2, MessageCircle } from 'lucide-react';
+import { SEO } from '@/components/SEO';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useAuth } from '@/hooks/useAuth';
@@ -106,6 +107,7 @@ export default function Messages() {
 
   return (
     <div className="min-h-screen bg-background flex flex-col">
+      <SEO title="Messages" description="Your Trivara message inbox." noIndex />
       <div className="container mx-auto px-4 py-8 flex-1">
         <h1 className="text-3xl font-display font-medium text-foreground mb-6">Messages</h1>
 

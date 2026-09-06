@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Navigate } from 'react-router-dom';
 import { Loader2, MapPin, Printer, CheckCircle2 } from 'lucide-react';
+import { SEO } from '@/components/SEO';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
@@ -80,6 +81,7 @@ export default function BookingConfirmation() {
 
   return (
     <div className="min-h-screen bg-background print:bg-white">
+      <SEO title="Booking confirmation" description="Your Trivara booking confirmation." noIndex />
       <style>{`
         @media print {
           header, .no-print { display: none !important; }

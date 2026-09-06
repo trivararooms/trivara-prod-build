@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { Calendar, MapPin, Wifi, Car, Snowflake, Tv, Loader2, BadgeCheck, ShieldCheck, Share2, X, MessageCircle } from 'lucide-react';
+import { SEO } from '@/components/SEO';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent } from '@/components/ui/card';
 import { Calendar as CalendarComponent } from '@/components/ui/calendar';
@@ -351,6 +352,7 @@ export default function ListingDetail() {
   if (!listing) {
     return (
       <div className="min-h-screen bg-background">
+        <SEO title="Listing not found" description="This listing is no longer available." noIndex />
         <div className="container mx-auto px-4 py-8">
           <div className="text-center">
             <h1 className="text-2xl font-medium text-foreground mb-4">Listing not found</h1>
@@ -361,8 +363,39 @@ export default function ListingDetail() {
     );
   }
 
+  const listingDescription = listing.description
+    ? listing.description.slice(0, 155)
+    : `${listing.bedrooms} bedroom ${listing.propertyType.replace('_', ' ')} in ${listing.location.city}, ${listing.location.state}.`;
+
   return (
     <div className="min-h-screen bg-background">
+      <SEO
+        title={`${listing.title} - ${listing.location.city}`}
+        description={listingDescription}
+        image={listing.photos[0]}
+        path={`/listing/${listing.id}`}
+        jsonLd={{
+          '@context': 'https://schema.org',
+          '@type': 'LodgingBusiness',
+          name: listing.title,
+          description: listingDescription,
+          image: listing.photos,
+          address: {
+            '@type': 'PostalAddress',
+            addressLocality: listing.location.city,
+            addressRegion: listing.location.state,
+            addressCountry: listing.location.country,
+          },
+          priceRange: `₹${listing.pricePerNight}`,
+          ...(listing.reviewCount > 0 && {
+            aggregateRating: {
+              '@type': 'AggregateRating',
+              ratingValue: listing.rating,
+              reviewCount: listing.reviewCount,
+            },
+          }),
+        }}
+      />
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         {/* Title and Location */}

@@ -72,6 +72,7 @@ export function FeaturedListingCard({ listing }: FeaturedListingCardProps) {
           <img
             src={listing.photos[0]}
             alt={listing.title}
+            loading="lazy"
             className="w-full h-full object-cover"
           />
         </div>

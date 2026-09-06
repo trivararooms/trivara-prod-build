@@ -1,4 +1,5 @@
 import { Navigate } from 'react-router-dom';
+import { SEO } from '@/components/SEO';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Badge } from '@/components/ui/badge';
@@ -120,6 +121,7 @@ export default function HostEarnings() {
 
   return (
     <div className="min-h-screen bg-background">
+      <SEO title="Earnings" description="Your Trivara host earnings and payouts." noIndex />
 
       <div className="container mx-auto px-4 py-8 max-w-6xl">
         <h1 className="text-3xl font-display font-medium mb-6">
