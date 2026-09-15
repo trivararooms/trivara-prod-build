@@ -140,18 +140,21 @@ export default function Index() {
       </section>
 
       {/* Popular Destinations - tight bottom padding so the cards sit close
-          to "Featured stays" below, instead of a big gap between sections. */}
-      {destinations.length > 0 && (
-        <section className="pt-24 md:pt-32 pb-4 md:pb-6">
-          <div className={`w-full ${SIDE_PAD}`}>
-            <EditableText
-              settingKey="content_destinations_heading"
-              fallback="Popular destinations"
-              as="h2"
-              className="text-[27px] sm:text-[42px] lg:text-[55px] font-display font-medium text-center mb-10"
-            />
+          to "Featured stays" below, instead of a big gap between sections.
+          Always rendered now, even with 0 real destinations - empty
+          placeholder cards keep the section's shape instead of the whole
+          thing disappearing. */}
+      <section className="pt-24 md:pt-32 pb-4 md:pb-6">
+        <div className={`w-full ${SIDE_PAD}`}>
+          <EditableText
+            settingKey="content_destinations_heading"
+            fallback="Popular destinations"
+            as="h2"
+            className="text-[27px] sm:text-[42px] lg:text-[55px] font-display font-medium text-center mb-10"
+          />
 
-            <div className="marquee-mask">
+          <div className="marquee-mask">
+            {destinations.length > 0 ? (
               <div
                 className={`flex gap-4 w-max ${destinations.length > 1 ? 'marquee-track' : ''}`}
                 style={destinations.length > 1 ? { animationDuration: `${marqueeDuration}s` } : undefined}
@@ -177,10 +180,20 @@ export default function Index() {
                   </Link>
                 ))}
               </div>
-            </div>
+            ) : (
+              <div className="flex gap-4 w-max">
+                {Array.from({ length: 4 }).map((_, i) => (
+                  <div
+                    key={i}
+                    className="flex-shrink-0 aspect-[4/5] bg-surface-2"
+                    style={{ width: destCardWidth ? `${destCardWidth}px` : '180px' }}
+                  />
+                ))}
+              </div>
+            )}
           </div>
-        </section>
-      )}
+        </div>
+      </section>
 
       {/* Featured Listings - tight top padding to match the destinations
           section's tight bottom padding above, so the gap between the two
@@ -201,7 +214,18 @@ export default function Index() {
           </div>
 
           {featuredListings.length === 0 ? (
-            <p className="text-text-secondary py-12 text-center">No featured stays yet - check back soon.</p>
+            // Empty placeholder cards instead of a text message, so the
+            // section keeps its real shape - "feat-media" on each one so
+            // the destination cards above still size themselves off it.
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
+              {Array.from({ length: 3 }).map((_, i) => (
+                <div key={i}>
+                  <div className="feat-media aspect-[4/5] bg-surface-2 mb-4" />
+                  <div className="h-4 w-2/3 bg-surface-2 rounded mb-2" />
+                  <div className="h-3 w-1/2 bg-surface-2 rounded" />
+                </div>
+              ))}
+            </div>
           ) : (
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-10">
               {featuredListings.map((listing) => (
