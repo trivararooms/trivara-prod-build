@@ -1,0 +1,228 @@
+<!doctype html>
+<html lang="en" data-theme="obsidian">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trivara Stays — Mock 2 · Reward</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Sora:wght@400;600;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/shared.css">
+<style>
+/* MOCK 2 · REWARD — CRED (tactile neumorphic cards, premium dark, scratch-card offers, "you earned this" tone)
+   + slice (chunky pill shapes, playful bold type, floating dock, diagonal slice motif, bottom-sheet planner). */
+:root{--r:26px;--f-display:'Sora',system-ui,sans-serif;--f-body:'DM Sans',system-ui,sans-serif;
+  --nu-hi:rgba(255,255,255,.07);--nu-lo:rgba(0,0,0,.55)}
+[data-theme="paper"],[data-theme="chalk"],[data-theme="ocean"]{--nu-hi:rgba(255,255,255,.95);--nu-lo:rgba(60,50,30,.18)}
+.nu{background:var(--surface);border-radius:var(--r);box-shadow:8px 10px 24px var(--nu-lo),-6px -6px 18px var(--nu-hi),inset 0 1px 0 var(--nu-hi)}
+.nu-in{background:var(--bg);border-radius:calc(var(--r) * .7);box-shadow:inset 4px 5px 12px var(--nu-lo),inset -3px -3px 10px var(--nu-hi)}
+h1,h2,h3{font-family:var(--f-display);letter-spacing:-.03em}
+.wrap{max-width:1280px;margin:0 auto;padding:0 28px}
+/* floating pill nav */
+.pillnav{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:6px;padding:8px 10px 8px 20px;border-radius:999px;width:min(980px,calc(100% - 24px))}
+.pillnav .logo{font:800 18px var(--f-display);letter-spacing:-.04em;margin-right:auto;display:flex;align-items:center;gap:8px}
+.pillnav .logo i{width:20px;height:20px;border-radius:7px;background:var(--accent);transform:rotate(-12deg);display:block}
+.pillnav a{padding:9px 16px;border-radius:999px;font-size:14px;font-weight:500;color:var(--ink2);transition:.2s}
+.pillnav a:hover{color:var(--ink);background:var(--bg2)}
+.pillnav .go{background:var(--accent);color:var(--accent-ink);font-weight:700}
+.pillnav .themes{margin:0 10px}
+/* hero */
+.hero{padding:130px 0 70px;position:relative;overflow:hidden}
+.hero .grid{display:grid;grid-template-columns:1.1fr .9fr;gap:40px;align-items:center}
+.hero h1{font-weight:800;font-size:clamp(46px,7.2vw,104px);line-height:.95}
+.hero h1 .sl{display:inline-block;position:relative;color:var(--accent-ink);padding:0 .18em;margin:0 -.04em;isolation:isolate}
+.hero h1 .sl::before{content:"";position:absolute;inset:.06em 0 .02em;background:var(--accent);transform:skewX(-10deg) rotate(-1.5deg);border-radius:.14em;z-index:-1}
+.hero p{font-size:19px;color:var(--ink2);max-width:40ch;margin:22px 0 0}
+.stack{position:relative;height:520px}
+.stack .c{position:absolute;width:62%;aspect-ratio:3/4;border-radius:32px;background-size:cover;background-position:center;box-shadow:12px 18px 40px var(--nu-lo),inset 0 0 0 1px var(--nu-hi);transition:transform .6s cubic-bezier(.2,.8,.2,1);cursor:pointer;overflow:hidden}
+.stack .c span{position:absolute;left:14px;bottom:14px;background:var(--bg);padding:7px 14px;border-radius:999px;font:700 13px var(--f-body)}
+.stack .c:nth-child(1){left:0;top:50px;transform:rotate(-9deg)}
+.stack .c:nth-child(2){left:19%;top:0;transform:rotate(3deg);z-index:2}
+.stack .c:nth-child(3){right:0;top:90px;transform:rotate(11deg);z-index:1}
+.stack:hover .c:nth-child(1){transform:rotate(-14deg) translateX(-24px)}
+.stack:hover .c:nth-child(3){transform:rotate(16deg) translateX(24px)}
+.stack .c:hover{z-index:5;transform:rotate(0) scale(1.06)!important}
+/* planner (bottom-sheet style, inline controls, no popovers) */
+.planner{margin-top:34px;padding:22px;display:grid;gap:18px;max-width:640px}
+.planner .q{display:flex;align-items:center;gap:12px;padding:14px 18px;border-radius:999px}
+.planner input{flex:1;background:none;border:0;color:var(--ink);font:500 16px var(--f-body);outline:0}
+.planner .tabs{display:flex;gap:8px}
+.tabs button{flex:1;padding:12px;border-radius:999px;font-weight:700;font-size:14px;color:var(--ink2);transition:.2s}
+.tabs button.on{background:var(--accent);color:var(--accent-ink);box-shadow:0 8px 24px -8px var(--glow)}
+.planner .pane{display:none}.planner .pane.on{display:block}
+.planner .sum{display:flex;justify-content:space-between;align-items:center;font-size:14px;color:var(--ink2);flex-wrap:wrap;gap:6px}
+.planner .sum b{color:var(--ink);font-weight:700}
+.quick{display:flex;gap:8px;margin-bottom:12px;flex-wrap:wrap}
+.pane .gst .ctl button{width:44px;height:44px;font-size:22px;background:var(--bg);box-shadow:3px 4px 10px var(--nu-lo),-2px -2px 8px var(--nu-hi);border:0}
+.pane .gst .ctl button:active:not(:disabled){transform:scale(.9)}
+.pane .gst output{font:800 20px var(--f-display)}
+/* scratch offers */
+section{padding:70px 0}
+.sh{display:flex;align-items:end;justify-content:space-between;margin-bottom:28px;gap:14px}
+.sh h2{font-size:clamp(30px,4vw,54px);font-weight:800;line-height:1}
+.sh span{color:var(--ink2);font-size:14px}
+.offers{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.scr{position:relative;aspect-ratio:1.5;overflow:hidden;border-radius:var(--r);box-shadow:10px 12px 28px var(--nu-lo),-6px -6px 18px var(--nu-hi)}
+.scr .under{position:absolute;inset:0;padding:24px;display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 55%,var(--bg)));color:var(--accent-ink)}
+.scr .under b{font:800 54px/1 var(--f-display);letter-spacing:-.05em}
+.scr .under small{font-weight:700;opacity:.8;text-transform:uppercase;letter-spacing:.1em;font-size:11px}
+.scr canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab;transition:opacity .5s}
+.scr canvas.gone{opacity:0;pointer-events:none}
+.rule{margin-top:10px;font-size:12px;color:var(--ink2);text-align:center}
+/* featured: 5 across, chunky */
+.feat{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
+.fc{border-radius:30px;overflow:hidden;cursor:pointer;position:relative;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.fc:hover{transform:translateY(-8px) rotate(-.6deg)}
+.fc .im{aspect-ratio:3/4;background-size:cover;background-position:center;position:relative}
+.fc .im .heart{position:absolute;top:12px;right:12px}
+.fc .im .pr{position:absolute;left:12px;bottom:12px;background:var(--accent);color:var(--accent-ink);font:800 14px var(--f-display);padding:7px 13px;border-radius:999px;transform:rotate(-3deg)}
+.fc .bd{padding:14px 16px 18px}
+.fc h4{font:700 16px var(--f-display);letter-spacing:-.02em}
+.fc .bd div{color:var(--ink2);font-size:13px;margin-top:2px}
+.imgslot{height:240px;border-radius:var(--r);margin-top:0}
+/* destinations */
+.bub{display:flex;gap:18px;overflow:auto;padding:16px 6px 24px;scrollbar-width:none}
+.bub button{flex:0 0 auto;text-align:center;font-weight:700;font-size:14px}
+.bub .o{width:124px;height:124px;border-radius:50%;margin:0 auto 10px;background-size:cover;background-position:center;box-shadow:8px 10px 22px var(--nu-lo),-5px -5px 14px var(--nu-hi);transition:.25s;border:4px solid var(--surface)}
+.bub button:hover .o{transform:scale(1.08) rotate(-4deg)}
+.bub button.on .o{outline:4px solid var(--accent);outline-offset:3px}
+.bub small{display:block;color:var(--ink2);font-weight:400}
+/* explore */
+.xp{display:grid;grid-template-columns:1.1fr .9fr;gap:22px;align-items:start}
+.filters{padding:16px 18px;border-radius:var(--r);margin-bottom:18px;display:grid;gap:12px;position:sticky;top:84px;z-index:5}
+.filters .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.chip{border:0;background:var(--bg);box-shadow:3px 4px 10px var(--nu-lo),-2px -2px 8px var(--nu-hi);font-weight:600;padding:10px 16px}
+.chip.on{background:var(--accent);color:var(--accent-ink);box-shadow:inset 2px 3px 8px rgba(0,0,0,.25)}
+.filters select{background:var(--bg);color:var(--ink);border:0;padding:10px 14px;border-radius:999px;font:600 13px var(--f-body);box-shadow:3px 4px 10px var(--nu-lo),-2px -2px 8px var(--nu-hi)}
+.filters input[type=range]{accent-color:var(--accent);width:140px}
+.list{display:grid;gap:16px}
+.lr{display:grid;grid-template-columns:200px 1fr;gap:18px;padding:12px;cursor:pointer;transition:.25s;border:2px solid transparent}
+.lr.hot{border-color:var(--accent);transform:translateX(6px)}
+.lr .im{border-radius:calc(var(--r) * .75);background-size:cover;background-position:center;min-height:150px;position:relative}
+.lr .im .heart{position:absolute;top:8px;left:8px}
+.lr h4{font:700 20px var(--f-display);letter-spacing:-.03em}
+.lr .m{font-size:13px;color:var(--ink2);margin:4px 0 10px}
+.lr .tags{display:flex;gap:6px;flex-wrap:wrap}
+.lr .tags span{font-size:11px;font-weight:700;padding:4px 10px;border-radius:999px;background:var(--bg);box-shadow:inset 2px 2px 5px var(--nu-lo),inset -1px -1px 4px var(--nu-hi)}
+.lr .tags .z{background:var(--accent);color:var(--accent-ink);box-shadow:none}
+.lr .p{margin-top:10px;font:800 22px var(--f-display);letter-spacing:-.03em}.lr .p small{font:400 12px var(--f-body);color:var(--ink2)}
+.mapc{position:sticky;top:84px;height:calc(100vh - 110px);border-radius:var(--r);overflow:hidden;padding:8px}
+.mapc .map{height:100%;border-radius:calc(var(--r) * .8)}
+/* host slab */
+.hostslab{position:relative;margin:30px 0 0;padding:90px 0;background:var(--accent);color:var(--accent-ink);clip-path:polygon(0 8%,100% 0,100% 92%,0 100%);overflow:hidden}
+.hostslab h2{font-size:clamp(38px,6vw,86px);font-weight:800;line-height:.95;max-width:12ch}
+.hostslab p{max-width:44ch;margin:18px 0 28px;font-weight:500}
+.hostslab .btn{width:auto;background:var(--accent-ink);color:var(--accent);padding:16px 30px;border-radius:999px}
+.hostslab .coin{position:absolute;right:8%;top:50%;width:260px;height:260px;border-radius:50%;border:14px solid var(--accent-ink);display:grid;place-items:center;font:800 90px var(--f-display);transform:translateY(-50%) rotate(-12deg);opacity:.9}
+/* dock */
+.dock{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:70;display:flex;gap:4px;padding:8px;border-radius:999px}
+.dock a{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 18px;border-radius:999px;font-size:11px;font-weight:700;color:var(--ink2);transition:.2s;position:relative}
+.dock a:hover,.dock a.on{background:var(--accent);color:var(--accent-ink)}
+.dock svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.dock em{position:absolute;top:3px;right:10px;background:var(--accent);color:var(--accent-ink);font:800 10px var(--f-body);padding:1px 6px;border-radius:99px;font-style:normal}
+footer{padding:60px 0 130px;color:var(--ink2);font-size:14px;text-align:center}
+.dlg-in{border-radius:36px}
+@media(max-width:1000px){.hero .grid,.xp{grid-template-columns:1fr}.stack{height:380px}.offers{grid-template-columns:1fr}.feat{grid-template-columns:repeat(2,1fr)}.mapc{position:relative;top:0;height:380px}.pillnav a:not(.go){display:none}.lr{grid-template-columns:120px 1fr}.hostslab .coin{display:none}.filters{position:relative;top:0}}
+</style>
+</head>
+<body>
+<nav class="pillnav nu">
+  <a class="logo" href="#"><i></i>trivara</a>
+  <a href="#offers">Offers</a><a href="#feat">Featured</a><a href="#explore">Explore</a>
+  <div class="themes" id="th"></div>
+  <a class="go" href="#host">Host</a>
+</nav>
+
+<header class="hero"><div class="wrap grid">
+  <div>
+    <h1 class="rv">Your next stay is a <span class="sl">reward.</span></h1>
+    <p class="rv">Karnataka's best homes — some with Instant Book, all with prices that show their working. Plan it right here. No pop-ups, no maze.</p>
+    <div class="planner nu rv">
+      <div class="q nu-in"><span aria-hidden="true">⌕</span><input data-q placeholder="Search Coorg, Hampi, Gokarna…" autocomplete="off"></div>
+      <div class="tabs nu-in" style="padding:5px;border-radius:999px"><button class="on" data-tab="dates">📅 Dates</button><button data-tab="guests">👥 Guests &amp; pets</button></div>
+      <div class="pane on" id="pane-dates"><div class="quick" id="quick"></div><div id="cal"></div></div>
+      <div class="pane" id="pane-guests"><div id="gs"></div></div>
+      <div class="sum"><span>📅 <b data-dates>Add dates</b></span><span>👥 <b data-gsum>2 guests</b></span><span><b id="n1">8</b> stays match</span></div>
+    </div>
+  </div>
+  <div class="stack rv" aria-hidden="true" id="stack"></div>
+</div></header>
+
+<section id="offers" style="padding-top:20px"><div class="wrap">
+  <div class="sh rv"><h2>Scratch. Save.</h2><span>Admin-set offers · applied automatically at checkout · best one wins, no stacking</span></div>
+  <div class="offers" id="offersgrid"></div>
+</div></section>
+
+<section id="feat" style="padding-bottom:0"><div class="wrap">
+  <div class="sh rv"><h2>Featured stays</h2><span>5 hand-picked</span></div>
+  <div class="feat" id="featrow"></div>
+</div></section>
+
+<div class="wrap" style="margin-top:50px"><div class="imgslot nu-in" aria-hidden="true"></div></div>
+
+<section><div class="wrap">
+  <div class="sh rv"><h2>Popular destinations</h2><span>Tap to filter</span></div>
+  <div class="bub" id="bub"></div>
+</div></section>
+
+<section id="explore" style="padding-top:20px"><div class="wrap">
+  <div class="sh rv"><h2>Everything, on the map</h2><span id="xc">8 stays</span></div>
+  <div class="xp">
+    <div>
+      <div class="filters nu"><div class="row" id="chips"></div>
+        <div class="row"><span style="font-size:13px;font-weight:700">Up to</span><input type="range" data-price min="2000" max="12000" step="500" value="12000"><b data-price-out style="font-size:14px">₹12,000+</b><span style="flex:1"></span>
+        <select data-sort aria-label="Sort"><option value="rec">Recommended</option><option value="lo">Price: low → high</option><option value="hi">Price: high → low</option><option value="top">Top rated</option><option value="new">Newest</option></select></div></div>
+      <div class="list" id="list"></div>
+    </div>
+    <div class="mapc nu"><div class="map" id="map"></div></div>
+  </div>
+</div></section>
+
+<section id="host" style="padding:0"><div class="hostslab"><div class="wrap"><h2>Got a place? Make it earn.</h2><p>Tiered commission. Per-date pricing. Payouts you can actually follow.</p><button class="btn">Start hosting →</button></div><div class="coin">₹</div></div></section>
+
+<footer><div class="wrap">trivara · considered stays across Karnataka · <i>mock design, not live</i></div></footer>
+
+<nav class="dock nu" aria-label="Quick nav">
+  <a href="#" class="on"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v10H3z"/></svg>Home</a>
+  <a href="#explore"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Explore</a>
+  <a href="#offers"><svg viewBox="0 0 24 24"><path d="M20 12v8H4v-8M2 7h20v5H2zM12 22V7M12 7S10 2 7 3s-1 4 5 4zM12 7s2-5 5-4 1 4-5 4z"/></svg>Offers</a>
+  <a href="#explore"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.6-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6C19 16.4 12 21 12 21Z"/></svg>Saved<em data-saved-n>0</em></a>
+</nav>
+<div class="mockbar"><a href="index.html">← All mocks</a><span>· 2 Reward</span></div>
+
+<script src="shared/shared.js"></script>
+<script>
+const {$,$$,inr,L,DESTS,S,art,heart,filtered}=TV;
+TV.initThemes('reward');
+$$('[data-saved-n]').forEach(n=>n.textContent=TV.saved.size);
+
+/* hero stack */
+$('#stack').innerHTML=['l1','l3','l6'].map(id=>{const l=L.find(x=>x.id==id);return `<div class="c" data-open="${id}" style="background-image:${art(l,1)}"><span>${l.city} · ${inr(l.price)}</span></div>`}).join('');
+
+/* planner */
+TV.rangeCal($('#cal'),1);TV.bindGuests($('#gs'));
+$$('[data-tab]').forEach(b=>b.onclick=()=>{$$('[data-tab]').forEach(x=>x.classList.toggle('on',x===b));$$('.pane').forEach(p=>p.classList.toggle('on',p.id=='pane-'+b.dataset.tab))});
+$('#quick').innerHTML=['This weekend','Next weekend','+3 nights'].map((t,i)=>`<button class="chip" data-qk="${i}">${t}</button>`).join('');
+$('#quick').onclick=e=>{const b=e.target.closest('[data-qk]');if(!b)return;const s=[new Date(2026,9,9),new Date(2026,9,23),new Date(2026,9,19)][b.dataset.qk],e2=new Date(s);e2.setDate(s.getDate()+(b.dataset.qk==2?3:2));S.range={s,e:e2};TV.rangeCal($('#cal'),1);TV.sync()};
+
+/* offers = discount_rules (first_time_user / area / combo). Real scratch canvas. */
+const OFF=[{k:'FIRST-TIME USER',v:'10% off',d:'Your first completed stay'},{k:'AREA · COORG',v:'₹1,000 off',d:'Flat, on any Coorg stay'},{k:'COMBO',v:'8% off',d:'Book 3+ nights'}];
+$('#offersgrid').innerHTML=OFF.map((o,i)=>`<div class="rv"><div class="scr"><div class="under"><small>${o.k}</small><b>${o.v}</b><small>${o.d}</small></div><canvas data-i="${i}"></canvas></div><div class="rule">Scratch to reveal</div></div>`).join('');
+$$('.scr canvas').forEach(cv=>{const ctx=cv.getContext('2d');let drawing=false;
+ const fit=()=>{const r=cv.getBoundingClientRect();cv.width=r.width*devicePixelRatio;cv.height=r.height*devicePixelRatio;ctx.scale(devicePixelRatio,devicePixelRatio);const g=ctx.createLinearGradient(0,0,r.width,r.height);g.addColorStop(0,'#3a3a40');g.addColorStop(.5,'#7d7d88');g.addColorStop(1,'#2b2b30');ctx.fillStyle=g;ctx.fillRect(0,0,r.width,r.height);ctx.fillStyle='rgba(255,255,255,.55)';ctx.font='800 20px Sora,sans-serif';ctx.textAlign='center';ctx.fillText('SCRATCH HERE',r.width/2,r.height/2+6);ctx.globalCompositeOperation='destination-out'};
+ requestAnimationFrame(fit);
+ const pt=e=>{const r=cv.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top]};
+ const sc=e=>{if(!drawing)return;const[x,y]=pt(e);ctx.beginPath();ctx.arc(x,y,26,0,7);ctx.fill()};
+ cv.onpointerdown=e=>{drawing=true;cv.setPointerCapture(e.pointerId);sc(e)};cv.onpointermove=sc;
+ cv.onpointerup=()=>{drawing=false;const d=ctx.getImageData(0,0,cv.width,cv.height).data;let c=0;for(let i=3;i<d.length;i+=64)if(d[i]<20)c++;if(c/(d.length/64)>.42){cv.classList.add('gone');TV.toast('Offer unlocked — auto-applies at checkout')}}});
+
+/* featured (5), destinations */
+$('#featrow').innerHTML=L.filter(l=>l.feat).slice(0,5).map(l=>`<article class="fc nu rv" data-open="${l.id}"><div class="im" style="background-image:${art(l)}">${heart(l.id)}<span class="pr">${inr(l.price)}</span></div><div class="bd"><h4>${l.t}</h4><div>${l.city} · ★ ${l.r}</div></div></article>`).join('');
+$('#bub').innerHTML=DESTS.map(d=>{const l=L.find(x=>x.city==d.id)||L[0];return `<button data-dest="${d.id}"><div class="o" style="background-image:${art(l,2,300,300)}"></div>${d.id}<small>${d.n} stays</small></button>`}).join('');
+$('#chips').innerHTML=[['instant','⚡ Instant Book'],['pets','🐾 Pets ok'],['pool','Pool'],['wifi','Wifi'],['workspace','Workspace'],['stepfree','♿ Step-free'],['beach','Beach']].map(([k,n])=>`<button class="chip" data-f="${k}">${n}</button>`).join('');
+
+function draw(){const r=filtered();$('#list').innerHTML=r.length?r.map(l=>`<article class="lr nu" data-id="${l.id}" data-open="${l.id}"><div class="im" style="background-image:${art(l)}">${heart(l.id)}</div><div><h4>${l.t}</h4><div class="m">${l.loc} · ${l.type} · ${l.g} guests · ★ ${l.r} (${l.rc})</div><div class="tags"><span class="${l.instant?'z':''}">${l.instant?'⚡ Instant Book':'Request to Book'}</span>${l.pets?'<span>🐾 Pets</span>':''}<span>${l.pol} cancel</span></div><div class="p">${inr(l.price)} <small>/ night</small></div></div></article>`).join(''):'<div class="nu" style="padding:50px;text-align:center;border-radius:var(--r)">Nothing here yet. Try fewer filters.</div>';
+$('#xc').textContent=r.length+' stays';$('#n1').textContent=r.length}
+TV.onChange(draw);TV.bindFilters();TV.mountMap($('#map'),id=>TV.detail(id));draw();TV.reveal();
+</script>
+</body>
+</html>
