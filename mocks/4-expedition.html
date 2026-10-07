@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="en" data-theme="obsidian">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trivara Stays — Mock 4 · Expedition</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,500;1,300;1,500&family=Barlow:wght@300;400;500;600&family=Barlow+Condensed:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/shared.css">
+<style>
+/* MOCK 4 · EXPEDITION — Black Tomato (bespoke "get lost" editorial, expanding destination panels, serif italics)
+   + Own Prim Land (earthy, land-as-asset, quiet confidence) + Virgin Galactic (cinematic dark, wide-tracked thin caps, countdown)
+   + SpaceX (full-viewport snap "missions", ghost uppercase buttons, telemetry stats). */
+:root{--r:0px;--f-display:'Cormorant Garamond',Georgia,serif;--f-body:'Barlow',system-ui,sans-serif;--f-mono:'Barlow Condensed',sans-serif}
+html{scroll-snap-type:y proximity}
+body{font-weight:300;overflow-x:hidden}
+.up{font:500 12px var(--f-mono);letter-spacing:.28em;text-transform:uppercase}
+.ghost{display:inline-block;border:1px solid currentColor;padding:15px 34px;font:500 12px var(--f-mono);letter-spacing:.28em;text-transform:uppercase;transition:.3s;background:transparent}
+.ghost:hover{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.ghost.solid{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.ghost.solid:hover{box-shadow:0 0 40px var(--glow);background:var(--accent);color:var(--accent-ink)}
+.ov{color:#fff}.ov .ghost:hover{background:#fff;color:#000;border-color:#fff}
+nav.top{position:fixed;top:0;left:0;right:0;z-index:60;display:grid;grid-template-columns:1fr auto 1fr;align-items:center;padding:20px 36px;color:#fff;mix-blend-mode:normal;transition:background .4s}
+nav.top.solid{background:color-mix(in srgb,var(--bg) 85%,transparent);backdrop-filter:blur(16px);color:var(--ink)}
+nav.top .logo{font:500 20px var(--f-body);letter-spacing:.5em}
+nav.top .c{display:flex;gap:34px}
+nav.top .c a{opacity:.8}nav.top .c a:hover{opacity:1}
+nav.top .r{display:flex;justify-content:flex-end;gap:22px;align-items:center}
+nav.top .themes button{border-color:rgba(255,255,255,.5)}
+/* hero */
+.scene{position:relative;min-height:100vh;scroll-snap-align:start;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;color:#fff;background:#000}
+.scene .bg{position:absolute;inset:-4%;background-size:cover;background-position:center;animation:drift 40s ease-in-out infinite alternate}
+@keyframes drift{to{transform:scale(1.1) translate(-1.5%,1%)}}
+.scene::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.45),transparent 30%,rgba(0,0,0,.7))}
+.scene>*:not(.bg){position:relative;z-index:2}
+.hero h1{font:300 clamp(54px,9vw,150px)/.92 var(--f-display);letter-spacing:-.01em;margin:0 36px}
+.hero h1 em{font-style:italic;font-weight:300}
+.hero .sub{margin:24px 36px 34px;max-width:46ch;font-size:17px;opacity:.85}
+.hero .cta{margin:0 36px 54px;display:flex;gap:16px;flex-wrap:wrap}
+/* mission-control search */
+.mc{display:grid;grid-template-columns:1.3fr 1.4fr 1.2fr 1fr;border-top:1px solid rgba(255,255,255,.3);background:rgba(0,0,0,.45);backdrop-filter:blur(18px)}
+.mc>div{padding:18px 36px 18px 24px;border-right:1px solid rgba(255,255,255,.2);position:relative;min-width:0}
+.mc>div:first-child{padding-left:36px}
+.mc .up{opacity:.6;display:block;margin-bottom:6px;font-size:11px}
+.mc input{width:100%;background:none;border:0;color:#fff;font:300 20px var(--f-display);outline:0}
+.mc input::placeholder{color:#fff;opacity:.5}
+.mc .v{font:300 20px var(--f-display);cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.mc .t{font:300 28px var(--f-mono);letter-spacing:.14em;font-variant-numeric:tabular-nums}
+.mc .t small{display:block;font-size:11px;letter-spacing:.2em;opacity:.55}
+.pp{position:absolute;bottom:calc(100% + 1px);left:0;background:var(--surface);color:var(--ink);border:1px solid var(--line);padding:20px;display:none;z-index:40;box-shadow:var(--shadow)}
+.pp.open{display:block}
+/* missions */
+.ms .tx{padding:0 36px 90px;max-width:900px}
+.ms .no{font:500 12px var(--f-mono);letter-spacing:.3em;opacity:.7;margin-bottom:14px}
+.ms h2{font:300 clamp(48px,8vw,128px)/.92 var(--f-display);text-transform:none}
+.ms h2 em{font-style:italic}
+.spec{display:flex;gap:44px;margin:30px 0 34px;flex-wrap:wrap}
+.spec div b{display:block;font:300 34px var(--f-display);letter-spacing:.01em}
+.spec div span{font:500 11px var(--f-mono);letter-spacing:.26em;text-transform:uppercase;opacity:.65}
+.ms .cta{display:flex;gap:14px;flex-wrap:wrap;align-items:center}
+.ms .heart{background:transparent;border:1px solid rgba(255,255,255,.6);border-radius:0;width:48px;height:48px}
+.ms .heart svg{stroke:#fff}.ms .heart.on svg{stroke:var(--accent);fill:var(--accent)}
+.dots{position:fixed;right:22px;top:50%;transform:translateY(-50%);z-index:55;display:flex;flex-direction:column;gap:12px;opacity:0;transition:.4s}
+.dots.show{opacity:1}
+.dots a{width:7px;height:7px;border:1px solid #fff;border-radius:50%;display:block;mix-blend-mode:difference}
+.dots a.on{background:#fff}
+/* get lost panels */
+.lost{display:flex;height:84vh;min-height:560px;scroll-snap-align:start;background:var(--bg)}
+.lost button{flex:1;position:relative;overflow:hidden;color:#fff;text-align:left;transition:flex .8s cubic-bezier(.2,.7,.2,1);border-right:1px solid var(--bg)}
+.lost button .im{position:absolute;inset:0;background-size:cover;background-position:center;transition:transform 1.2s,filter .6s;filter:brightness(.6) saturate(.8)}
+.lost button:hover,.lost button.on{flex:3.6}
+.lost button:hover .im,.lost button.on .im{transform:scale(1.06);filter:none}
+.lost button .t{position:absolute;left:22px;bottom:26px;right:22px}
+.lost button b{display:block;font:300 34px var(--f-display);writing-mode:horizontal-tb;white-space:nowrap}
+.lost button .up{opacity:.8;display:block;margin-top:6px;font-size:11px;max-height:0;overflow:hidden;transition:max-height .6s}
+.lost button:hover .up,.lost button.on .up{max-height:40px}
+.lost button.on::before{content:"";position:absolute;inset:0;border:2px solid var(--accent);z-index:3}
+.lost::after{content:""}
+.sec{padding:110px 36px}
+.sh{display:flex;justify-content:space-between;align-items:end;margin-bottom:46px;gap:20px}
+.sh h2{font:300 clamp(38px,5.4vw,84px)/1 var(--f-display)}
+.sh h2 em{font-style:italic;color:var(--ink2)}
+.slot{height:300px;background:var(--bg2)}
+/* telemetry */
+.tel{display:grid;grid-template-columns:repeat(4,1fr);border-block:1px solid var(--line)}
+.tel div{padding:50px 36px;border-right:1px solid var(--line)}
+.tel div:last-child{border:0}
+.tel b{display:block;font:300 clamp(48px,6vw,96px)/1 var(--f-display)}
+.tel span{color:var(--ink2)}
+/* explore */
+.xp{display:grid;grid-template-columns:minmax(0,1.05fr) minmax(0,.95fr);border:1px solid var(--line)}
+.xl{padding:0}
+.bar{display:flex;gap:8px;flex-wrap:wrap;align-items:center;padding:16px 22px;border-bottom:1px solid var(--line);position:sticky;top:0;background:var(--bg);z-index:5}
+.bar .chip{border-radius:0;font:500 11px var(--f-mono);letter-spacing:.2em;text-transform:uppercase;padding:9px 14px}
+.bar select{margin-left:auto;background:var(--bg);color:var(--ink);border:1px solid var(--line);padding:8px 10px;font:500 11px var(--f-mono);letter-spacing:.16em;text-transform:uppercase}
+.bar input[type=range]{accent-color:var(--accent);width:120px}
+.scroll{max-height:880px;overflow:auto}
+.row{display:grid;grid-template-columns:230px 1fr;gap:22px;padding:18px 22px;border-bottom:1px solid var(--line);cursor:pointer;transition:background .25s}
+.row.hot{background:var(--surface)}
+.row .im{aspect-ratio:4/3;background-size:cover;background-position:center;position:relative;overflow:hidden}
+.row .im .heart{position:absolute;top:8px;right:8px;border-radius:0}
+.row h4{font:300 30px/1.05 var(--f-display);margin:2px 0 6px}
+.row .mt{color:var(--ink2);font-size:14px}
+.row .tg{display:flex;gap:8px;margin-top:12px;flex-wrap:wrap}
+.row .tg span{border:1px solid var(--line);padding:3px 9px;font:500 10px var(--f-mono);letter-spacing:.2em;text-transform:uppercase}
+.row .tg .z{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.row .p{margin-top:14px;font:300 28px var(--f-display)}.row .p small{font:500 11px var(--f-mono);letter-spacing:.2em;color:var(--ink2)}
+.xm{position:sticky;top:0;height:min(900px,100vh);border-left:1px solid var(--line)}
+.xm .map{height:100%}.pin rect{rx:0}
+/* land / host */
+.land{position:relative;min-height:90vh;display:flex;align-items:center;color:#fff;scroll-snap-align:start;overflow:hidden}
+.land .bg{position:absolute;inset:0;background-size:cover;background-position:center}
+.land::after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.78),rgba(0,0,0,.1))}
+.land .tx{position:relative;z-index:2;padding:0 36px;max-width:760px}
+.land h2{font:300 clamp(46px,7vw,112px)/.95 var(--f-display);margin:14px 0 22px}
+.land h2 em{font-style:italic}
+.land p{max-width:46ch;opacity:.85;margin-bottom:34px;font-size:17px}
+footer{padding:80px 36px 100px;display:grid;grid-template-columns:2fr 1fr 1fr 1fr;gap:30px;font-size:14px;color:var(--ink2);border-top:1px solid var(--line)}
+footer h5{color:var(--ink);margin-bottom:12px}
+footer li{list-style:none;padding:3px 0}
+@media(max-width:1000px){nav.top .c{display:none}nav.top{grid-template-columns:1fr auto}.mc{grid-template-columns:1fr 1fr}.lost{flex-direction:column;height:auto}.lost button{height:110px;flex:none}.lost button:hover,.lost button.on{height:240px;flex:none}.tel{grid-template-columns:1fr 1fr}.xp{grid-template-columns:1fr}.xm{position:relative;height:380px;border-left:0}.row{grid-template-columns:130px 1fr}.spec{gap:24px}footer{grid-template-columns:1fr 1fr}.dots{display:none}}
+</style>
+</head>
+<body>
+<nav class="top up" id="nav"><a class="logo" href="#">TRIVARA</a>
+  <div class="c"><a href="#ms">Stays</a><a href="#lost">Destinations</a><a href="#xp">Map</a><a href="#land">Host</a></div>
+  <div class="r"><div class="themes" id="th"></div><a href="#land">Host with us</a></div></nav>
+<div class="dots" id="dots"></div>
+
+<header class="scene hero ov" id="top">
+  <div class="bg" id="herobg"></div>
+  <span class="up" style="margin:0 36px 20px;opacity:.75">Karnataka · India · Est. 2026</span>
+  <h1>Where will you <em>get lost</em><br>next?</h1>
+  <p class="sub">Villas above the clouds, lofts between the boulders, a tent on the river. Every stay verified. Every rupee itemised.</p>
+  <div class="cta"><a class="ghost solid" href="#ms">View featured stays</a><a class="ghost" href="#xp">Open the map</a></div>
+  <div class="mc" id="mc">
+    <div><span class="up">Destination</span><input data-q placeholder="Coorg, Hampi, Gokarna" autocomplete="off"></div>
+    <div><span class="up">Dates</span><div class="v" data-dates data-pp="pd">Add dates</div><div class="pp" id="pd" style="width:min(640px,92vw)"><div id="cal"></div></div></div>
+    <div><span class="up">Guests &amp; pets</span><div class="v" data-gsum data-pp="pg">2 guests</div><div class="pp" id="pg" style="min-width:320px;right:0;left:auto"><div id="gs"></div></div></div>
+    <div><span class="up">Next window opens</span><div class="t" id="cd">T–00:00:00<small>live · IST</small></div></div>
+  </div>
+</header>
+
+<div id="ms"></div>
+
+<section id="lost">
+  <div class="sec" style="padding-bottom:40px"><div class="sh"><h2>Popular <em>destinations</em></h2><span class="up">Hover to explore · click to filter the map</span></div></div>
+  <div class="lost" id="lostrow"></div>
+</section>
+
+<div class="slot" aria-hidden="true"></div>
+
+<div class="tel">
+  <div><b data-count="4.8" data-dec="1">0</b><span class="up">Average rating</span></div>
+  <div><b data-count="205">0</b><span class="up">Verified stays</span></div>
+  <div><b data-count="7">0</b><span class="up">Destinations</span></div>
+  <div><b data-count="100">0</b><span class="up">% itemised pricing</span></div>
+</div>
+
+<section class="sec" id="xp">
+  <div class="sh"><h2>Every stay, <em>on the map</em></h2><span class="up" id="xc">8 results</span></div>
+  <div class="xp">
+    <div class="xl"><div class="bar" id="bar"></div><div class="scroll" id="list"></div></div>
+    <div class="xm"><div class="map" id="map"></div></div>
+  </div>
+</section>
+
+<section class="land ov" id="land"><div class="bg" id="landbg"></div><div class="tx"><span class="up">For hosts</span><h2>Your land. <em>Your terms.</em></h2><p>Tiered commission, per-date pricing, blackout dates and payouts with a full audit trail. Guests message you before they book.</p><a class="ghost solid">Apply to host</a></div></section>
+
+<footer><div><div class="up" style="color:var(--ink);letter-spacing:.5em">TRIVARA</div><p style="margin-top:14px;max-width:34ch">Considered stays across Karnataka. Mock design — not live.</p></div>
+  <ul><h5 class="up">Stay</h5><li>Search</li><li>Saved <span data-saved-n>0</span></li><li>Trips</li></ul>
+  <ul><h5 class="up">Host</h5><li>Become a host</li><li>Earnings</li><li>Calendar</li></ul>
+  <ul><h5 class="up">Help</h5><li>Cancellation options</li><li>Safety</li><li>Contact</li></ul></footer>
+<div class="mockbar"><a href="index.html">← All mocks</a><span>· 4 Expedition</span></div>
+
+<script src="shared/shared.js"></script>
+<script>
+const {$,$$,inr,L,DESTS,S,art,heart,filtered}=TV;
+TV.initThemes('expedition');
+$$('[data-saved-n]').forEach(n=>n.textContent=TV.saved.size);
+const z=n=>String(n).padStart(2,'0');
+
+$('#herobg').style.backgroundImage=art(L[0],2,1600,900);
+$('#landbg').style.backgroundImage=art(L[7],1,1600,900);
+
+/* featured = full-viewport "missions" */
+const feat=L.filter(l=>l.feat).slice(0,5);
+$('#ms').innerHTML=feat.map((l,i)=>`<section class="scene ms ov" id="m${i}" data-id="${l.id}" data-nohot="1"><div class="bg" style="background-image:${art(l,0,1600,900)}"></div><div class="tx"><div class="no">Stay ${z(i+1)} / ${z(feat.length)}</div><h2>${l.t.split(' ').slice(0,-1).join(' ')} <em>${l.t.split(' ').slice(-1)}</em></h2>
+<p style="max-width:44ch;margin-top:18px;font-size:17px;opacity:.85">${l.blurb}</p>
+<div class="spec"><div><b>${l.city}</b><span>Location</span></div><div><b>${l.g}</b><span>Guests</span></div><div><b>${l.instant?'Instant':'Request'}</b><span>Booking</span></div><div><b>${inr(l.price)}</b><span>Per night</span></div></div>
+<div class="cta"><a class="ghost solid" data-open="${l.id}">View stay</a>${heart(l.id)}</div></div></section>`).join('');
+$('#dots').innerHTML=['top',...feat.map((_,i)=>'m'+i)].map(id=>`<a href="#${id}" data-s="${id}" aria-label="${id}"></a>`).join('');
+
+/* destination panels */
+$('#lostrow').innerHTML=DESTS.map((d,i)=>{const l=L.find(x=>x.city==d.id)||L[0];return `<button data-dest="${d.id}"><div class="im" style="background-image:${art(l,i%5,900,1200)}"></div><div class="t"><b>${d.id}</b><span class="up">${d.tag} · ${d.n} stays</span></div></button>`}).join('');
+
+/* popovers + countdown */
+TV.rangeCal($('#cal'),2);TV.bindGuests($('#gs'));
+$$('[data-pp]').forEach(b=>b.onclick=e=>{const p=$('#'+b.dataset.pp);$$('.pp').forEach(x=>x!==p&&x.classList.remove('open'));p.classList.toggle('open')});
+document.addEventListener('click',e=>{if(!e.target.closest('#mc'))$$('.pp').forEach(p=>p.classList.remove('open'))});
+setInterval(()=>{const n=new Date(),t=new Date(n);t.setHours(24,0,0,0);const s=Math.floor((t-n)/1000);$('#cd').firstChild.textContent='T–'+[s/3600|0,(s%3600)/60|0,s%60].map(z).join(':')},1000);
+
+/* nav solid on scroll + dots */
+const nav=$('#nav'),dots=$('#dots');
+const io=new IntersectionObserver(es=>es.forEach(x=>{if(x.isIntersecting)$$('#dots a').forEach(a=>a.classList.toggle('on',a.dataset.s==x.target.id))}),{threshold:.55});
+['top',...feat.map((_,i)=>'m'+i)].forEach(id=>io.observe($('#'+id)));
+addEventListener('scroll',()=>{nav.classList.toggle('solid',scrollY>innerHeight*5.6||false);const inMs=scrollY<innerHeight*5.9;dots.classList.toggle('show',inMs&&scrollY>40)},{passive:true});
+nav.classList.remove('solid');
+
+/* explore */
+$('#bar').innerHTML=[['instant','Instant'],['pets','Pets'],['pool','Pool'],['wifi','Wifi'],['workspace','Desk'],['stepfree','Step-free'],['beach','Beach']].map(([k,n])=>`<button class="chip" data-f="${k}">${n}</button>`).join('')+`<input type="range" data-price min="2000" max="12000" step="500" value="12000" aria-label="Max price"><span class="up" data-price-out>₹12,000+</span><select data-sort aria-label="Sort"><option value="rec">Recommended</option><option value="lo">Price ↑</option><option value="hi">Price ↓</option><option value="top">Top rated</option><option value="new">Newest</option></select>`;
+function draw(){const r=filtered();$('#list').innerHTML=r.length?r.map(l=>`<article class="row" data-id="${l.id}" data-open="${l.id}"><div class="im" style="background-image:${art(l)}">${heart(l.id)}</div><div><span class="up" style="color:var(--ink2)">${l.type} · ${l.city}</span><h4>${l.t}</h4><div class="mt">${l.loc} · up to ${l.g} guests · ★ ${l.r} (${l.rc})</div><div class="tg"><span class="${l.instant?'z':''}">${l.instant?'Instant Book':'Request'}</span>${l.pets?'<span>Pets welcome</span>':''}<span>${l.pol} cancellation</span></div><div class="p">${inr(l.price)} <small>/ NIGHT</small></div></div></article>`).join(''):'<div style="padding:70px;text-align:center;color:var(--ink2)">No stays match. Loosen a filter or change the dates.</div>';
+$('#xc').textContent=r.length+' results'}
+TV.onChange(draw);TV.bindFilters();TV.mountMap($('#map'),id=>TV.detail(id));draw();TV.count();
+</script>
+</body>
+</html>
