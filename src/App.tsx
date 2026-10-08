@@ -7,6 +7,7 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ProtectedRoute from "@/components/ProtectedRoute";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
+import { Dock } from "@/components/layout/Dock";
 import { SiteBackground } from "@/components/layout/SiteBackground";
 import { ThemeColor } from "@/components/layout/ThemeColor";
 import { Loader2 } from "lucide-react";
@@ -165,6 +166,8 @@ const App = () => (
             content (rather than beside <Header /> above) so it stays at the
             true bottom of every page instead of floating above it. */}
         <Footer />
+        {/* Floating bottom dock - Home / Explore / Trips / Saved. */}
+        <Dock />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>

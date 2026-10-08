@@ -20,8 +20,9 @@ export default {
     },
     extend: {
       fontFamily: {
-        sans: ["Inter", "system-ui", "sans-serif"],
-        display: ["Fraunces", "Georgia", "serif"],
+        sans: ["DM Sans", "system-ui", "sans-serif"],
+        ui: ["Sora", "system-ui", "sans-serif"],
+        display: ["Cormorant Garamond", "Georgia", "serif"],
         script: ["Fraunces", "Georgia", "serif"],
         pillar: ["Big Shoulders Display", "system-ui", "sans-serif"],
         bastliga: ["Fraunces", "Georgia", "serif"],

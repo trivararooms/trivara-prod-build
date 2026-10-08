@@ -5,35 +5,16 @@ import 'leaflet/dist/leaflet.css';
 import { Listing } from '@/types';
 import { formatINR } from '@/lib/utils';
 
-// Vite bundles leaflet's marker images as regular imports rather than the
-// default relative-URL lookup leaflet.js does internally (which breaks under
-// a bundler) - without this, markers render as broken image icons.
-import markerIcon2x from 'leaflet/dist/images/marker-icon-2x.png';
-import markerIcon from 'leaflet/dist/images/marker-icon.png';
-import markerShadow from 'leaflet/dist/images/marker-shadow.png';
-
-L.Icon.Default.mergeOptions({
-  iconRetinaUrl: markerIcon2x,
-  iconUrl: markerIcon,
-  shadowUrl: markerShadow,
-});
-
-const defaultIcon = new L.Icon.Default();
-
-// A visually distinct, larger pin swapped in for whichever marker
-// corresponds to the currently hovered/clicked listing. Built as an inline
-// SVG divIcon rather than a second image asset so there's nothing extra to
-// bundle or fetch.
-const highlightedIcon = L.divIcon({
-  className: '',
-  html: `<svg width="34" height="34" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg" style="filter:drop-shadow(0 2px 3px rgba(0,0,0,0.4))">
-    <path d="M12 0C7.6 0 4 3.6 4 8c0 6 8 16 8 16s8-10 8-16c0-4.4-3.6-8-8-8z" fill="#fdbb30" stroke="#171717" stroke-width="1"/>
-    <circle cx="12" cy="8" r="3" fill="#ffffff"/>
-  </svg>`,
-  iconSize: [34, 34],
-  iconAnchor: [17, 34],
-  popupAnchor: [0, -34],
-});
+// Price-pill pins (the mock's map pins) instead of Leaflet's default
+// image markers: nothing to bundle, and the highlighted state is just a CSS
+// class (see .tv-pin in index.css) so it follows the active colour scheme.
+function pinIcon(listing: Listing, hot: boolean) {
+  return L.divIcon({
+    className: `tv-pin${hot ? ' hot' : ''}`,
+    html: `<span>${escapeHtml(formatINR(listing.pricePerNight))}</span>`,
+    iconSize: [0, 0],
+  });
+}
 
 interface ListingsMapProps {
   listings: Listing[];
@@ -63,6 +44,8 @@ export function ListingsMap({ listings, highlightedListingId, onMarkerHover, onM
   // Kept in refs (rather than the marker-rebuild effect's dependency array)
   // so a new inline callback from the parent on every render doesn't tear
   // down and rebuild every marker - only `listings` changing should do that.
+  const listingsRef = useRef(listings);
+  listingsRef.current = listings;
   const onMarkerHoverRef = useRef(onMarkerHover);
   onMarkerHoverRef.current = onMarkerHover;
   const onMarkerClickRef = useRef(onMarkerClick);
@@ -103,7 +86,7 @@ export function ListingsMap({ listings, highlightedListingId, onMarkerHover, onM
     );
 
     withCoords.forEach((listing) => {
-      const marker = L.marker([listing.location.lat, listing.location.lng]);
+      const marker = L.marker([listing.location.lat, listing.location.lng], { icon: pinIcon(listing, listing.id === highlightedListingId) });
       // Navigation happens from a dedicated link inside the popup rather
       // than the marker click itself, so opening the popup to read details
       // doesn't also immediately navigate away from the map.
@@ -130,17 +113,13 @@ export function ListingsMap({ listings, highlightedListingId, onMarkerHover, onM
       const bounds = L.latLngBounds(withCoords.map((l) => [l.location.lat, l.location.lng] as [number, number]));
       map.fitBounds(bounds, { padding: [40, 40], maxZoom: 13 });
     }
-    // Re-apply whichever marker is currently highlighted, since the markers
-    // above were all just rebuilt with the default icon.
-    Object.entries(markersByIdRef.current).forEach(([id, marker]) => {
-      marker.setIcon(id === highlightedListingId ? highlightedIcon : defaultIcon);
-    });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [listings, navigate]);
 
   useEffect(() => {
     Object.entries(markersByIdRef.current).forEach(([id, marker]) => {
-      marker.setIcon(id === highlightedListingId ? highlightedIcon : defaultIcon);
+      const listing = listingsRef.current.find((l) => l.id === id);
+      if (listing) marker.setIcon(pinIcon(listing, id === highlightedListingId));
     });
     if (highlightedListingId) {
       markersByIdRef.current[highlightedListingId]?.setZIndexOffset(1000);

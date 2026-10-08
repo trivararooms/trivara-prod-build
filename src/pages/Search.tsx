@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo, useCallback, useRef } from 'react';
 import { useQuery } from '@tanstack/react-query';
-import { useSearchParams } from 'react-router-dom';
+import { Link, useSearchParams } from 'react-router-dom';
 import { SlidersHorizontal, X, Search as SearchIcon, Loader2, Crown } from 'lucide-react';
 import { SEO } from '@/components/SEO';
 import { SearchBar } from '@/components/search/SearchBar';
@@ -203,8 +203,8 @@ export default function Search() {
       />
 
       {/* Sticky Search Header */}
-      <div className="sticky top-0 z-40 border-b border-border bg-surface-0 transition-all duration-300">
-        <div className="container py-4">
+      <div className="sticky top-20 z-20 px-[clamp(20px,4vw,48px)]">
+        <div className="glass rounded-[32px] px-4 py-3 sm:px-5">
           <div className="flex flex-col md:flex-row items-center gap-4">
             <div className="flex-1 w-full max-w-3xl">
               <SearchBar
@@ -244,7 +244,7 @@ export default function Search() {
                 value={sort}
                 onValueChange={(value) => updateFilter('sort', value === 'recommended' ? null : value)}
               >
-                <SelectTrigger className="w-auto gap-2 border-none bg-transparent shadow-none hover:bg-surface-2">
+                <SelectTrigger className="nu-chip w-auto gap-2 rounded-full border-none shadow-none">
                   <SelectValue placeholder="Sort" />
                 </SelectTrigger>
                 <SelectContent>
@@ -259,17 +259,17 @@ export default function Search() {
               {/* Filters Button */}
               <Sheet open={showFilters} onOpenChange={setShowFilters}>
                 <SheetTrigger asChild>
-                  <Button variant="outline" className="gap-2 hover:bg-surface-2">
+                  <Button variant="outline" className="nu-chip gap-2 border-none">
                     <SlidersHorizontal className="h-4 w-4" />
                     Filters
                     {activeFilterCount > 0 && (
-                      <span className="h-5 w-5 rounded-full bg-foreground text-background text-xs flex items-center justify-center font-medium">
+                      <span className="h-5 w-5 rounded-full bg-accent text-accent-foreground text-xs flex items-center justify-center font-medium">
                         {activeFilterCount}
                       </span>
                     )}
                   </Button>
                 </SheetTrigger>
-                <SheetContent className="w-full sm:max-w-md bg-surface-0 overflow-y-auto">
+                <SheetContent className="glass w-full overflow-y-auto rounded-l-[32px] sm:max-w-md">
                   <SheetHeader className="mb-6">
                     <SheetTitle className="flex items-center justify-between">
                       Filters
@@ -443,9 +443,9 @@ export default function Search() {
                     </div>
                   </div>
 
-                  <div className="sticky bottom-0 pt-6 pb-4 bg-surface-0 border-t border-border mt-8">
+                  <div className="sticky bottom-0 mt-8 border-t border-border bg-card/80 pb-4 pt-6 backdrop-blur-md">
                     <Button
-                      className="w-full bg-foreground text-background hover:bg-foreground/90"
+                      className="trivara-btn-primary w-full"
                       onClick={() => setShowFilters(false)}
                     >
                       Show {searchResults.total} {searchResults.total === 1 ? 'result' : 'results'}
@@ -470,7 +470,7 @@ export default function Search() {
               {loadingCarousels ? (
                 <CarouselSkeleton />
               ) : featuredStays.length > 0 ? (
-                <div className="flex gap-4 overflow-x-auto pb-6 snap-x snap-mandatory scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+                <div className="flex gap-5 overflow-x-auto pt-2 pb-10 snap-x snap-mandatory scrollbar-hide -mx-4 px-4 md:-mx-3 md:px-3">
                   {featuredStays.map(listing => (
                     <div key={`featured-${listing.id}`} className="min-w-[280px] w-[280px] md:min-w-[320px] md:w-[320px] flex-shrink-0 snap-start">
                       <ListingCard listing={listing} />
@@ -488,7 +488,7 @@ export default function Search() {
               {loadingCarousels ? (
                 <CarouselSkeleton />
               ) : popularStays.length > 0 ? (
-                <div className="flex gap-4 overflow-x-auto pb-6 snap-x snap-mandatory scrollbar-hide -mx-4 px-4 md:mx-0 md:px-0">
+                <div className="flex gap-5 overflow-x-auto pt-2 pb-10 snap-x snap-mandatory scrollbar-hide -mx-4 px-4 md:-mx-3 md:px-3">
                   {popularStays.map((listing, idx) => (
                     <div key={`popular-${listing.id}`} className="relative min-w-[280px] w-[280px] md:min-w-[320px] md:w-[320px] flex-shrink-0 snap-start">
                       {idx < 3 && (
@@ -528,7 +528,7 @@ export default function Search() {
 
           {/* Empty State / Error Layout */}
           {!loading && searchResults.listings.length === 0 ? (
-            <div className="py-20 flex flex-col items-center justify-center text-center bg-surface-1 rounded-lg border border-border/50">
+            <div className="nu py-20 flex flex-col items-center justify-center text-center">
               <div className="h-16 w-16 bg-surface-2 rounded-full flex items-center justify-center mb-6">
                 <SearchIcon className="h-8 w-8 text-text-tertiary" />
               </div>
@@ -536,7 +536,7 @@ export default function Search() {
               <p className="text-text-secondary max-w-md mb-8">
                 Try changing or removing some of your filters or adjusting your search area.
               </p>
-              <Button onClick={clearFilters} className="bg-foreground text-background hover:bg-foreground/90">
+              <Button onClick={clearFilters} className="trivara-btn-primary">
                 Clear all filters
               </Button>
             </div>
@@ -561,13 +561,13 @@ export default function Search() {
                     ref={(el) => { listingRowRefs.current[listing.id] = el; }}
                     onMouseEnter={() => setHighlightedListingId(listing.id)}
                     onMouseLeave={() => setHighlightedListingId(null)}
-                    className={`flex flex-col sm:flex-row gap-4 p-4 rounded-lg border transition-all group ${
+                    className={`nu flex flex-col sm:flex-row gap-4 p-3 border-2 transition-all duration-300 group ${
                       listing.id === highlightedListingId
-                        ? 'border-foreground bg-surface-1'
-                        : 'border-transparent hover:border-border hover:bg-surface-1'
+                        ? 'translate-x-1.5 border-accent'
+                        : 'border-transparent'
                     }`}
                   >
-                    <div className="w-full sm:w-48 h-48 sm:h-32 overflow-hidden flex-shrink-0 relative">
+                    <div className="relative h-48 w-full flex-shrink-0 overflow-hidden rounded-[18px] sm:h-32 sm:w-48">
                       <img
                         src={listing.photos[0]}
                         alt={listing.title}
@@ -580,7 +580,7 @@ export default function Search() {
                         <p className="text-xs text-text-meta mb-1 capitalize">
                           {listing.propertyType.replace('_', ' ')} · {listing.location.city}
                         </p>
-                        <h3 className="font-medium line-clamp-1 mb-1">{listing.title}</h3>
+                        <h3 className="mb-1 line-clamp-1 font-display text-2xl leading-none"><Link to={`/listing/${listing.id}`} className="hover:underline">{listing.title}</Link></h3>
                         <p className="text-sm text-text-secondary line-clamp-1 mb-2">
                           {listing.bedrooms} bed{listing.bedrooms > 1 ? 's' : ''} · {listing.bathrooms} bath{listing.bathrooms > 1 ? 's' : ''}
                         </p>
@@ -599,7 +599,7 @@ export default function Search() {
               </div>
 
               {/* Map */}
-              <div className="hidden lg:block sticky top-36 h-[calc(100vh-200px)] rounded-lg bg-surface-1 border border-border overflow-hidden">
+              <div className="nu hidden lg:block sticky top-44 h-[calc(100vh-14rem)] overflow-hidden p-2">
                 {loading ? (
                   <div className="w-full h-full flex items-center justify-center">
                     <Loader2 className="h-6 w-6 animate-spin text-text-secondary" />

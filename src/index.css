@@ -1,86 +1,244 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Big+Shoulders+Display:wght@600;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Sora:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Big+Shoulders+Display:wght@600;800&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /*
-  TRIVARA DESIGN SYSTEM
-  Editorial-luxury light theme, inspired by plumguide.com: white/near-white
-  canvas, near-black text, a single warm-gold accent. No shadows, no
-  gradients, depth via layered warm-neutral surface tones.
-  Primary (near-black) = structural/interactive (links, focus, host & admin authority)
-  Accent (gold) = warm CTA/highlight (primary buttons, ratings, price emphasis)
+  TRIVARA DESIGN SYSTEM - "Voyage"
+  Cinematic full-bleed scenes (serif italics, slow-drifting skies) wrapped in
+  soft tactile cards (neumorphic raised/inset surfaces), pill controls and a
+  floating dock. Five switchable colour schemes (paper, chalk, obsidian,
+  forest, ocean) drive every shadcn token below via html[data-theme] - see
+  src/lib/themes.ts and ThemeSwitcher. Primary (ink) = structural/interactive;
+  accent = the one highlight colour per scheme (CTAs, ratings, active states).
 */
 
 @layer base {
-  :root {
-    /* Primary Canvas - soft warm off-white */
-    --background: 30 20% 98%;
-    --foreground: 0 0% 9%;
-
-    /* Card/Popover - pure white, pops slightly above the page canvas */
-    --card: 0 0% 100%;
-    --card-foreground: 0 0% 9%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 0 0% 9%;
-
-    /* Primary - near-black, the interactive/structural color (indigo retired) */
-    --primary: 0 0% 9%;
-    --primary-foreground: 0 0% 98%;
-
-    /* Secondary Surface - light warm beige-gray */
-    --secondary: 30 15% 94%;
-    --secondary-foreground: 0 0% 9%;
-
-    /* Muted for subtle elements */
-    --muted: 30 15% 94%;
-    --muted-foreground: 0 0% 40%;
-
-    /* Accent - warm gold #fdbb30, the one highlight color (chestnut retired) */
-    --accent: 41 98% 59%;
-    --accent-foreground: 0 0% 9%;
-    --accent-hover: 41 85% 38%;
-
-    /* Destructive - kept distinct from the accent hue */
-    --destructive: 0 65% 45%;
+  html[data-theme="paper"] {
+    --background: 40 45% 94%;
+    --foreground: 40 8% 8%;
+    --card: 42 56% 96%;
+    --card-foreground: 40 8% 8%;
+    --popover: 42 56% 96%;
+    --popover-foreground: 40 8% 8%;
+    --primary: 40 8% 8%;
+    --primary-foreground: 40 45% 94%;
+    --secondary: 42 41% 87%;
+    --secondary-foreground: 40 8% 8%;
+    --muted: 42 41% 87%;
+    --muted-foreground: 41 9% 33%;
+    --accent: 42 95% 52%;
+    --accent-foreground: 40 8% 8%;
+    --accent-hover: 42 86% 43%;
+    --destructive: 0 65% 50%;
     --destructive-foreground: 0 0% 98%;
+    --border: 42 14% 81%;
+    --input: 42 14% 81%;
+    --ring: 42 95% 52%;
+    --limited: 40 8% 72%;
+    --text-primary: 40 8% 8%;
+    --text-secondary: 41 9% 33%;
+    --text-meta: 41 6% 51%;
+    --surface-0: 40 45% 94%;
+    --surface-1: 42 56% 96%;
+    --surface-2: 42 41% 87%;
+    --surface-3: 43 28% 83%;
+    --surface-4: 42 20% 78%;
+    --sidebar-background: 40 45% 94%;
+    --sidebar-foreground: 40 8% 8%;
+    --sidebar-primary: 40 8% 8%;
+    --sidebar-primary-foreground: 40 45% 94%;
+    --sidebar-accent: 42 41% 87%;
+    --sidebar-accent-foreground: 40 8% 8%;
+    --sidebar-border: 42 14% 81%;
+    --sidebar-ring: 42 95% 52%;
+    --nu-hi: rgba(255,255,255,.95);
+    --nu-lo: rgba(60,50,30,.2);
+    --glow: rgba(249,179,18,.35);
+    color-scheme: light;
+  }
 
-    /* Border - soft warm neutral, close to the surface tones it sits
-       against. --ring (keyboard focus) now matches --primary (near-black)
-       instead of indigo - still a clear accessibility affordance, just no
-       longer a second brand hue. */
-    --border: 30 10% 88%;
-    --input: 30 10% 88%;
-    --ring: 0 0% 9%;
-
-    /* Limited availability indicator */
-    --limited: 30 15% 80%;
-
-    /* Text hierarchy */
-    --text-primary: 0 0% 9%;
-    --text-secondary: 0 0% 40%;
-    --text-meta: 0 0% 55%;
-
-    /* Surface layers for depth - light warm neutrals, darkest at surface-4 */
-    --surface-0: 30 20% 98%;
+  html[data-theme="chalk"] {
+    --background: 0 0% 100%;
+    --foreground: 240 4% 5%;
+    --card: 0 0% 100%;
+    --card-foreground: 240 4% 5%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 240 4% 5%;
+    --primary: 240 4% 5%;
+    --primary-foreground: 0 0% 100%;
+    --secondary: 240 4% 95%;
+    --secondary-foreground: 240 4% 5%;
+    --muted: 240 4% 95%;
+    --muted-foreground: 240 3% 37%;
+    --accent: 7 80% 54%;
+    --accent-foreground: 0 0% 100%;
+    --accent-hover: 7 68% 44%;
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 0 0% 87%;
+    --input: 0 0% 87%;
+    --ring: 7 80% 54%;
+    --limited: 0 0% 76%;
+    --text-primary: 240 4% 5%;
+    --text-secondary: 240 3% 37%;
+    --text-meta: 240 2% 56%;
+    --surface-0: 0 0% 100%;
     --surface-1: 0 0% 100%;
-    --surface-2: 30 15% 95%;
-    --surface-3: 30 12% 91%;
-    --surface-4: 30 10% 86%;
+    --surface-2: 240 4% 95%;
+    --surface-3: 240 2% 90%;
+    --surface-4: 240 1% 84%;
+    --sidebar-background: 0 0% 100%;
+    --sidebar-foreground: 240 4% 5%;
+    --sidebar-primary: 240 4% 5%;
+    --sidebar-primary-foreground: 0 0% 100%;
+    --sidebar-accent: 240 4% 95%;
+    --sidebar-accent-foreground: 240 4% 5%;
+    --sidebar-border: 0 0% 87%;
+    --sidebar-ring: 7 80% 54%;
+    --nu-hi: rgba(255,255,255,.95);
+    --nu-lo: rgba(60,50,30,.2);
+    --glow: rgba(232,65,44,.25);
+    color-scheme: light;
+  }
 
-    --radius: 0.25rem;
+  :root,
+  html[data-theme="obsidian"] {
+    --background: 240 10% 4%;
+    --foreground: 240 5% 96%;
+    --card: 240 8% 10%;
+    --card-foreground: 240 5% 96%;
+    --popover: 240 8% 10%;
+    --popover-foreground: 240 5% 96%;
+    --primary: 240 5% 96%;
+    --primary-foreground: 240 10% 4%;
+    --secondary: 240 7% 8%;
+    --secondary-foreground: 240 5% 96%;
+    --muted: 240 7% 8%;
+    --muted-foreground: 240 5% 62%;
+    --accent: 39 100% 56%;
+    --accent-foreground: 240 10% 4%;
+    --accent-hover: 39 78% 46%;
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 240 2% 17%;
+    --input: 240 2% 17%;
+    --ring: 39 100% 56%;
+    --limited: 240 1% 27%;
+    --text-primary: 240 5% 96%;
+    --text-secondary: 240 5% 62%;
+    --text-meta: 240 4% 45%;
+    --surface-0: 240 10% 4%;
+    --surface-1: 240 8% 10%;
+    --surface-2: 240 7% 8%;
+    --surface-3: 240 4% 13%;
+    --surface-4: 240 3% 19%;
+    --sidebar-background: 240 10% 4%;
+    --sidebar-foreground: 240 5% 96%;
+    --sidebar-primary: 240 5% 96%;
+    --sidebar-primary-foreground: 240 10% 4%;
+    --sidebar-accent: 240 7% 8%;
+    --sidebar-accent-foreground: 240 5% 96%;
+    --sidebar-border: 240 2% 17%;
+    --sidebar-ring: 39 100% 56%;
+    --nu-hi: rgba(255,255,255,.07);
+    --nu-lo: rgba(0,0,0,.55);
+    --glow: rgba(255,176,32,.28);
+    color-scheme: dark;
+  }
 
-    /* Sidebar - matches surface hierarchy */
-    --sidebar-background: 30 20% 98%;
-    --sidebar-foreground: 0 0% 9%;
-    --sidebar-primary: 0 0% 9%;
-    --sidebar-primary-foreground: 0 0% 98%;
-    --sidebar-accent: 30 15% 95%;
-    --sidebar-accent-foreground: 0 0% 9%;
-    --sidebar-border: 30 10% 88%;
-    --sidebar-ring: 0 0% 9%;
+  html[data-theme="forest"] {
+    --background: 142 28% 8%;
+    --foreground: 100 32% 93%;
+    --card: 144 28% 14%;
+    --card-foreground: 100 32% 93%;
+    --popover: 144 28% 14%;
+    --popover-foreground: 100 32% 93%;
+    --primary: 100 32% 93%;
+    --primary-foreground: 142 28% 8%;
+    --secondary: 145 30% 11%;
+    --secondary-foreground: 100 32% 93%;
+    --muted: 145 30% 11%;
+    --muted-foreground: 141 12% 62%;
+    --accent: 75 73% 66%;
+    --accent-foreground: 142 28% 8%;
+    --accent-hover: 75 44% 55%;
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 138 10% 20%;
+    --input: 138 10% 20%;
+    --ring: 75 73% 66%;
+    --limited: 132 7% 29%;
+    --text-primary: 100 32% 93%;
+    --text-secondary: 141 12% 62%;
+    --text-meta: 142 8% 46%;
+    --surface-0: 142 28% 8%;
+    --surface-1: 144 28% 14%;
+    --surface-2: 145 30% 11%;
+    --surface-3: 142 20% 16%;
+    --surface-4: 139 15% 21%;
+    --sidebar-background: 142 28% 8%;
+    --sidebar-foreground: 100 32% 93%;
+    --sidebar-primary: 100 32% 93%;
+    --sidebar-primary-foreground: 142 28% 8%;
+    --sidebar-accent: 145 30% 11%;
+    --sidebar-accent-foreground: 100 32% 93%;
+    --sidebar-border: 138 10% 20%;
+    --sidebar-ring: 75 73% 66%;
+    --nu-hi: rgba(255,255,255,.07);
+    --nu-lo: rgba(0,0,0,.55);
+    --glow: rgba(200,232,107,.25);
+    color-scheme: dark;
+  }
+
+  html[data-theme="ocean"] {
+    --background: 210 47% 94%;
+    --foreground: 210 59% 11%;
+    --card: 210 60% 98%;
+    --card-foreground: 210 59% 11%;
+    --popover: 210 60% 98%;
+    --popover-foreground: 210 59% 11%;
+    --primary: 210 59% 11%;
+    --primary-foreground: 210 47% 94%;
+    --secondary: 207 46% 90%;
+    --secondary-foreground: 210 59% 11%;
+    --muted: 207 46% 90%;
+    --muted-foreground: 209 20% 41%;
+    --accent: 224 100% 56%;
+    --accent-foreground: 0 0% 100%;
+    --accent-hover: 224 79% 46%;
+    --destructive: 0 65% 50%;
+    --destructive-foreground: 0 0% 98%;
+    --border: 210 18% 82%;
+    --input: 210 18% 82%;
+    --ring: 224 100% 56%;
+    --limited: 210 13% 73%;
+    --text-primary: 210 59% 11%;
+    --text-secondary: 209 20% 41%;
+    --text-meta: 209 15% 57%;
+    --surface-0: 210 47% 94%;
+    --surface-1: 210 60% 98%;
+    --surface-2: 207 46% 90%;
+    --surface-3: 208 32% 85%;
+    --surface-4: 206 25% 80%;
+    --sidebar-background: 210 47% 94%;
+    --sidebar-foreground: 210 59% 11%;
+    --sidebar-primary: 210 59% 11%;
+    --sidebar-primary-foreground: 210 47% 94%;
+    --sidebar-accent: 207 46% 90%;
+    --sidebar-accent-foreground: 210 59% 11%;
+    --sidebar-border: 210 18% 82%;
+    --sidebar-ring: 224 100% 56%;
+    --nu-hi: rgba(255,255,255,.95);
+    --nu-lo: rgba(60,80,120,.22);
+    --glow: rgba(30,91,255,.28);
+    color-scheme: light;
+  }
+
+  :root {
+    --radius: 1.5rem;
+    --ease-out-expo: cubic-bezier(0.2, 0.7, 0.2, 1);
   }
 }
 
@@ -88,114 +246,177 @@
   * {
     @apply border-border;
   }
-  
+
   html {
     @apply antialiased;
+    scroll-behavior: smooth;
   }
 
   body {
     @apply bg-background text-foreground font-sans;
-    font-feature-settings: "cv11", "ss01";
+    transition: background-color 0.35s, color 0.35s;
   }
-  
-  /* Typography scale */
+
+  ::selection {
+    background: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+  }
+
+  /* Typography scale - Cormorant Garamond display, DM Sans body, Sora UI. */
   h1, h2, h3, h4, h5, h6 {
     @apply font-display tracking-tight;
   }
-  
+
   h1 {
-    @apply text-4xl md:text-5xl lg:text-6xl font-medium;
+    @apply text-5xl md:text-6xl lg:text-7xl font-light;
+    line-height: 0.95;
   }
-  
+
   h2 {
-    @apply text-2xl md:text-3xl lg:text-4xl font-medium;
+    @apply text-3xl md:text-4xl lg:text-5xl font-light;
+    line-height: 1;
   }
-  
+
   h3 {
-    @apply text-xl md:text-2xl font-medium;
+    @apply text-2xl md:text-3xl font-normal;
+    line-height: 1.05;
   }
-  
+
   h4 {
-    @apply text-lg md:text-xl font-medium;
+    @apply text-xl md:text-2xl font-normal;
+    line-height: 1.1;
   }
-  
+
   /* Remove focus outlines for mouse users, keep for keyboard */
   :focus:not(:focus-visible) {
     outline: none;
   }
-  
+
   :focus-visible {
     @apply outline-none ring-2 ring-accent ring-offset-2 ring-offset-background;
   }
 }
 
 @layer components {
-  /* Card with a subtle neutral border - depth via border + surface color, not
-     a colored line (see --border in :root above).
-     !important since these can be layered onto primitives (Card, Input, etc.) whose
-     own base classes are plain Tailwind utilities, which otherwise always win over
-     @layer components regardless of source order. */
+  /* ---- Tactile surfaces ---------------------------------------------- */
+  .nu {
+    background: hsl(var(--card));
+    border-radius: var(--radius);
+    box-shadow: 8px 10px 24px var(--nu-lo), -6px -6px 18px var(--nu-hi), inset 0 1px 0 var(--nu-hi);
+  }
+
+  .nu-in {
+    background: hsl(var(--background));
+    border-radius: calc(var(--radius) * 0.7);
+    box-shadow: inset 4px 5px 12px var(--nu-lo), inset -3px -3px 10px var(--nu-hi);
+  }
+
+  .nu-chip {
+    background: hsl(var(--background));
+    box-shadow: 3px 4px 10px var(--nu-lo), -2px -2px 8px var(--nu-hi);
+  }
+
+  .nu-chip[data-active='true'],
+  .nu-chip.is-active {
+    background: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+    box-shadow: inset 2px 3px 8px rgba(0, 0, 0, 0.25);
+  }
+
+  .glass {
+    background: hsl(var(--card) / 0.62);
+    backdrop-filter: blur(22px) saturate(1.4);
+    -webkit-backdrop-filter: blur(22px) saturate(1.4);
+    border: 1px solid hsl(var(--foreground) / 0.14);
+    border-radius: var(--radius);
+    box-shadow: 0 30px 70px -24px rgba(0, 0, 0, 0.55);
+  }
+
+  /* Card with raised tactile depth - the old flat bordered card, upgraded.
+     !important since these can be layered onto primitives (Card, Input, etc.)
+     whose own base classes are plain Tailwind utilities, which otherwise
+     always win over @layer components regardless of source order. */
   .trivara-card {
-    @apply !bg-card rounded-lg !border !border-border;
+    @apply !bg-card rounded-lg !border !border-border/60;
+    box-shadow: 8px 10px 24px var(--nu-lo), -6px -6px 18px var(--nu-hi);
   }
 
   .trivara-card-elevated {
-    @apply !bg-surface-3 rounded-lg !border !border-border;
+    @apply !bg-surface-3 rounded-lg !border !border-border/60;
+    box-shadow: 8px 10px 24px var(--nu-lo), -6px -6px 18px var(--nu-hi);
   }
 
-  /* Button variants - !important because these are almost always layered onto
-     shadcn's <Button>, whose "default" variant emits bg-primary as a utility
-     class; utilities always win over @layer components regardless of source
-     order, so without !important these silently render bg-primary instead. */
+  /* Button variants - pills. !important because these are almost always
+     layered onto shadcn's <Button>, whose "default" variant emits bg-primary
+     as a utility class; utilities always win over @layer components
+     regardless of source order. */
   .trivara-btn-primary {
-    @apply !bg-accent !text-accent-foreground hover:!bg-accent-hover transition-colors duration-200 !border !border-accent-hover;
+    @apply !bg-accent !text-accent-foreground !border-0 rounded-full font-ui font-bold transition-all duration-200;
+  }
+
+  .trivara-btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 14px 34px -8px var(--glow);
   }
 
   .trivara-btn-secondary {
-    @apply !bg-surface-3 !text-foreground hover:!bg-surface-4 transition-colors duration-200 !border !border-border;
+    @apply !bg-surface-3 !text-foreground hover:!bg-surface-4 transition-colors duration-200 !border !border-border rounded-full;
   }
 
   .trivara-btn-ghost {
-    @apply bg-transparent text-foreground hover:bg-surface-2 transition-colors duration-200;
+    @apply bg-transparent text-foreground hover:bg-surface-2 transition-colors duration-200 rounded-full;
   }
 
-  /* Input styling */
+  /* Ghost-on-photo pill (hero / scene CTAs) */
+  .pill-ghost {
+    @apply inline-flex items-center justify-center rounded-full px-8 py-4 font-ui text-sm font-bold text-white transition-all duration-200;
+    background: rgba(255, 255, 255, 0.1);
+    border: 1px solid rgba(255, 255, 255, 0.45);
+    backdrop-filter: blur(10px);
+  }
+
+  .pill-ghost:hover {
+    background: rgba(255, 255, 255, 0.22);
+    transform: translateY(-2px);
+  }
+
+  /* Input styling - inset, like the mock's planner fields */
   .trivara-input {
     @apply !bg-surface-2 !border !border-border !text-foreground placeholder:!text-text-secondary focus:ring-1 focus:ring-accent;
   }
-  
+
   /* Text styles */
   .text-body {
     @apply text-foreground;
   }
-  
+
   .text-body-secondary {
     @apply text-text-secondary;
   }
-  
+
   .text-body-meta {
     @apply text-text-meta;
   }
-  
+
   /* Rating display */
   .rating-badge {
     @apply inline-flex items-center gap-1 text-sm font-medium;
   }
-  
+
   /* Price display */
   .price-display {
-    @apply font-semibold text-foreground;
+    @apply font-ui font-bold text-foreground;
   }
-  
+
   .price-unit {
     @apply text-text-secondary font-normal;
   }
-  
+
   /* Smooth transitions */
   .trivara-transition {
     @apply transition-all duration-200 ease-out;
   }
-  
+
   /* Image containers */
   .trivara-image {
     @apply rounded-lg overflow-hidden !bg-surface-0 !border !border-border;
@@ -205,12 +426,88 @@
   .search-container {
     @apply bg-surface-2 rounded-full border border-border;
   }
-  
+
   /* Map styling */
   .trivara-map {
     @apply bg-surface-0 rounded-lg;
-    filter: grayscale(80%) brightness(0.8);
   }
+
+  /* ---- Cinematic scenes ---------------------------------------------- */
+  .scene-bg {
+    position: absolute;
+    inset: -4%;
+    background-size: cover;
+    background-position: center;
+    animation: scene-drift 40s ease-in-out infinite alternate;
+  }
+
+  .scene-scrim {
+    position: absolute;
+    inset: 0;
+    background: linear-gradient(180deg, rgba(0, 0, 0, 0.4), transparent 35%, rgba(0, 0, 0, 0.72));
+  }
+
+  /* ---- Scroll reveal --------------------------------------------------- */
+  .rv {
+    opacity: 0;
+    transform: translateY(24px);
+    transition: opacity 0.8s var(--ease-out-expo), transform 0.8s var(--ease-out-expo);
+  }
+
+  .rv.in {
+    opacity: 1;
+    transform: none;
+  }
+
+  /* ---- Leaflet price pins (match the mock's map pins) ------------------ */
+  .tv-pin {
+    background: transparent;
+    border: 0;
+  }
+
+  .tv-pin span {
+    display: inline-block;
+    transform: translate(-50%, -100%);
+    padding: 4px 10px;
+    border-radius: 999px;
+    border: 1.2px solid hsl(var(--foreground));
+    background: hsl(var(--card));
+    color: hsl(var(--foreground));
+    font: 600 11px 'DM Sans', system-ui, sans-serif;
+    white-space: nowrap;
+    transition: transform 0.2s, background 0.2s;
+  }
+
+  .tv-pin.hot span {
+    background: hsl(var(--accent));
+    border-color: hsl(var(--accent));
+    color: hsl(var(--accent-foreground));
+    transform: translate(-50%, calc(-100% - 3px));
+    box-shadow: 0 6px 12px var(--glow);
+  }
+}
+
+/* Leaflet follows the active colour scheme: dark schemes get inverted OSM
+   tiles, popups use the card tokens. */
+html[data-theme='obsidian'] .leaflet-tile-pane,
+html[data-theme='forest'] .leaflet-tile-pane {
+  filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.7);
+}
+
+.leaflet-container {
+  font-family: 'DM Sans', system-ui, sans-serif;
+  background: hsl(var(--surface-2));
+}
+
+.leaflet-popup-content-wrapper,
+.leaflet-popup-tip {
+  background: hsl(var(--card));
+  color: hsl(var(--card-foreground));
+  box-shadow: 0 12px 30px var(--nu-lo);
+}
+
+.leaflet-popup-content-wrapper {
+  border-radius: 18px;
 }
 
 @layer utilities {
@@ -219,11 +516,11 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
-  
+
   .scrollbar-hide::-webkit-scrollbar {
     display: none;
   }
-  
+
   /* Line clamp utilities */
   .line-clamp-1 {
     display: -webkit-box;
@@ -231,18 +528,43 @@
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  
+
   .line-clamp-2 {
     display: -webkit-box;
     -webkit-line-clamp: 2;
     -webkit-box-orient: vertical;
     overflow: hidden;
   }
-  
+
   .line-clamp-3 {
     display: -webkit-box;
     -webkit-line-clamp: 3;
     -webkit-box-orient: vertical;
     overflow: hidden;
+  }
+}
+
+@keyframes scene-drift {
+  to {
+    transform: scale(1.1) translate(-1.5%, 1%);
+  }
+}
+
+@keyframes pulse-ring {
+  50% {
+    box-shadow: 0 0 0 7px transparent;
+    opacity: 0.5;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rv {
+    opacity: 1;
+    transform: none;
+    transition: none;
+  }
+
+  .scene-bg {
+    animation: none;
   }
 }

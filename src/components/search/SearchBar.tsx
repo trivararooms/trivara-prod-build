@@ -68,9 +68,9 @@ export function SearchBar({ variant = 'hero', className = '', controlled }: Sear
   return (
     <form
       onSubmit={(e) => { e.preventDefault(); handleSearch(); }}
-      className={`flex items-center gap-1 bg-surface-2 border border-border rounded-none ${barPadding} ${className}`}
+      className={`nu-in flex items-center gap-1 rounded-full ${barPadding} ${className}`}
     >
-      <div className={`flex-1 min-w-0 flex items-center gap-2 rounded-none hover:bg-surface-3 trivara-transition ${locationPadding}`}>
+      <div className={`flex-1 min-w-0 flex items-center gap-2 rounded-full hover:bg-foreground/5 trivara-transition ${locationPadding}`}>
         <input
           type="text"
           placeholder="Search destinations"
