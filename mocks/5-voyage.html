@@ -9,8 +9,8 @@
 <link rel="stylesheet" href="shared/shared.css">
 <style>
 /* MOCK 5 · VOYAGE = Reward (2) × Expedition (4).
-   From 2: tactile soft cards, pill shapes, scratch offers, floating dock + pill nav, inline planner, chunky steppers.
-   From 4: cinematic full-viewport skies, serif italic headlines, snap-scroll "missions", expanding destination panels, live countdown. */
+   From 2: tactile soft cards, pill shapes, floating dock + pill nav, inline planner, chunky steppers.
+   From 4: cinematic full-viewport skies, serif italic headlines, expanding destination panels. Only uses data/features the backend already has. */
 :root{--r:26px;--f-display:'Cormorant Garamond',Georgia,serif;--f-ui:'Sora',system-ui,sans-serif;--f-body:'DM Sans',system-ui,sans-serif;
   --nu-hi:rgba(255,255,255,.07);--nu-lo:rgba(0,0,0,.55)}
 [data-theme="paper"],[data-theme="chalk"],[data-theme="ocean"]{--nu-hi:rgba(255,255,255,.95);--nu-lo:rgba(60,50,30,.2)}
@@ -90,6 +90,15 @@ section.s{padding:90px 0}
 .scr canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab;transition:opacity .5s}
 .scr canvas.gone{opacity:0;pointer-events:none}
 .rule{margin-top:10px;font-size:12px;color:var(--ink2);text-align:center}
+.feat{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
+.fc{border-radius:30px;overflow:hidden;cursor:pointer;position:relative;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.fc:hover{transform:translateY(-8px) rotate(-.6deg)}
+.fc .im{aspect-ratio:3/4;background-size:cover;background-position:center;position:relative}
+.fc .im .heart{position:absolute;top:12px;right:12px}
+.fc .im .pr{position:absolute;left:12px;bottom:12px;background:var(--accent);color:var(--accent-ink);font:800 14px var(--f-ui);padding:7px 13px;border-radius:999px;transform:rotate(-3deg)}
+.fc .bd{padding:14px 18px 20px}
+.fc h4{font:400 26px/1 var(--f-display)}
+.fc .bd div{color:var(--ink2);font-size:13px;margin-top:4px}
 /* bento (from mock 1, restyled) */
 .bento{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:210px;gap:18px}
 .bx{padding:26px;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between}
@@ -158,13 +167,13 @@ section.s{padding:90px 0}
 footer{padding:60px 0 130px;color:var(--ink2);font-size:14px;text-align:center}
 .dlg-in{border-radius:36px}
 .dlg-in h2{font-family:var(--f-display)}
-@media(max-width:1000px){.hero .grid,.xp{grid-template-columns:1fr}.bento{grid-template-columns:1fr 1fr}.bx.a,.bx.b,.bx.c,.bx.d{grid-column:span 2;grid-row:auto}.offers,.tel{grid-template-columns:1fr 1fr}.offers{grid-template-columns:1fr}.lost{flex-direction:column;height:auto}.lost button{height:100px;flex:none}.lost button:hover,.lost button.on{height:230px;flex:none}.mapc{position:relative;top:0;height:380px}.pillnav a:not(.go){display:none}.lr{grid-template-columns:120px 1fr}.filters{position:relative;top:0}}
+@media(max-width:1000px){.hero .grid,.xp{grid-template-columns:1fr}.bento{grid-template-columns:1fr 1fr}.bx.a,.bx.b,.bx.c,.bx.d{grid-column:span 2;grid-row:auto}.feat{grid-template-columns:repeat(2,1fr)}.lost{flex-direction:column;height:auto}.lost button{height:100px;flex:none}.lost button:hover,.lost button.on{height:230px;flex:none}.mapc{position:relative;top:0;height:380px}.pillnav a:not(.go){display:none}.lr{grid-template-columns:120px 1fr}.filters{position:relative;top:0}}
 </style>
 </head>
 <body>
 <nav class="pillnav glass">
   <a class="logo" href="#"><i></i>trivara</a>
-  <a href="#offers">Offers</a><a href="#bento">Why Trivara</a><a href="#xp">Explore</a>
+  <a href="#feat">Featured</a><a href="#bento">Why Trivara</a><a href="#xp">Explore</a>
   <div class="themes" id="th"></div><a class="go" href="#land">Host</a>
 </nav>
 
@@ -173,7 +182,6 @@ footer{padding:60px 0 130px;color:var(--ink2);font-size:14px;text-align:center}
     <div>
       <h1>Where will you <span class="sl">get lost</span> next?</h1>
       <p class="l">Karnataka's finest stays — villas above the clouds, lofts between boulders, a tent on the river. Instant Book where hosts allow it, prices that show their working.</p>
-      <div class="cd"><i></i><span>Next window opens</span><b id="cd">T–00:00:00</b></div>
     </div>
     <div class="planner glass">
       <div class="q nu-in"><span aria-hidden="true">⌕</span><input data-q placeholder="Search Coorg, Hampi, Gokarna…" autocomplete="off"></div>
@@ -185,16 +193,18 @@ footer{padding:60px 0 130px;color:var(--ink2);font-size:14px;text-align:center}
   </div>
 </header>
 
-<section class="s" id="offers"><div class="wrap">
-  <div class="sh"><h2>Scratch. <em>Save.</em></h2><span>Admin-set offers · auto-applied at checkout · best one wins</span></div>
-  <div class="offers" id="offersgrid"></div>
+<section class="s" id="feat"><div class="wrap">
+  <div class="sh"><h2>Featured <em>stays</em></h2><span>Hand-picked by the Trivara team · up to the admin's slot limit</span></div>
+  <div class="feat" id="featrow"></div>
 </div></section>
+
+<div class="wrap"><div class="slot nu-in" aria-hidden="true"></div></div>
 
 <section class="s" id="bento" style="padding-top:20px"><div class="wrap">
   <div class="sh"><h2>Built like <em>instruments</em>, not brochures.</h2></div>
   <div class="bento">
     <div class="bx a dark nu"><div><span class="tag">01 · Guests</span><h3 style="margin-top:12px">Adults, children, infants — and pets.</h3></div>
-      <div><p style="margin-bottom:18px">Infants never count against capacity. Bringing a dog? We only show homes that say yes.</p><div class="big"><span data-count="4.8" data-dec="1">0</span><span style="font-size:32px;opacity:.6"> / 5 avg</span></div></div></div>
+      <div><p style="margin-bottom:18px">Infants never count against capacity. Bringing a dog? We only show homes that say yes.</p><div class="big">+ − <span style="font-size:40px">🐾</span></div></div></div>
     <div class="bx b nu"><div><span class="tag">02 · Pricing</span><h3 style="margin-top:8px">Every rupee <em>itemised.</em></h3></div>
       <div class="mini"><div><span>₹8,400 × 3 nights</span><span>₹25,200</span></div><div><span>First-stay offer · 10%</span><span>−₹2,520</span></div><div class="t"><span>Total</span><span>₹24,235</span></div></div></div>
     <div class="bx c nu"><span class="tag">03 · Booking</span><div><h3>Instant Book <em>or</em> Request.</h3><p style="margin-top:8px">Hosts choose per listing. You always see which, before you pay.</p></div></div>
@@ -205,18 +215,9 @@ footer{padding:60px 0 130px;color:var(--ink2);font-size:14px;text-align:center}
 </div></section>
 
 <section class="s" style="padding-top:20px"><div class="wrap">
-  <div class="sh"><h2>Popular <em>destinations</em></h2><span>Hover to explore · click to filter</span></div>
+  <div class="sh"><h2>Popular <em>destinations</em></h2><span>Hover to explore · click to filter the map</span></div>
   <div class="lost" id="lostrow"></div>
 </div></section>
-
-<div class="wrap"><div class="slot nu-in" aria-hidden="true"></div></div>
-
-<section class="s"><div class="wrap"><div class="tel">
-  <div class="nu"><b data-count="4.8" data-dec="1">0</b><span>Average rating</span></div>
-  <div class="nu"><b data-count="205">0</b><span>Verified stays</span></div>
-  <div class="nu"><b data-count="7">0</b><span>Destinations</span></div>
-  <div class="nu"><b data-count="100">0</b><span>% itemised pricing</span></div>
-</div></div></section>
 
 <section class="s" id="xp" style="padding-top:20px"><div class="wrap">
   <div class="sh"><h2>Every stay, <em>on the map</em></h2><span id="xc">8 stays</span></div>
@@ -238,7 +239,7 @@ footer{padding:60px 0 130px;color:var(--ink2);font-size:14px;text-align:center}
 <nav class="dock nu" aria-label="Quick nav">
   <a href="#top" class="on"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v10H3z"/></svg>Home</a>
   <a href="#xp"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Explore</a>
-  <a href="#offers"><svg viewBox="0 0 24 24"><path d="M20 12v8H4v-8M2 7h20v5H2zM12 22V7M12 7S10 2 7 3s-1 4 5 4zM12 7s2-5 5-4 1 4-5 4z"/></svg>Offers</a>
+  <a href="#feat"><svg viewBox="0 0 24 24"><path d="M20 12v8H4v-8M2 7h20v5H2zM12 22V7M12 7S10 2 7 3s-1 4 5 4zM12 7s2-5 5-4 1 4-5 4z"/></svg>Featured</a>
   <a href="#xp"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.6-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6C19 16.4 12 21 12 21Z"/></svg>Saved<em data-saved-n>0</em></a>
 </nav>
 <div class="mockbar"><a href="index.html">← All mocks</a><span>· 5 Voyage</span></div>
@@ -252,34 +253,23 @@ const z=n=>String(n).padStart(2,'0');
 $('#herobg').style.backgroundImage=art(L[0],2,1600,900);
 $('#landbg').style.backgroundImage=art(L[7],1,1600,900);
 
-/* countdown */
-setInterval(()=>{const n=new Date(),t=new Date(n);t.setHours(24,0,0,0);const s=Math.floor((t-n)/1000);$('#cd').textContent='T–'+[s/3600|0,(s%3600)/60|0,s%60].map(z).join(':')},1000);
-
 /* planner */
 TV.rangeCal($('#cal'),1);TV.bindGuests($('#gs'));
 $$('[data-tab]').forEach(b=>b.onclick=()=>{$$('[data-tab]').forEach(x=>x.classList.toggle('on',x===b));$$('.pane').forEach(p=>p.classList.toggle('on',p.id=='pane-'+b.dataset.tab))});
 $('#quick').innerHTML=['This weekend','Next weekend','+3 nights'].map((t,i)=>`<button class="chip" data-qk="${i}">${t}</button>`).join('');
 $('#quick').onclick=e=>{const b=e.target.closest('[data-qk]');if(!b)return;const s=[new Date(2026,9,9),new Date(2026,9,23),new Date(2026,9,19)][b.dataset.qk],e2=new Date(s);e2.setDate(s.getDate()+(b.dataset.qk==2?3:2));S.range={s,e:e2};TV.rangeCal($('#cal'),1);TV.sync()};
 
-/* scratch offers */
-const OFF=[{k:'First-time user',v:'10% off',d:'Your first completed stay'},{k:'Area · Coorg',v:'₹1,000 off',d:'Flat, on any Coorg stay'},{k:'Combo',v:'8% off',d:'Book 3+ nights'}];
-$('#offersgrid').innerHTML=OFF.map((o,i)=>`<div><div class="scr"><div class="under"><small>${o.k}</small><b>${o.v}</b><small>${o.d}</small></div><canvas data-i="${i}"></canvas></div><div class="rule">Scratch to reveal</div></div>`).join('');
-$$('.scr canvas').forEach(cv=>{const ctx=cv.getContext('2d');let drawing=false;
- const fit=()=>{const r=cv.getBoundingClientRect();cv.width=r.width*devicePixelRatio;cv.height=r.height*devicePixelRatio;ctx.scale(devicePixelRatio,devicePixelRatio);const g=ctx.createLinearGradient(0,0,r.width,r.height);g.addColorStop(0,'#3a3a40');g.addColorStop(.5,'#7d7d88');g.addColorStop(1,'#2b2b30');ctx.fillStyle=g;ctx.fillRect(0,0,r.width,r.height);ctx.fillStyle='rgba(255,255,255,.55)';ctx.font='italic 300 34px Cormorant Garamond,serif';ctx.textAlign='center';ctx.fillText('scratch here',r.width/2,r.height/2+8);ctx.globalCompositeOperation='destination-out'};
- requestAnimationFrame(fit);
- const pt=e=>{const r=cv.getBoundingClientRect();return[e.clientX-r.left,e.clientY-r.top]};
- const sc=e=>{if(!drawing)return;const[x,y]=pt(e);ctx.beginPath();ctx.arc(x,y,26,0,7);ctx.fill()};
- cv.onpointerdown=e=>{drawing=true;cv.setPointerCapture(e.pointerId);sc(e)};cv.onpointermove=sc;
- cv.onpointerup=()=>{drawing=false;const d=ctx.getImageData(0,0,cv.width,cv.height).data;let c=0;for(let i=3;i<d.length;i+=64)if(d[i]<20)c++;if(c/(d.length/64)>.42){cv.classList.add('gone');TV.toast('Offer unlocked — auto-applies at checkout')}}});
+/* featured stays (admin-curated is_featured, capped by featured_stays_max_slots) */
+$('#featrow').innerHTML=L.filter(l=>l.feat).slice(0,5).map(l=>`<article class="fc nu" data-open="${l.id}"><div class="im" style="background-image:${art(l)}">${heart(l.id)}<span class="pr">${inr(l.price)}</span></div><div class="bd"><h4>${l.t}</h4><div>${l.city} · ★ ${l.r}</div></div></article>`).join('');
 
 /* destinations */
-$('#lostrow').innerHTML=DESTS.map((d,i)=>{const l=L.find(x=>x.city==d.id)||L[0];return `<button data-dest="${d.id}"><div class="im" style="background-image:${art(l,i%5,900,1200)}"></div><div class="t"><b>${d.id}</b><span>${d.tag} · ${d.n} stays</span></div></button>`}).join('');
+$('#lostrow').innerHTML=DESTS.map((d,i)=>{const l=L.find(x=>x.city==d.id)||L[0];return `<button data-dest="${d.id}"><div class="im" style="background-image:${art(l,i%5,900,1200)}"></div><div class="t"><b>${d.id}</b><span>${L.filter(x=>x.city==d.id).length} stay${L.filter(x=>x.city==d.id).length==1?'':'s'}</span></div></button>`}).join('');
 
 /* explore */
 $('#chips').innerHTML=[['instant','⚡ Instant Book'],['pets','🐾 Pets ok'],['pool','Pool'],['wifi','Wifi'],['workspace','Workspace'],['stepfree','♿ Step-free'],['beach','Beach']].map(([k,n])=>`<button class="chip" data-f="${k}">${n}</button>`).join('');
 function draw(){const r=filtered();$('#list').innerHTML=r.length?r.map(l=>`<article class="lr nu" data-id="${l.id}" data-open="${l.id}"><div class="im" style="background-image:${art(l)}">${heart(l.id)}</div><div><h4>${l.t}</h4><div class="m">${l.loc} · ${l.type} · ${l.g} guests · ★ ${l.r} (${l.rc})</div><div class="tags"><span class="${l.instant?'z':''}">${l.instant?'⚡ Instant Book':'Request to Book'}</span>${l.pets?'<span>🐾 Pets</span>':''}<span>${l.pol} cancel</span></div><div class="p">${inr(l.price)} <small>/ night</small></div></div></article>`).join(''):'<div class="nu" style="padding:50px;text-align:center">Nothing here yet. Try fewer filters.</div>';
 $('#xc').textContent=r.length+' stays';$('#n1').textContent=r.length}
-TV.onChange(draw);TV.bindFilters();TV.mountMap($('#map'),id=>TV.detail(id));draw();TV.count();
+TV.onChange(draw);TV.bindFilters();TV.mountMap($('#map'),id=>TV.detail(id));draw();
 </script>
 </body>
 </html>
