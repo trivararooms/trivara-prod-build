@@ -66,11 +66,3 @@ export function applyTextContrast(css: string): void {
   root.setProperty('--text-meta', fg.meta);
   root.setProperty('--sidebar-foreground', fg.primary);
 }
-
-/** Undoes applyTextContrast() so the active colour scheme's own tokens apply again. */
-export function clearTextContrast(): void {
-  if (typeof document === 'undefined') return;
-  const root = document.documentElement.style;
-  ['--foreground', '--card-foreground', '--popover-foreground', '--text-primary', '--text-secondary', '--text-meta', '--sidebar-foreground']
-    .forEach((prop) => root.removeProperty(prop));
-}
