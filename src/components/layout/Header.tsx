@@ -7,10 +7,9 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSepara
 import { useAuth } from '@/hooks/useAuth';
 import { messageService } from '@/services/messageService';
 import { Logo } from '@/components/layout/Logo';
-import { ThemeSwitcher } from '@/components/layout/ThemeSwitcher';
 
 // Rendered exactly once, in App.tsx, above every route. A floating glass
-// pill (logo, links, colour-scheme dots, Host CTA) that sits in the same
+// pill (logo, links, Host CTA) that sits in the same
 // sticky 5rem band on every page - so nothing underneath is ever covered or
 // unclickable (the home hero pulls itself up under this band with -mt-20).
 // The pill itself is pointer-events-auto; the empty band around it is not,
@@ -110,12 +109,10 @@ export function Header() {
           )}
         </div>
 
-        <ThemeSwitcher className="mx-2.5 hidden sm:flex" />
-
         {!isHost && (
           <Link
             to="/host"
-            className="hidden rounded-full bg-accent px-5 py-2.5 font-ui text-[13px] font-bold text-accent-foreground transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_28px_-8px_var(--glow)] sm:inline-flex"
+            className="ml-2 hidden rounded-full bg-accent px-5 py-2.5 font-ui text-[13px] font-bold text-accent-foreground transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_28px_-8px_var(--glow)] sm:inline-flex"
           >
             Host
           </Link>
@@ -130,7 +127,6 @@ export function Header() {
           </SheetTrigger>
           <SheetContent side="right" className="w-80 border-border bg-surface-0">
             <div className="mt-8 flex flex-col gap-6">
-              <ThemeSwitcher />
               {user ? (
                 <>
                   {!isHost && (

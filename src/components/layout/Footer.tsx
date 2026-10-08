@@ -1,6 +1,5 @@
 import { Link } from 'react-router-dom';
 import { Logo } from '@/components/layout/Logo';
-import { ThemeSwitcher } from '@/components/layout/ThemeSwitcher';
 
 // Rendered exactly once, in App.tsx, below every route - the footer
 // equivalent of Header.tsx: one shared instance so every page gets it, not
@@ -21,7 +20,6 @@ export function Footer() {
           <Link to="/help" className={linkClass}>Talk to Us</Link>
           <Link to="/cancellation-options" className={linkClass}>Cancellation options</Link>
         </div>
-        <ThemeSwitcher />
         <span className="text-xs text-text-meta">© {new Date().getFullYear()} Trivara. All rights reserved.</span>
       </div>
     </footer>

@@ -8,14 +8,13 @@
   TRIVARA DESIGN SYSTEM - "Voyage"
   Cinematic full-bleed scenes (serif italics, slow-drifting skies) wrapped in
   soft tactile cards (neumorphic raised/inset surfaces), pill controls and a
-  floating dock. Five switchable colour schemes (paper, chalk, obsidian,
-  forest, ocean) drive every shadcn token below via html[data-theme] - see
-  src/lib/themes.ts and ThemeSwitcher. Primary (ink) = structural/interactive;
+  floating dock. One colour scheme (paper: warm canvas, gold accent) drives
+  every shadcn token below. Primary (ink) = structural/interactive;
   accent = the one highlight colour per scheme (CTAs, ratings, active states).
 */
 
 @layer base {
-  html[data-theme="paper"] {
+  :root {
     --background: 40 45% 94%;
     --foreground: 40 8% 8%;
     --card: 42 56% 96%;
@@ -56,183 +55,6 @@
     --nu-hi: rgba(255,255,255,.95);
     --nu-lo: rgba(60,50,30,.2);
     --glow: rgba(249,179,18,.35);
-    color-scheme: light;
-  }
-
-  html[data-theme="chalk"] {
-    --background: 0 0% 100%;
-    --foreground: 240 4% 5%;
-    --card: 0 0% 100%;
-    --card-foreground: 240 4% 5%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 240 4% 5%;
-    --primary: 240 4% 5%;
-    --primary-foreground: 0 0% 100%;
-    --secondary: 240 4% 95%;
-    --secondary-foreground: 240 4% 5%;
-    --muted: 240 4% 95%;
-    --muted-foreground: 240 3% 37%;
-    --accent: 7 80% 54%;
-    --accent-foreground: 0 0% 100%;
-    --accent-hover: 7 68% 44%;
-    --destructive: 0 65% 50%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 0 0% 87%;
-    --input: 0 0% 87%;
-    --ring: 7 80% 54%;
-    --limited: 0 0% 76%;
-    --text-primary: 240 4% 5%;
-    --text-secondary: 240 3% 37%;
-    --text-meta: 240 2% 56%;
-    --surface-0: 0 0% 100%;
-    --surface-1: 0 0% 100%;
-    --surface-2: 240 4% 95%;
-    --surface-3: 240 2% 90%;
-    --surface-4: 240 1% 84%;
-    --sidebar-background: 0 0% 100%;
-    --sidebar-foreground: 240 4% 5%;
-    --sidebar-primary: 240 4% 5%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 4% 95%;
-    --sidebar-accent-foreground: 240 4% 5%;
-    --sidebar-border: 0 0% 87%;
-    --sidebar-ring: 7 80% 54%;
-    --nu-hi: rgba(255,255,255,.95);
-    --nu-lo: rgba(60,50,30,.2);
-    --glow: rgba(232,65,44,.25);
-    color-scheme: light;
-  }
-
-  :root,
-  html[data-theme="obsidian"] {
-    --background: 240 10% 4%;
-    --foreground: 240 5% 96%;
-    --card: 240 8% 10%;
-    --card-foreground: 240 5% 96%;
-    --popover: 240 8% 10%;
-    --popover-foreground: 240 5% 96%;
-    --primary: 240 5% 96%;
-    --primary-foreground: 240 10% 4%;
-    --secondary: 240 7% 8%;
-    --secondary-foreground: 240 5% 96%;
-    --muted: 240 7% 8%;
-    --muted-foreground: 240 5% 62%;
-    --accent: 39 100% 56%;
-    --accent-foreground: 240 10% 4%;
-    --accent-hover: 39 78% 46%;
-    --destructive: 0 65% 50%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 240 2% 17%;
-    --input: 240 2% 17%;
-    --ring: 39 100% 56%;
-    --limited: 240 1% 27%;
-    --text-primary: 240 5% 96%;
-    --text-secondary: 240 5% 62%;
-    --text-meta: 240 4% 45%;
-    --surface-0: 240 10% 4%;
-    --surface-1: 240 8% 10%;
-    --surface-2: 240 7% 8%;
-    --surface-3: 240 4% 13%;
-    --surface-4: 240 3% 19%;
-    --sidebar-background: 240 10% 4%;
-    --sidebar-foreground: 240 5% 96%;
-    --sidebar-primary: 240 5% 96%;
-    --sidebar-primary-foreground: 240 10% 4%;
-    --sidebar-accent: 240 7% 8%;
-    --sidebar-accent-foreground: 240 5% 96%;
-    --sidebar-border: 240 2% 17%;
-    --sidebar-ring: 39 100% 56%;
-    --nu-hi: rgba(255,255,255,.07);
-    --nu-lo: rgba(0,0,0,.55);
-    --glow: rgba(255,176,32,.28);
-    color-scheme: dark;
-  }
-
-  html[data-theme="forest"] {
-    --background: 142 28% 8%;
-    --foreground: 100 32% 93%;
-    --card: 144 28% 14%;
-    --card-foreground: 100 32% 93%;
-    --popover: 144 28% 14%;
-    --popover-foreground: 100 32% 93%;
-    --primary: 100 32% 93%;
-    --primary-foreground: 142 28% 8%;
-    --secondary: 145 30% 11%;
-    --secondary-foreground: 100 32% 93%;
-    --muted: 145 30% 11%;
-    --muted-foreground: 141 12% 62%;
-    --accent: 75 73% 66%;
-    --accent-foreground: 142 28% 8%;
-    --accent-hover: 75 44% 55%;
-    --destructive: 0 65% 50%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 138 10% 20%;
-    --input: 138 10% 20%;
-    --ring: 75 73% 66%;
-    --limited: 132 7% 29%;
-    --text-primary: 100 32% 93%;
-    --text-secondary: 141 12% 62%;
-    --text-meta: 142 8% 46%;
-    --surface-0: 142 28% 8%;
-    --surface-1: 144 28% 14%;
-    --surface-2: 145 30% 11%;
-    --surface-3: 142 20% 16%;
-    --surface-4: 139 15% 21%;
-    --sidebar-background: 142 28% 8%;
-    --sidebar-foreground: 100 32% 93%;
-    --sidebar-primary: 100 32% 93%;
-    --sidebar-primary-foreground: 142 28% 8%;
-    --sidebar-accent: 145 30% 11%;
-    --sidebar-accent-foreground: 100 32% 93%;
-    --sidebar-border: 138 10% 20%;
-    --sidebar-ring: 75 73% 66%;
-    --nu-hi: rgba(255,255,255,.07);
-    --nu-lo: rgba(0,0,0,.55);
-    --glow: rgba(200,232,107,.25);
-    color-scheme: dark;
-  }
-
-  html[data-theme="ocean"] {
-    --background: 210 47% 94%;
-    --foreground: 210 59% 11%;
-    --card: 210 60% 98%;
-    --card-foreground: 210 59% 11%;
-    --popover: 210 60% 98%;
-    --popover-foreground: 210 59% 11%;
-    --primary: 210 59% 11%;
-    --primary-foreground: 210 47% 94%;
-    --secondary: 207 46% 90%;
-    --secondary-foreground: 210 59% 11%;
-    --muted: 207 46% 90%;
-    --muted-foreground: 209 20% 41%;
-    --accent: 224 100% 56%;
-    --accent-foreground: 0 0% 100%;
-    --accent-hover: 224 79% 46%;
-    --destructive: 0 65% 50%;
-    --destructive-foreground: 0 0% 98%;
-    --border: 210 18% 82%;
-    --input: 210 18% 82%;
-    --ring: 224 100% 56%;
-    --limited: 210 13% 73%;
-    --text-primary: 210 59% 11%;
-    --text-secondary: 209 20% 41%;
-    --text-meta: 209 15% 57%;
-    --surface-0: 210 47% 94%;
-    --surface-1: 210 60% 98%;
-    --surface-2: 207 46% 90%;
-    --surface-3: 208 32% 85%;
-    --surface-4: 206 25% 80%;
-    --sidebar-background: 210 47% 94%;
-    --sidebar-foreground: 210 59% 11%;
-    --sidebar-primary: 210 59% 11%;
-    --sidebar-primary-foreground: 210 47% 94%;
-    --sidebar-accent: 207 46% 90%;
-    --sidebar-accent-foreground: 210 59% 11%;
-    --sidebar-border: 210 18% 82%;
-    --sidebar-ring: 224 100% 56%;
-    --nu-hi: rgba(255,255,255,.95);
-    --nu-lo: rgba(60,80,120,.22);
-    --glow: rgba(30,91,255,.28);
     color-scheme: light;
   }
 
@@ -487,13 +309,7 @@
   }
 }
 
-/* Leaflet follows the active colour scheme: dark schemes get inverted OSM
-   tiles, popups use the card tokens. */
-html[data-theme='obsidian'] .leaflet-tile-pane,
-html[data-theme='forest'] .leaflet-tile-pane {
-  filter: invert(1) hue-rotate(180deg) brightness(0.85) contrast(0.9) saturate(0.7);
-}
-
+/* Leaflet popups use the card tokens. */
 .leaflet-container {
   font-family: 'DM Sans', system-ui, sans-serif;
   background: hsl(var(--surface-2));

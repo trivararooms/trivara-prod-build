@@ -2,16 +2,6 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <script>
-      // Pre-paint theme (keep in sync with src/lib/themes.ts) so there is no flash of the wrong scheme.
-      try {
-        var t = localStorage.getItem('tv-theme');
-        if (['paper', 'chalk', 'obsidian', 'forest', 'ocean'].indexOf(t) === -1) t = 'obsidian';
-        document.documentElement.setAttribute('data-theme', t);
-      } catch (e) {
-        document.documentElement.setAttribute('data-theme', 'obsidian');
-      }
-    </script>
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <link rel="icon" href="/trivara-favicon.png" />
     <title>TRIVARA</title>
