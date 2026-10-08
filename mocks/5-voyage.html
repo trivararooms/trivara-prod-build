@@ -90,6 +90,20 @@ section.s{padding:90px 0}
 .scr canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab;transition:opacity .5s}
 .scr canvas.gone{opacity:0;pointer-events:none}
 .rule{margin-top:10px;font-size:12px;color:var(--ink2);text-align:center}
+/* bento (from mock 1, restyled) */
+.bento{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:210px;gap:18px}
+.bx{padding:26px;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between}
+.bx h3{font:400 32px/1 var(--f-display)}
+.bx h3 em{font-style:italic;color:var(--ink2)}
+.bx p{color:var(--ink2);font-size:14px;max-width:34ch}
+.bx.a{grid-column:span 3;grid-row:span 2}.bx.b{grid-column:span 3}.bx.c{grid-column:span 2}.bx.d{grid-column:span 1}
+.bx.dark{background:var(--accent);color:var(--accent-ink)}.bx.dark p{color:inherit;opacity:.8}
+.bx .big{font:300 96px/.9 var(--f-display);font-style:italic}
+.bx .tag{font:700 11px var(--f-ui);letter-spacing:.14em;text-transform:uppercase;opacity:.65}
+.mini{font:600 12px var(--f-ui);display:grid;gap:8px;color:var(--ink2)}
+.mini div{display:flex;justify-content:space-between;padding:8px 14px;border-radius:999px;background:var(--bg);box-shadow:inset 2px 2px 6px var(--nu-lo),inset -2px -2px 6px var(--nu-hi)}
+.mini .t{color:var(--ink)}
+.kbd{font:600 11px var(--f-ui);padding:4px 10px;border-radius:999px;background:var(--bg);box-shadow:3px 4px 10px var(--nu-lo),-2px -2px 8px var(--nu-hi)}
 /* destination panels (rounded) */
 .lost{display:flex;gap:12px;height:520px}
 .lost button{flex:1;position:relative;overflow:hidden;color:#fff;text-align:left;border-radius:30px;transition:flex .8s cubic-bezier(.2,.7,.2,1);box-shadow:8px 10px 24px var(--nu-lo),-5px -5px 14px var(--nu-hi)}
@@ -144,13 +158,13 @@ section.s{padding:90px 0}
 footer{padding:60px 0 130px;color:var(--ink2);font-size:14px;text-align:center}
 .dlg-in{border-radius:36px}
 .dlg-in h2{font-family:var(--f-display)}
-@media(max-width:1000px){.hero .grid,.xp{grid-template-columns:1fr}.offers,.tel{grid-template-columns:1fr 1fr}.offers{grid-template-columns:1fr}.lost{flex-direction:column;height:auto}.lost button{height:100px;flex:none}.lost button:hover,.lost button.on{height:230px;flex:none}.mapc{position:relative;top:0;height:380px}.pillnav a:not(.go){display:none}.lr{grid-template-columns:120px 1fr}.filters{position:relative;top:0}}
+@media(max-width:1000px){.hero .grid,.xp{grid-template-columns:1fr}.bento{grid-template-columns:1fr 1fr}.bx.a,.bx.b,.bx.c,.bx.d{grid-column:span 2;grid-row:auto}.offers,.tel{grid-template-columns:1fr 1fr}.offers{grid-template-columns:1fr}.lost{flex-direction:column;height:auto}.lost button{height:100px;flex:none}.lost button:hover,.lost button.on{height:230px;flex:none}.mapc{position:relative;top:0;height:380px}.pillnav a:not(.go){display:none}.lr{grid-template-columns:120px 1fr}.filters{position:relative;top:0}}
 </style>
 </head>
 <body>
 <nav class="pillnav glass">
   <a class="logo" href="#"><i></i>trivara</a>
-  <a href="#ms">Stays</a><a href="#offers">Offers</a><a href="#xp">Explore</a>
+  <a href="#offers">Offers</a><a href="#bento">Why Trivara</a><a href="#xp">Explore</a>
   <div class="themes" id="th"></div><a class="go" href="#land">Host</a>
 </nav>
 
@@ -171,11 +185,23 @@ footer{padding:60px 0 130px;color:var(--ink2);font-size:14px;text-align:center}
   </div>
 </header>
 
-<div id="ms"></div>
-
 <section class="s" id="offers"><div class="wrap">
   <div class="sh"><h2>Scratch. <em>Save.</em></h2><span>Admin-set offers · auto-applied at checkout · best one wins</span></div>
   <div class="offers" id="offersgrid"></div>
+</div></section>
+
+<section class="s" id="bento" style="padding-top:20px"><div class="wrap">
+  <div class="sh"><h2>Built like <em>instruments</em>, not brochures.</h2></div>
+  <div class="bento">
+    <div class="bx a dark nu"><div><span class="tag">01 · Guests</span><h3 style="margin-top:12px">Adults, children, infants — and pets.</h3></div>
+      <div><p style="margin-bottom:18px">Infants never count against capacity. Bringing a dog? We only show homes that say yes.</p><div class="big"><span data-count="4.8" data-dec="1">0</span><span style="font-size:32px;opacity:.6"> / 5 avg</span></div></div></div>
+    <div class="bx b nu"><div><span class="tag">02 · Pricing</span><h3 style="margin-top:8px">Every rupee <em>itemised.</em></h3></div>
+      <div class="mini"><div><span>₹8,400 × 3 nights</span><span>₹25,200</span></div><div><span>First-stay offer · 10%</span><span>−₹2,520</span></div><div class="t"><span>Total</span><span>₹24,235</span></div></div></div>
+    <div class="bx c nu"><span class="tag">03 · Booking</span><div><h3>Instant Book <em>or</em> Request.</h3><p style="margin-top:8px">Hosts choose per listing. You always see which, before you pay.</p></div></div>
+    <div class="bx d nu"><span class="tag">04 · Trust</span><div class="big" style="font-size:64px">✓</div><p>Verified hosts</p></div>
+    <div class="bx b nu"><span class="tag">05 · Reviews</span><div class="mini"><div><span>Cleanliness</span><span class="t">4.9</span></div><div><span>Accuracy</span><span class="t">4.8</span></div><div><span>Communication</span><span class="t">5.0</span></div><div><span>Value · Location</span><span class="t">4.6 · 4.9</span></div></div></div>
+    <div class="bx c nu" style="grid-column:span 3"><div style="display:flex;justify-content:space-between"><span class="tag">06 · Planner</span><span style="display:flex;gap:6px"><span class="kbd">Dates</span><span class="kbd">Guests</span><span class="kbd">Pets</span></span></div><h3>Plan it in one place. <em>No pop-ups.</em></h3><p>Pick dates, set guests and pets, and watch results update live.</p></div>
+  </div>
 </div></section>
 
 <section class="s" style="padding-top:20px"><div class="wrap">
@@ -234,12 +260,6 @@ TV.rangeCal($('#cal'),1);TV.bindGuests($('#gs'));
 $$('[data-tab]').forEach(b=>b.onclick=()=>{$$('[data-tab]').forEach(x=>x.classList.toggle('on',x===b));$$('.pane').forEach(p=>p.classList.toggle('on',p.id=='pane-'+b.dataset.tab))});
 $('#quick').innerHTML=['This weekend','Next weekend','+3 nights'].map((t,i)=>`<button class="chip" data-qk="${i}">${t}</button>`).join('');
 $('#quick').onclick=e=>{const b=e.target.closest('[data-qk]');if(!b)return;const s=[new Date(2026,9,9),new Date(2026,9,23),new Date(2026,9,19)][b.dataset.qk],e2=new Date(s);e2.setDate(s.getDate()+(b.dataset.qk==2?3:2));S.range={s,e:e2};TV.rangeCal($('#cal'),1);TV.sync()};
-
-/* missions */
-const feat=L.filter(l=>l.feat).slice(0,5);
-$('#ms').innerHTML=feat.map((l,i)=>`<section class="scene ms" id="m${i}"><div class="bg" style="background-image:${art(l,0,1600,900)}"></div><div class="tx"><span class="no">Stay ${z(i+1)} / ${z(feat.length)}</span><h2>${l.t.split(' ').slice(0,-1).join(' ')} <em>${l.t.split(' ').slice(-1)}</em></h2>
-<div class="pl"><div><b>${l.city}</b><span>Location</span></div><div><b>${l.g}</b><span>Guests</span></div><div><b>${l.instant?'⚡ Instant':'Request'}</b><span>Booking</span></div><div><b>${inr(l.price)}</b><span>Per night</span></div></div>
-<div class="cta"><a class="pill" data-open="${l.id}">View stay</a><a class="pill ghost" href="#xp">See on map</a>${heart(l.id)}</div></div></section>`).join('');
 
 /* scratch offers */
 const OFF=[{k:'First-time user',v:'10% off',d:'Your first completed stay'},{k:'Area · Coorg',v:'₹1,000 off',d:'Flat, on any Coorg stay'},{k:'Combo',v:'8% off',d:'Book 3+ nights'}];
