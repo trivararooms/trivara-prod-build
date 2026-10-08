@@ -1,0 +1,275 @@
+<!doctype html>
+<html lang="en" data-theme="obsidian">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trivara Stays — Mock 5 · Voyage</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,500;1,300;1,500&family=Sora:wght@400;600;800&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/shared.css">
+<style>
+/* MOCK 5 · VOYAGE = Reward (2) × Expedition (4).
+   From 2: tactile soft cards, pill shapes, floating dock + pill nav, inline planner, chunky steppers.
+   From 4: cinematic full-viewport skies, serif italic headlines, expanding destination panels. Only uses data/features the backend already has. */
+:root{--r:26px;--f-display:'Cormorant Garamond',Georgia,serif;--f-ui:'Sora',system-ui,sans-serif;--f-body:'DM Sans',system-ui,sans-serif;
+  --nu-hi:rgba(255,255,255,.07);--nu-lo:rgba(0,0,0,.55)}
+[data-theme="paper"],[data-theme="chalk"],[data-theme="ocean"]{--nu-hi:rgba(255,255,255,.95);--nu-lo:rgba(60,50,30,.2)}
+html{scroll-snap-type:y proximity}
+.nu{background:var(--surface);border-radius:var(--r);box-shadow:8px 10px 24px var(--nu-lo),-6px -6px 18px var(--nu-hi),inset 0 1px 0 var(--nu-hi)}
+.nu-in{background:var(--bg);border-radius:calc(var(--r) * .7);box-shadow:inset 4px 5px 12px var(--nu-lo),inset -3px -3px 10px var(--nu-hi)}
+.glass{background:color-mix(in srgb,var(--surface) 62%,transparent);backdrop-filter:blur(22px) saturate(1.4);border:1px solid color-mix(in srgb,var(--ink) 14%,transparent);border-radius:var(--r);box-shadow:0 30px 70px -24px rgba(0,0,0,.55)}
+.ui{font-family:var(--f-ui)}
+.wrap{max-width:1280px;margin:0 auto;padding:0 28px}
+/* nav */
+.pillnav{position:fixed;top:16px;left:50%;transform:translateX(-50%);z-index:60;display:flex;align-items:center;gap:6px;padding:8px 10px 8px 20px;border-radius:999px;width:min(980px,calc(100% - 24px))}
+.pillnav .logo{font:800 18px var(--f-ui);letter-spacing:-.04em;margin-right:auto;display:flex;gap:8px;align-items:center}
+.pillnav .logo i{width:20px;height:20px;border-radius:7px;background:var(--accent);transform:rotate(-12deg)}
+.pillnav a{padding:9px 16px;border-radius:999px;font-size:14px;font-weight:500;color:var(--ink2);transition:.2s}
+.pillnav a:hover{color:var(--ink);background:var(--bg2)}
+.pillnav .go{background:var(--accent);color:var(--accent-ink);font-weight:700}
+.pillnav .themes{margin:0 10px}
+/* cinematic scenes */
+.scene{position:relative;min-height:100vh;scroll-snap-align:start;display:flex;flex-direction:column;justify-content:flex-end;overflow:hidden;color:#fff;background:#000}
+.scene .bg{position:absolute;inset:-4%;background-size:cover;background-position:center;animation:drift 40s ease-in-out infinite alternate}
+@keyframes drift{to{transform:scale(1.1) translate(-1.5%,1%)}}
+.scene::after{content:"";position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.4),transparent 35%,rgba(0,0,0,.72))}
+.scene>*:not(.bg){position:relative;z-index:2}
+.hero{padding:120px 0 60px;justify-content:center}
+.hero .grid{display:grid;grid-template-columns:1.15fr .85fr;gap:36px;align-items:end}
+.hero h1{font:300 clamp(54px,8.4vw,140px)/.9 var(--f-display)}
+.hero h1 em{font-style:italic}
+.hero h1 .sl{display:inline-block;position:relative;color:var(--accent-ink);padding:0 .14em;font-style:italic;font-weight:500;isolation:isolate}
+.hero h1 .sl::before{content:"";position:absolute;inset:.1em 0 .04em;background:var(--accent);transform:skewX(-9deg) rotate(-1.5deg);border-radius:.12em;z-index:-1}
+.hero p.l{font:400 18px var(--f-body);max-width:42ch;margin:22px 0 0;opacity:.88}
+.cd{display:inline-flex;align-items:center;gap:12px;margin-top:26px;padding:10px 18px;border-radius:999px;font:600 13px var(--f-ui);background:rgba(0,0,0,.35);backdrop-filter:blur(12px);border:1px solid rgba(255,255,255,.25)}
+.cd i{width:8px;height:8px;border-radius:50%;background:var(--accent);animation:pl 1.8s infinite}
+@keyframes pl{50%{box-shadow:0 0 0 7px transparent;opacity:.5}}
+.cd b{font-variant-numeric:tabular-nums;letter-spacing:.06em}
+/* planner (glass+neumorphic controls) */
+.planner{padding:20px;display:grid;gap:14px;color:var(--ink)}
+.planner .q{display:flex;gap:12px;align-items:center;padding:13px 18px;border-radius:999px}
+.planner input{flex:1;background:none;border:0;color:var(--ink);font:500 15px var(--f-body);outline:0}
+.tabs{display:flex;gap:6px;padding:5px;border-radius:999px}
+.tabs button{flex:1;padding:11px;border-radius:999px;font:700 13px var(--f-ui);color:var(--ink2);transition:.2s}
+.tabs button.on{background:var(--accent);color:var(--accent-ink);box-shadow:0 8px 24px -8px var(--glow)}
+.pane{display:none}.pane.on{display:block}
+.quick{display:flex;gap:8px;margin-bottom:10px;flex-wrap:wrap}
+.chip{border:0;background:var(--bg);box-shadow:3px 4px 10px var(--nu-lo),-2px -2px 8px var(--nu-hi);font:600 13px var(--f-ui);padding:10px 16px}
+.chip.on{background:var(--accent);color:var(--accent-ink);box-shadow:inset 2px 3px 8px rgba(0,0,0,.25)}
+.pane .gst .ctl button{width:42px;height:42px;font-size:22px;background:var(--bg);box-shadow:3px 4px 10px var(--nu-lo),-2px -2px 8px var(--nu-hi);border:0}
+.pane .gst .ctl button:active:not(:disabled){transform:scale(.9)}
+.pane .gst output{font:800 19px var(--f-ui)}
+.planner .sum{display:flex;justify-content:space-between;font-size:13px;color:var(--ink2);flex-wrap:wrap;gap:6px}.planner .sum b{color:var(--ink)}
+/* sections */
+section.s{padding:90px 0}
+.sh{display:flex;justify-content:space-between;align-items:end;margin-bottom:34px;gap:14px}
+.sh h2{font:300 clamp(40px,5.4vw,84px)/.98 var(--f-display)}
+.sh h2 em{font-style:italic;color:var(--ink2)}
+.sh span{color:var(--ink2);font-size:14px}
+/* missions */
+.ms .tx{padding:0 0 70px;max-width:1280px;margin:0 auto;width:100%;padding-inline:28px}
+.ms .no{display:inline-block;font:700 12px var(--f-ui);padding:7px 14px;border-radius:999px;background:rgba(0,0,0,.4);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.25);margin-bottom:16px}
+.ms h2{font:300 clamp(52px,8.6vw,138px)/.9 var(--f-display)}
+.ms h2 em{font-style:italic}
+.ms .pl{display:flex;flex-wrap:wrap;gap:12px;margin:26px 0}
+.ms .pl div{padding:14px 20px;border-radius:22px;background:rgba(255,255,255,.12);backdrop-filter:blur(16px);border:1px solid rgba(255,255,255,.22);box-shadow:8px 10px 24px rgba(0,0,0,.35),inset 0 1px 0 rgba(255,255,255,.2)}
+.ms .pl b{display:block;font:600 22px var(--f-ui);letter-spacing:-.03em}
+.ms .pl span{font:500 11px var(--f-ui);letter-spacing:.14em;text-transform:uppercase;opacity:.7}
+.ms .cta{display:flex;gap:12px;align-items:center;flex-wrap:wrap}
+.pill{display:inline-flex;padding:15px 30px;border-radius:999px;background:var(--accent);color:var(--accent-ink);font:700 14px var(--f-ui);transition:.2s;cursor:pointer;border:0}
+.pill:hover{transform:translateY(-2px);box-shadow:0 14px 34px -8px var(--glow)}
+.pill.ghost{background:rgba(255,255,255,.1);color:#fff;border:1px solid rgba(255,255,255,.45);backdrop-filter:blur(10px)}
+.ms .heart{width:48px;height:48px;background:rgba(255,255,255,.12);border:1px solid rgba(255,255,255,.4)}
+.ms .heart svg{stroke:#fff}.ms .heart.on svg{stroke:var(--accent);fill:var(--accent)}
+/* offers */
+.offers{display:grid;grid-template-columns:repeat(3,1fr);gap:22px}
+.scr{position:relative;aspect-ratio:1.5;overflow:hidden;border-radius:var(--r);box-shadow:10px 12px 28px var(--nu-lo),-6px -6px 18px var(--nu-hi)}
+.scr .under{position:absolute;inset:0;padding:24px;display:flex;flex-direction:column;justify-content:space-between;background:linear-gradient(135deg,var(--accent),color-mix(in srgb,var(--accent) 55%,var(--bg)));color:var(--accent-ink)}
+.scr .under b{font:300 78px/.9 var(--f-display);font-style:italic;letter-spacing:-.02em}
+.scr .under small{font:700 11px var(--f-ui);letter-spacing:.12em;text-transform:uppercase;opacity:.8}
+.scr canvas{position:absolute;inset:0;width:100%;height:100%;touch-action:none;cursor:grab;transition:opacity .5s}
+.scr canvas.gone{opacity:0;pointer-events:none}
+.rule{margin-top:10px;font-size:12px;color:var(--ink2);text-align:center}
+.feat{display:grid;grid-template-columns:repeat(5,1fr);gap:16px}
+.fc{border-radius:30px;overflow:hidden;cursor:pointer;position:relative;transition:transform .35s cubic-bezier(.2,.8,.2,1)}
+.fc:hover{transform:translateY(-8px) rotate(-.6deg)}
+.fc .im{aspect-ratio:3/4;background-size:cover;background-position:center;position:relative}
+.fc .im .heart{position:absolute;top:12px;right:12px}
+.fc .im .pr{position:absolute;left:12px;bottom:12px;background:var(--accent);color:var(--accent-ink);font:800 14px var(--f-ui);padding:7px 13px;border-radius:999px;transform:rotate(-3deg)}
+.fc .bd{padding:14px 18px 20px}
+.fc h4{font:400 26px/1 var(--f-display)}
+.fc .bd div{color:var(--ink2);font-size:13px;margin-top:4px}
+/* bento (from mock 1, restyled) */
+.bento{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:210px;gap:18px}
+.bx{padding:26px;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between}
+.bx h3{font:400 32px/1 var(--f-display)}
+.bx h3 em{font-style:italic;color:var(--ink2)}
+.bx p{color:var(--ink2);font-size:14px;max-width:34ch}
+.bx.a{grid-column:span 3;grid-row:span 2}.bx.b{grid-column:span 3}.bx.c{grid-column:span 2}.bx.d{grid-column:span 1}
+.bx.dark{background:var(--accent);color:var(--accent-ink)}.bx.dark p{color:inherit;opacity:.8}
+.bx .big{font:300 96px/.9 var(--f-display);font-style:italic}
+.bx .tag{font:700 11px var(--f-ui);letter-spacing:.14em;text-transform:uppercase;opacity:.65}
+.mini{font:600 12px var(--f-ui);display:grid;gap:8px;color:var(--ink2)}
+.mini div{display:flex;justify-content:space-between;padding:8px 14px;border-radius:999px;background:var(--bg);box-shadow:inset 2px 2px 6px var(--nu-lo),inset -2px -2px 6px var(--nu-hi)}
+.mini .t{color:var(--ink)}
+.kbd{font:600 11px var(--f-ui);padding:4px 10px;border-radius:999px;background:var(--bg);box-shadow:3px 4px 10px var(--nu-lo),-2px -2px 8px var(--nu-hi)}
+/* destination panels (rounded) */
+.lost{display:flex;gap:12px;height:520px}
+.lost button{flex:1;position:relative;overflow:hidden;color:#fff;text-align:left;border-radius:30px;transition:flex .8s cubic-bezier(.2,.7,.2,1);box-shadow:8px 10px 24px var(--nu-lo),-5px -5px 14px var(--nu-hi)}
+.lost button .im{position:absolute;inset:0;background-size:cover;background-position:center;transition:transform 1.2s,filter .6s;filter:brightness(.62) saturate(.8)}
+.lost button:hover,.lost button.on{flex:3.6}
+.lost button:hover .im,.lost button.on .im{transform:scale(1.06);filter:none}
+.lost button.on{outline:3px solid var(--accent);outline-offset:-3px}
+.lost .t{position:absolute;left:20px;bottom:22px;right:20px}
+.lost b{display:block;font:300 34px var(--f-display);white-space:nowrap}
+.lost .t span{display:inline-block;margin-top:8px;font:700 11px var(--f-ui);padding:5px 12px;border-radius:999px;background:rgba(0,0,0,.45);backdrop-filter:blur(8px);max-width:0;overflow:hidden;white-space:nowrap;transition:max-width .6s;padding-inline:0}
+.lost button:hover .t span,.lost button.on .t span{max-width:240px;padding-inline:12px}
+.slot{height:240px;border-radius:var(--r)}
+/* stats */
+.tel{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+.tel div{padding:30px 26px}
+.tel b{display:block;font:300 clamp(48px,5.4vw,84px)/1 var(--f-display);font-style:italic}
+.tel span{color:var(--ink2);font:600 12px var(--f-ui);letter-spacing:.08em;text-transform:uppercase}
+/* explore */
+.xp{display:grid;grid-template-columns:1.1fr .9fr;gap:22px;align-items:start}
+.filters{padding:16px 18px;margin-bottom:18px;display:grid;gap:12px;position:sticky;top:84px;z-index:5}
+.filters .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.filters select{background:var(--bg);color:var(--ink);border:0;padding:10px 14px;border-radius:999px;font:600 13px var(--f-ui);box-shadow:3px 4px 10px var(--nu-lo),-2px -2px 8px var(--nu-hi)}
+.filters input[type=range]{accent-color:var(--accent);width:140px}
+.list{display:grid;gap:16px}
+.lr{display:grid;grid-template-columns:200px 1fr;gap:18px;padding:12px;cursor:pointer;transition:.25s;border:2px solid transparent}
+.lr.hot{border-color:var(--accent);transform:translateX(6px)}
+.lr .im{border-radius:calc(var(--r) * .75);background-size:cover;background-position:center;min-height:150px;position:relative}
+.lr .im .heart{position:absolute;top:8px;left:8px}
+.lr h4{font:400 32px/1 var(--f-display)}
+.lr .m{font-size:13px;color:var(--ink2);margin:6px 0 10px}
+.lr .tags{display:flex;gap:6px;flex-wrap:wrap}
+.lr .tags span{font:700 11px var(--f-ui);padding:5px 11px;border-radius:999px;background:var(--bg);box-shadow:inset 2px 2px 5px var(--nu-lo),inset -1px -1px 4px var(--nu-hi)}
+.lr .tags .z{background:var(--accent);color:var(--accent-ink);box-shadow:none}
+.lr .p{margin-top:10px;font:800 21px var(--f-ui);letter-spacing:-.03em}.lr .p small{font:400 12px var(--f-body);color:var(--ink2)}
+.mapc{position:sticky;top:84px;height:calc(100vh - 110px);padding:8px}
+.mapc .map{height:100%;border-radius:calc(var(--r) * .8)}
+/* host */
+.land{position:relative;min-height:90vh;display:flex;align-items:center;color:#fff;scroll-snap-align:start;overflow:hidden}
+.land .bg{position:absolute;inset:0;background-size:cover;background-position:center}
+.land::before{content:"";position:absolute;inset:0;background:linear-gradient(90deg,rgba(0,0,0,.75),rgba(0,0,0,.05));z-index:1}
+.land .slab{position:relative;z-index:2;margin-left:max(28px,calc((100vw - 1280px)/2 + 28px));padding:56px 60px 56px 52px;background:var(--accent);color:var(--accent-ink);max-width:640px;clip-path:polygon(0 6%,100% 0,100% 94%,0 100%);border-radius:10px}
+.land h2{font:300 clamp(44px,6vw,92px)/.92 var(--f-display);margin-bottom:16px}
+.land h2 em{font-style:italic;font-weight:500}
+.land p{max-width:42ch;margin-bottom:26px;font-weight:500}
+.land .pill{background:var(--accent-ink);color:var(--accent)}
+/* dock */
+.dock{position:fixed;bottom:18px;left:50%;transform:translateX(-50%);z-index:70;display:flex;gap:4px;padding:8px;border-radius:999px}
+.dock a{display:flex;flex-direction:column;align-items:center;gap:2px;padding:8px 18px;border-radius:999px;font:700 11px var(--f-ui);color:var(--ink2);transition:.2s;position:relative}
+.dock a:hover,.dock a.on{background:var(--accent);color:var(--accent-ink)}
+.dock svg{width:20px;height:20px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+.dock em{position:absolute;top:3px;right:10px;background:var(--accent);color:var(--accent-ink);font:800 10px var(--f-body);padding:1px 6px;border-radius:99px;font-style:normal}
+footer{padding:60px 0 130px;color:var(--ink2);font-size:14px;text-align:center}
+.dlg-in{border-radius:36px}
+.dlg-in h2{font-family:var(--f-display)}
+@media(max-width:1000px){.hero .grid,.xp{grid-template-columns:1fr}.bento{grid-template-columns:1fr 1fr}.bx.a,.bx.b,.bx.c,.bx.d{grid-column:span 2;grid-row:auto}.feat{grid-template-columns:repeat(2,1fr)}.lost{flex-direction:column;height:auto}.lost button{height:100px;flex:none}.lost button:hover,.lost button.on{height:230px;flex:none}.mapc{position:relative;top:0;height:380px}.pillnav a:not(.go){display:none}.lr{grid-template-columns:120px 1fr}.filters{position:relative;top:0}}
+</style>
+</head>
+<body>
+<nav class="pillnav glass">
+  <a class="logo" href="#"><i></i>trivara</a>
+  <a href="#feat">Featured</a><a href="#bento">Why Trivara</a><a href="#xp">Explore</a>
+  <div class="themes" id="th"></div><a class="go" href="#land">Host</a>
+</nav>
+
+<header class="scene hero" id="top"><div class="bg" id="herobg"></div>
+  <div class="wrap grid" style="width:100%">
+    <div>
+      <h1>Where will you <span class="sl">get lost</span> next?</h1>
+      <p class="l">Karnataka's finest stays — villas above the clouds, lofts between boulders, a tent on the river. Instant Book where hosts allow it, prices that show their working.</p>
+    </div>
+    <div class="planner glass">
+      <div class="q nu-in"><span aria-hidden="true">⌕</span><input data-q placeholder="Search Coorg, Hampi, Gokarna…" autocomplete="off"></div>
+      <div class="tabs nu-in"><button class="on" data-tab="dates">📅 Dates</button><button data-tab="guests">👥 Guests &amp; pets</button></div>
+      <div class="pane on" id="pane-dates"><div class="quick" id="quick"></div><div id="cal"></div></div>
+      <div class="pane" id="pane-guests"><div id="gs"></div></div>
+      <div class="sum"><span>📅 <b data-dates>Add dates</b></span><span>👥 <b data-gsum>2 guests</b></span><span><b id="n1">8</b> stays</span></div>
+    </div>
+  </div>
+</header>
+
+<section class="s" id="feat"><div class="wrap">
+  <div class="sh"><h2>Featured <em>stays</em></h2><span>Hand-picked by the Trivara team · up to the admin's slot limit</span></div>
+  <div class="feat" id="featrow"></div>
+</div></section>
+
+<div class="wrap"><div class="slot nu-in" aria-hidden="true"></div></div>
+
+<section class="s" id="bento" style="padding-top:20px"><div class="wrap">
+  <div class="sh"><h2>Built like <em>instruments</em>, not brochures.</h2></div>
+  <div class="bento">
+    <div class="bx a dark nu"><div><span class="tag">01 · Guests</span><h3 style="margin-top:12px">Adults, children, infants — and pets.</h3></div>
+      <div><p style="margin-bottom:18px">Infants never count against capacity. Bringing a dog? We only show homes that say yes.</p><div class="big">+ − <span style="font-size:40px">🐾</span></div></div></div>
+    <div class="bx b nu"><div><span class="tag">02 · Pricing</span><h3 style="margin-top:8px">Every rupee <em>itemised.</em></h3></div>
+      <div class="mini"><div><span>₹8,400 × 3 nights</span><span>₹25,200</span></div><div><span>First-stay offer · 10%</span><span>−₹2,520</span></div><div class="t"><span>Total</span><span>₹24,235</span></div></div></div>
+    <div class="bx c nu"><span class="tag">03 · Booking</span><div><h3>Instant Book <em>or</em> Request.</h3><p style="margin-top:8px">Hosts choose per listing. You always see which, before you pay.</p></div></div>
+    <div class="bx d nu"><span class="tag">04 · Trust</span><div class="big" style="font-size:64px">✓</div><p>Verified hosts</p></div>
+    <div class="bx b nu"><span class="tag">05 · Reviews</span><div class="mini"><div><span>Cleanliness</span><span class="t">4.9</span></div><div><span>Accuracy</span><span class="t">4.8</span></div><div><span>Communication</span><span class="t">5.0</span></div><div><span>Value · Location</span><span class="t">4.6 · 4.9</span></div></div></div>
+    <div class="bx c nu" style="grid-column:span 3"><div style="display:flex;justify-content:space-between"><span class="tag">06 · Planner</span><span style="display:flex;gap:6px"><span class="kbd">Dates</span><span class="kbd">Guests</span><span class="kbd">Pets</span></span></div><h3>Plan it in one place. <em>No pop-ups.</em></h3><p>Pick dates, set guests and pets, and watch results update live.</p></div>
+  </div>
+</div></section>
+
+<section class="s" style="padding-top:20px"><div class="wrap">
+  <div class="sh"><h2>Popular <em>destinations</em></h2><span>Hover to explore · click to filter the map</span></div>
+  <div class="lost" id="lostrow"></div>
+</div></section>
+
+<section class="s" id="xp" style="padding-top:20px"><div class="wrap">
+  <div class="sh"><h2>Every stay, <em>on the map</em></h2><span id="xc">8 stays</span></div>
+  <div class="xp">
+    <div>
+      <div class="filters nu"><div class="row" id="chips"></div>
+        <div class="row"><b class="ui" style="font-size:13px">Up to</b><input type="range" data-price min="2000" max="12000" step="500" value="12000"><b class="ui" data-price-out style="font-size:14px">₹12,000+</b><span style="flex:1"></span>
+        <select data-sort aria-label="Sort"><option value="rec">Recommended</option><option value="lo">Price: low → high</option><option value="hi">Price: high → low</option><option value="top">Top rated</option><option value="new">Newest</option></select></div></div>
+      <div class="list" id="list"></div>
+    </div>
+    <div class="mapc nu"><div class="map" id="map"></div></div>
+  </div>
+</div></section>
+
+<section class="land" id="land"><div class="bg" id="landbg"></div><div class="slab"><h2>Your land. <em>Your terms.</em></h2><p>Tiered commission, per-date pricing, blackout dates and payouts you can follow.</p><button class="pill">Start hosting →</button></div></section>
+
+<footer><div class="wrap">trivara · considered stays across Karnataka · <i>mock design, not live</i></div></footer>
+
+<nav class="dock nu" aria-label="Quick nav">
+  <a href="#top" class="on"><svg viewBox="0 0 24 24"><path d="M3 11l9-8 9 8v10H3z"/></svg>Home</a>
+  <a href="#xp"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="M21 21l-4.3-4.3"/></svg>Explore</a>
+  <a href="#feat"><svg viewBox="0 0 24 24"><path d="M20 12v8H4v-8M2 7h20v5H2zM12 22V7M12 7S10 2 7 3s-1 4 5 4zM12 7s2-5 5-4 1 4-5 4z"/></svg>Featured</a>
+  <a href="#xp"><svg viewBox="0 0 24 24"><path d="M12 21s-7-4.6-9.5-9A5.5 5.5 0 0 1 12 6a5.5 5.5 0 0 1 9.5 6C19 16.4 12 21 12 21Z"/></svg>Saved<em data-saved-n>0</em></a>
+</nav>
+<div class="mockbar"><a href="index.html">← All mocks</a><span>· 5 Voyage</span></div>
+
+<script src="shared/shared.js"></script>
+<script>
+const {$,$$,inr,L,DESTS,S,art,heart,filtered}=TV;
+TV.initThemes('voyage');
+$$('[data-saved-n]').forEach(n=>n.textContent=TV.saved.size);
+const z=n=>String(n).padStart(2,'0');
+$('#herobg').style.backgroundImage=art(L[0],2,1600,900);
+$('#landbg').style.backgroundImage=art(L[7],1,1600,900);
+
+/* planner */
+TV.rangeCal($('#cal'),1);TV.bindGuests($('#gs'));
+$$('[data-tab]').forEach(b=>b.onclick=()=>{$$('[data-tab]').forEach(x=>x.classList.toggle('on',x===b));$$('.pane').forEach(p=>p.classList.toggle('on',p.id=='pane-'+b.dataset.tab))});
+$('#quick').innerHTML=['This weekend','Next weekend','+3 nights'].map((t,i)=>`<button class="chip" data-qk="${i}">${t}</button>`).join('');
+$('#quick').onclick=e=>{const b=e.target.closest('[data-qk]');if(!b)return;const s=[new Date(2026,9,9),new Date(2026,9,23),new Date(2026,9,19)][b.dataset.qk],e2=new Date(s);e2.setDate(s.getDate()+(b.dataset.qk==2?3:2));S.range={s,e:e2};TV.rangeCal($('#cal'),1);TV.sync()};
+
+/* featured stays (admin-curated is_featured, capped by featured_stays_max_slots) */
+$('#featrow').innerHTML=L.filter(l=>l.feat).slice(0,5).map(l=>`<article class="fc nu" data-open="${l.id}"><div class="im" style="background-image:${art(l)}">${heart(l.id)}<span class="pr">${inr(l.price)}</span></div><div class="bd"><h4>${l.t}</h4><div>${l.city} · ★ ${l.r}</div></div></article>`).join('');
+
+/* destinations */
+$('#lostrow').innerHTML=DESTS.map((d,i)=>{const l=L.find(x=>x.city==d.id)||L[0];return `<button data-dest="${d.id}"><div class="im" style="background-image:${art(l,i%5,900,1200)}"></div><div class="t"><b>${d.id}</b><span>${L.filter(x=>x.city==d.id).length} stay${L.filter(x=>x.city==d.id).length==1?'':'s'}</span></div></button>`}).join('');
+
+/* explore */
+$('#chips').innerHTML=[['instant','⚡ Instant Book'],['pets','🐾 Pets ok'],['pool','Pool'],['wifi','Wifi'],['workspace','Workspace'],['stepfree','♿ Step-free'],['beach','Beach']].map(([k,n])=>`<button class="chip" data-f="${k}">${n}</button>`).join('');
+function draw(){const r=filtered();$('#list').innerHTML=r.length?r.map(l=>`<article class="lr nu" data-id="${l.id}" data-open="${l.id}"><div class="im" style="background-image:${art(l)}">${heart(l.id)}</div><div><h4>${l.t}</h4><div class="m">${l.loc} · ${l.type} · ${l.g} guests · ★ ${l.r} (${l.rc})</div><div class="tags"><span class="${l.instant?'z':''}">${l.instant?'⚡ Instant Book':'Request to Book'}</span>${l.pets?'<span>🐾 Pets</span>':''}<span>${l.pol} cancel</span></div><div class="p">${inr(l.price)} <small>/ night</small></div></div></article>`).join(''):'<div class="nu" style="padding:50px;text-align:center">Nothing here yet. Try fewer filters.</div>';
+$('#xc').textContent=r.length+' stays';$('#n1').textContent=r.length}
+TV.onChange(draw);TV.bindFilters();TV.mountMap($('#map'),id=>TV.detail(id));draw();
+</script>
+</body>
+</html>

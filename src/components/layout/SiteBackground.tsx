@@ -1,5 +1,6 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { siteSettingsService } from '@/services/siteSettingsService';
+import { getStoredTheme, THEME_CHANGE_EVENT, ThemeId } from '@/lib/themes';
 
 const STYLE_TAG_ID = 'site-background-override';
 
@@ -15,10 +16,30 @@ const STYLE_TAG_ID = 'site-background-override';
  * of those wrappers directly - no per-page edits needed, since they all
  * already use that same class. Renders nothing itself; mount once near the
  * root (see App.tsx).
+ *
+ * The visitor-selectable colour schemes (src/lib/themes.ts) own the page
+ * background, so this admin override only applies while the "paper" scheme
+ * (the brand's original warm canvas) is active - otherwise it would paint a
+ * custom backdrop under a scheme whose text colours it knows nothing about.
  */
 export function SiteBackground() {
+  const [theme, setTheme] = useState<ThemeId>(() => getStoredTheme());
+
+  useEffect(() => {
+    const onChange = (e: Event) => setTheme((e as CustomEvent<ThemeId>).detail);
+    window.addEventListener(THEME_CHANGE_EVENT, onChange);
+    return () => window.removeEventListener(THEME_CHANGE_EVENT, onChange);
+  }, []);
+
   useEffect(() => {
     let cancelled = false;
+    const existing = document.getElementById(STYLE_TAG_ID);
+
+    if (theme !== 'paper') {
+      existing?.remove();
+      return;
+    }
+
     siteSettingsService.getSiteBackground().then((css) => {
       if (cancelled || !css) return;
 
@@ -39,7 +60,7 @@ export function SiteBackground() {
       console.error('Error loading site background setting:', error);
     });
     return () => { cancelled = true; };
-  }, []);
+  }, [theme]);
 
   return null;
 }

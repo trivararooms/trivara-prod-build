@@ -1,12 +1,9 @@
 import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
-import { Heart, Star } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Star } from 'lucide-react';
 import { Listing } from '@/types';
-import { Button } from '@/components/ui/button';
 import { formatINR } from '@/lib/utils';
-import { useAuth } from '@/hooks/useAuth';
-import { useToast } from '@/hooks/use-toast';
-import { useSavedListingIds, useToggleSavedListing } from '@/hooks/useSavedListingIds';
+import { SaveButton } from '@/components/listings/SaveButton';
 
 interface ListingCardProps {
   listing: Listing;
@@ -14,30 +11,7 @@ interface ListingCardProps {
 }
 
 export function ListingCard({ listing, showSaveButton = true }: ListingCardProps) {
-  const { user } = useAuth();
-  const { toast } = useToast();
-  const navigate = useNavigate();
   const [currentImageIndex, setCurrentImageIndex] = useState(0);
-
-  const savedIdsQuery = useSavedListingIds(user?.id);
-  const toggleSaved = useToggleSavedListing(user?.id);
-  const isSaved = savedIdsQuery.data?.has(listing.id) ?? false;
-
-  const handleSave = (e: React.MouseEvent) => {
-    e.preventDefault();
-    e.stopPropagation();
-
-    if (!user) {
-      toast({
-        title: 'Sign in to save listings',
-        description: 'Create an account or log in to save your favorite stays.',
-      });
-      navigate('/login');
-      return;
-    }
-
-    toggleSaved.mutate({ listingId: listing.id, isSaved });
-  };
 
   const nextImage = (e: React.MouseEvent) => {
     e.preventDefault();
@@ -52,49 +26,49 @@ export function ListingCard({ listing, showSaveButton = true }: ListingCardProps
   };
 
   return (
-    <Link to={`/listing/${listing.id}`} className="group block">
+    <Link
+      to={`/listing/${listing.id}`}
+      className="nu group block overflow-hidden rounded-[26px] p-2 transition-transform duration-300 ease-out hover:-translate-y-1.5"
+    >
       {/* Image Container */}
-      <div className="relative aspect-[4/3] overflow-hidden bg-surface-0 mb-3">
+      <div className="relative mb-3 aspect-[4/3] overflow-hidden rounded-[20px] bg-surface-2">
         <img
           src={listing.photos[currentImageIndex]}
           alt={listing.title}
           loading="lazy"
-          className="w-full h-full object-cover group-hover:scale-105 trivara-transition duration-500"
+          className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
         />
-        
-        {/* Save Button */}
-        {showSaveButton && (
-          <Button
-            variant="ghost"
-            size="icon"
-            className="absolute top-3 right-3 h-8 w-8 rounded-full bg-surface-0/50 hover:bg-surface-0/80 backdrop-blur-sm"
-            onClick={handleSave}
-            disabled={toggleSaved.isPending}
-          >
-            <Heart
-              className={`h-4 w-4 ${isSaved ? 'fill-foreground' : ''}`}
-            />
-          </Button>
+
+        {showSaveButton && <SaveButton listingId={listing.id} className="absolute right-3 top-3" />}
+
+        {listing.instantBook && (
+          <span className="absolute bottom-3 left-3 rounded-full bg-background/80 px-3 py-1 font-ui text-[11px] font-bold backdrop-blur-md">
+            ⚡ Instant
+          </span>
         )}
 
         {/* Image Navigation */}
         {listing.photos.length > 1 && (
           <>
             <button
+              type="button"
+              aria-label="Previous photo"
               onClick={prevImage}
-              className="absolute left-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-surface-0/80 hover:bg-surface-0 flex items-center justify-center opacity-0 group-hover:opacity-100 trivara-transition"
+              className="absolute left-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-background/80 opacity-0 trivara-transition hover:bg-background group-hover:opacity-100"
             >
               <span className="text-sm">‹</span>
             </button>
             <button
+              type="button"
+              aria-label="Next photo"
               onClick={nextImage}
-              className="absolute right-2 top-1/2 -translate-y-1/2 h-7 w-7 rounded-full bg-surface-0/80 hover:bg-surface-0 flex items-center justify-center opacity-0 group-hover:opacity-100 trivara-transition"
+              className="absolute right-2 top-1/2 flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full bg-background/80 opacity-0 trivara-transition hover:bg-background group-hover:opacity-100"
             >
               <span className="text-sm">›</span>
             </button>
 
             {/* Dots */}
-            <div className="absolute bottom-3 left-1/2 -translate-x-1/2 flex gap-1">
+            <div className="absolute bottom-3 right-3 flex gap-1">
               {listing.photos.slice(0, 5).map((_, idx) => (
                 <div
                   key={idx}
@@ -109,21 +83,21 @@ export function ListingCard({ listing, showSaveButton = true }: ListingCardProps
       </div>
 
       {/* Content */}
-      <div className="space-y-1">
+      <div className="space-y-1 px-2 pb-2">
         <div className="flex items-start justify-between gap-2">
-          <h3 className="font-medium text-sm line-clamp-1">{listing.location.city}, {listing.location.state}</h3>
-          <div className="flex items-center gap-1 text-sm flex-shrink-0">
+          <h3 className="line-clamp-1 font-display text-2xl leading-none">{listing.title}</h3>
+          <div className="flex flex-shrink-0 items-center gap-1 text-sm">
             <Star className="h-3.5 w-3.5 fill-accent text-accent" />
             <span>{listing.rating.toFixed(2)}</span>
           </div>
         </div>
-        <p className="text-text-secondary text-sm line-clamp-1">{listing.title}</p>
-        <p className="text-text-meta text-sm">
+        <p className="line-clamp-1 text-sm text-text-secondary">{listing.location.city}, {listing.location.state}</p>
+        <p className="text-sm text-text-meta">
           {listing.bedrooms} {listing.bedrooms === 1 ? 'bedroom' : 'bedrooms'} · {listing.beds} {listing.beds === 1 ? 'bed' : 'beds'}
         </p>
         <p className="pt-1">
-          <span className="font-semibold">{formatINR(listing.pricePerNight)}</span>
-          <span className="text-text-secondary text-sm"> night</span>
+          <span className="font-ui font-extrabold">{formatINR(listing.pricePerNight)}</span>
+          <span className="text-sm text-text-secondary"> night</span>
         </p>
       </div>
     </Link>

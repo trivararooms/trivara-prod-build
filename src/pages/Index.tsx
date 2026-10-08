@@ -1,13 +1,19 @@
+import { useState, useEffect, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { ArrowRight } from 'lucide-react';
+import { useQuery, keepPreviousData } from '@tanstack/react-query';
 import { SEO } from '@/components/SEO';
-import { SearchBar } from '@/components/search/SearchBar';
+import { HeroPlanner } from '@/components/home/HeroPlanner';
+import { ExploreSection } from '@/components/home/ExploreSection';
+import { DestinationPanels } from '@/components/home/DestinationPanels';
+import { InstrumentsBento } from '@/components/home/InstrumentsBento';
 import { FeaturedListingCard } from '@/components/listings/FeaturedListingCard';
 import { EditableText } from '@/components/content/EditableText';
 import { listingService } from '@/services/listingService';
 import { siteSettingsService } from '@/services/siteSettingsService';
-import { Button } from '@/components/ui/button';
-import { useState, useEffect } from 'react';
+import { generatedArtUrl } from '@/lib/generatedArt';
+import { INITIAL_HOME_SEARCH, HomeSearchState, buildSearchFilters, buildSearchParams } from '@/lib/homeSearch';
+import { useReveal } from '@/hooks/useReveal';
 import { Listing } from '@/types';
 
 type Destination = Awaited<ReturnType<typeof listingService.getPopularDestinations>>[number];
@@ -18,23 +24,31 @@ type Destination = Awaited<ReturnType<typeof listingService.getPopularDestinatio
 // identical from the hero header down through the footer.
 const SIDE_PAD = 'px-[clamp(20px,4vw,48px)]';
 
+const FEATURED_COUNT = 5;
+const EXPLORE_PAGE_SIZE = 20;
+
 export default function Index() {
   const [featuredListings, setFeaturedListings] = useState<Listing[]>([]);
   const [destinations, setDestinations] = useState<Destination[]>([]);
   const [heroImage, setHeroImage] = useState<string | null>(null);
-  const [heroOverlay, setHeroOverlay] = useState(65);
+  const [heroOverlay, setHeroOverlay] = useState(35);
   const [hostCtaImage, setHostCtaImage] = useState<string | null>(null);
-  const [hostCtaOverlay, setHostCtaOverlay] = useState(80);
+  const [hostCtaOverlay, setHostCtaOverlay] = useState(40);
   const [collectionSlots, setCollectionSlots] = useState<{ image: string | null; link: string | null }[]>([]);
   const [banner75, setBanner75] = useState<{ image: string | null; link: string | null }>({ image: null, link: null });
   const [bannerHero, setBannerHero] = useState<{ image: string | null; link: string | null }>({ image: null, link: null });
-  const [loading, setLoading] = useState(true);
+  const [dataReady, setDataReady] = useState(false);
+  const [search, setSearch] = useState<HomeSearchState>(INITIAL_HOME_SEARCH);
+
+  const patchSearch = useCallback((patch: Partial<HomeSearchState>) => {
+    setSearch((prev) => ({ ...prev, ...patch }));
+  }, []);
 
   useEffect(() => {
     const fetchData = async () => {
       try {
         const [featured, popularDestinations, heroBackground, hostBackground, heroOverlaySetting, hostCtaOverlaySetting, collections, banner75Data, bannerHeroData] = await Promise.all([
-          listingService.getFeatured(3),
+          listingService.getFeatured(FEATURED_COUNT),
           listingService.getPopularDestinations(),
           siteSettingsService.getHeroBackgroundImageUrl(),
           siteSettingsService.getHostCtaBackgroundImageUrl(),
@@ -59,22 +73,34 @@ export default function Index() {
       } catch (error) {
         console.error('Error fetching data:', error);
       } finally {
-        setLoading(false);
+        setDataReady(true);
       }
     };
 
     fetchData();
   }, []);
 
-  if (loading) {
-    return (
-      <div className="min-h-screen bg-background">
-        <div className="container py-8 flex items-center justify-center">
-          <p>Loading...</p>
-        </div>
-      </div>
-    );
-  }
+  // Live results for the planner + controls (no search button - every
+  // change re-queries). Same service the /search page uses, so the two can
+  // never disagree about what matches.
+  const filters = useMemo(() => buildSearchFilters(search), [search]);
+  const searchQuery = useQuery({
+    queryKey: ['home-search', filters],
+    queryFn: () => listingService.searchListings(filters, 1, EXPLORE_PAGE_SIZE),
+    placeholderData: keepPreviousData,
+  });
+  const results = searchQuery.data?.listings ?? [];
+  const resultTotal = searchQuery.data?.total ?? null;
+  const resultsQueryString = useMemo(() => buildSearchParams(search), [search]);
+
+  useReveal([dataReady, featuredListings.length, destinations.length, results.length]);
+
+  const heroBackgroundImage = heroImage
+    ? `linear-gradient(rgba(0,0,0,${heroOverlay / 100}), rgba(0,0,0,${heroOverlay / 100})), url(${heroImage})`
+    : generatedArtUrl({ hue: 150, variant: 2 });
+  const hostBackgroundImage = hostCtaImage
+    ? `linear-gradient(rgba(0,0,0,${hostCtaOverlay / 100}), rgba(0,0,0,${hostCtaOverlay / 100})), url(${hostCtaImage})`
+    : generatedArtUrl({ hue: 170, variant: 1 });
 
   return (
     <div className="min-h-screen bg-background">
@@ -89,197 +115,178 @@ export default function Index() {
           url: typeof window !== 'undefined' ? window.location.origin : undefined,
         }}
       />
-      {/* Hero - the common <Header /> (rendered once in App.tsx, sticky and
-          transparent) still reserves its own 5rem of flow height above this
-          section (so nothing on any other page is ever covered/unclickable
-          behind it - see Header.tsx), but -mt-20 here pulls this section's
-          own box up underneath that reserved space, so its background image
-          extends behind the header instead of stopping below it. pt-20 on
-          the content wrapper below keeps the actual hero text roughly where
-          it was before, rather than drifting up into the header's row. */}
-      <section className="relative -mt-20 min-h-screen flex flex-col overflow-hidden">
-        <div
-          className="absolute inset-0"
-          style={{
-            // With an admin-uploaded photo: a flat, single-tone dark tint
-            // (adjustable in Admin Settings > Branding), pinned to
-            // --foreground rather than --surface-0 - foreground is the one
-            // token guaranteed to stay near-black across themes, so the
-            // photo always reads through a dark scrim regardless of which
-            // way the site palette is currently set. With no photo: the one
-            // continuous diagonal blend between the two locked palette hues
-            // that's the actual brand background.
-            backgroundImage: heroImage
-              ? `linear-gradient(hsl(var(--foreground) / ${heroOverlay / 100}), hsl(var(--foreground) / ${heroOverlay / 100})), url(${heroImage})`
-              : `linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%)`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        />
 
-        <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6 pt-20">
-          <EditableText
-            settingKey="content_hero_eyebrow"
-            fallback="wander well"
-            as="p"
-            className="font-script italic text-2xl text-accent mb-4 animate-fade-in"
-          />
-          <EditableText
-            settingKey="content_hero_heading"
-            fallback="Find your place"
-            as="h1"
-            className="text-white mb-8 animate-fade-in"
-          />
-          <EditableText
-            settingKey="content_hero_subtitle"
-            fallback="Discover extraordinary stays around the world"
-            as="p"
-            className="text-xl text-white/70 animate-fade-in"
-            style={{ animationDelay: '0.1s' }}
-          />
+      {/* Hero - the common <Header /> (rendered once in App.tsx, sticky)
+          reserves its own 5rem of flow height above this section (so
+          nothing on any other page is ever covered/unclickable behind it -
+          see Header.tsx), but -mt-20 here pulls this section's own box up
+          underneath that reserved space, so the cinematic backdrop extends
+          behind the floating pill. */}
+      <section className="relative -mt-20 flex min-h-screen flex-col justify-center overflow-hidden bg-black pb-16 pt-28 text-white">
+        <div className="scene-bg" style={{ backgroundImage: heroBackgroundImage }} />
+        <div className="scene-scrim" />
 
-          <div className="w-full max-w-[1100px] mx-auto mt-16 animate-fade-in" style={{ animationDelay: '0.2s' }}>
-            <SearchBar variant="hero" />
+        <div className={`relative z-10 grid w-full items-end gap-9 ${SIDE_PAD} lg:grid-cols-[1.15fr_.85fr]`}>
+          <div>
+            <h1 className="animate-fade-in text-[clamp(3.4rem,8.4vw,8.75rem)] font-light leading-[0.9] text-white">
+              <EditableText settingKey="content_hero_title_a" fallback="Where will you" as="span" />{' '}
+              <span className="relative inline-block isolate px-[0.14em] font-medium italic text-accent-foreground">
+                <span aria-hidden="true" className="absolute inset-x-0 bottom-[0.04em] top-[0.1em] -z-10 -rotate-[1.5deg] -skew-x-[9deg] rounded-[0.12em] bg-accent" />
+                <EditableText settingKey="content_hero_title_b" fallback="get lost" as="span" />
+              </span>{' '}
+              <EditableText settingKey="content_hero_title_c" fallback="next?" as="span" />
+            </h1>
+            <EditableText
+              settingKey="content_hero_subtitle"
+              fallback="Karnataka's finest stays — villas above the clouds, lofts between boulders, a tent on the river. Instant Book where hosts allow it, prices that show their working."
+              as="p"
+              className="mt-[22px] max-w-[42ch] animate-fade-in text-lg text-white/85"
+              style={{ animationDelay: '0.1s' }}
+            />
+          </div>
+
+          <div className="animate-fade-in" style={{ animationDelay: '0.2s' }}>
+            <HeroPlanner state={search} onChange={patchSearch} resultCount={resultTotal} />
           </div>
         </div>
       </section>
 
-      {/* Popular Destinations - tight bottom padding so the cards sit close
-          to "Featured stays" below, instead of a big gap between sections. */}
-      {destinations.length > 0 && (
-        <section className="pt-24 md:pt-32 pb-4 md:pb-6">
-          <div className={`w-full ${SIDE_PAD}`}>
-            <EditableText
-              settingKey="content_destinations_heading"
-              fallback="Popular destinations"
-              as="h2"
-              className="text-[27px] sm:text-[42px] lg:text-[55px] font-display font-medium text-center mb-10"
-            />
-
-            <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-4">
-              {destinations.map((dest) => (
-                <Link
-                  key={dest.city}
-                  to={`/search?location=${encodeURIComponent(dest.city)}`}
-                  className="group relative aspect-[4/5] overflow-hidden bg-surface-2"
-                >
-                  <img
-                    src={dest.image}
-                    alt={dest.city}
-                    loading="lazy"
-                    className="w-full h-full object-cover group-hover:scale-105 trivara-transition duration-500"
-                  />
-                  {/* Dark scrim pinned to --foreground (always near-black,
-                      unlike --surface-0 which now flips with the palette)
-                      so the caption stays legible over any photo. */}
-                  <div className="absolute inset-0 bg-gradient-to-t from-foreground/80 via-foreground/5 to-transparent" />
-                  <div className="absolute bottom-4 left-4 right-4">
-                    <h3 className="font-bold text-xs uppercase tracking-wide text-white">{dest.city}</h3>
-                    <p className="text-[11px] text-white/70 mt-0.5">{dest.listings} {dest.listings === 1 ? 'stay' : 'stays'}</p>
-                  </div>
-                </Link>
-              ))}
-            </div>
-          </div>
-        </section>
-      )}
-
-      {/* 75% banner - full-bleed image+link, same width as Hero, 75% of
-          Hero's height. Admin-configurable (Admin Settings > Branding);
-          renders nothing if no image is set. */}
-      {banner75.image && (
-        banner75.link ? (
-          <a href={banner75.link} className="block h-[75vh] overflow-hidden">
-            <img src={banner75.image} alt="" loading="lazy" className="w-full h-full object-cover" />
-          </a>
-        ) : (
-          <div className="h-[75vh] overflow-hidden">
-            <img src={banner75.image} alt="" loading="lazy" className="w-full h-full object-cover" />
-          </div>
-        )
-      )}
-
-      {/* Featured Listings - tight top padding to match the destinations
-          section's tight bottom padding above, so the gap between the two
-          sections stays minimal. */}
-      <section className="pt-4 md:pt-6 pb-16 md:pb-20">
+      {/* Featured stays - admin-curated (is_featured, capped by
+          featured_stays_max_slots), five across. */}
+      <section id="featured" className="scroll-mt-24 py-20 md:py-24">
         <div className={`w-full ${SIDE_PAD}`}>
-          <div className="grid grid-cols-[1fr_auto_1fr] items-center mb-10 gap-4">
-            <div />
+          <div className="rv mb-10 flex items-end justify-between gap-4">
             <EditableText
               settingKey="content_featured_heading"
               fallback="Featured stays"
               as="h2"
-              className="text-[42px] sm:text-[64px] lg:text-[84px] font-display font-medium text-center leading-none"
+              className="text-[42px] font-light leading-none sm:text-[64px] lg:text-[84px]"
             />
-            <Link to="/search" aria-label="Explore more" className="justify-self-end text-text-meta hover:text-foreground trivara-transition">
+            <Link to="/search" aria-label="Explore more" className="text-text-meta trivara-transition hover:text-foreground">
               <ArrowRight className="h-6 w-6" />
             </Link>
           </div>
 
           {featuredListings.length === 0 ? (
-            <p className="text-text-secondary py-12 text-center">No featured stays yet - check back soon.</p>
+            <p className="py-12 text-center text-text-secondary">
+              {dataReady ? 'No featured stays yet - check back soon.' : ' '}
+            </p>
           ) : (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6">
-              {featuredListings.map((listing) => (
-                <FeaturedListingCard key={listing.id} listing={listing} />
+            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
+              {featuredListings.map((listing, i) => (
+                <div key={listing.id} className="rv" style={{ transitionDelay: `${i * 60}ms` }}>
+                  <FeaturedListingCard listing={listing} />
+                </div>
               ))}
             </div>
           )}
         </div>
       </section>
 
-      {/* Become a Host CTA - full-bleed section sized and structured just
-          like the Hero above: the background image spans edge-to-edge
-          (no bordered/rounded card floating inside the page margins) and
-          the section fills the viewport the same way, only `.container`-
-          style horizontal padding is applied to the actual content. */}
-      <section className="relative min-h-screen flex flex-col overflow-hidden">
-        <div
-          className="absolute inset-0"
-          style={{
-            // Flat single-tone dark tint (adjustable in Admin Settings >
-            // Branding), pinned to --foreground same as the hero above - see
-            // that section's comment for why --surface-0 no longer works
-            // here now that it tracks the light canvas instead of the dark one.
-            backgroundImage: hostCtaImage
-              ? `linear-gradient(hsl(var(--foreground) / ${hostCtaOverlay / 100}), hsl(var(--foreground) / ${hostCtaOverlay / 100})), url(${hostCtaImage})`
-              : `linear-gradient(135deg, hsl(var(--primary)) 0%, hsl(var(--accent)) 100%)`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-          }}
-        />
+      {/* Image band - admin-configurable (Admin Settings > Branding, the
+          "75% banner" slot): a full-bleed image+link when set, otherwise a
+          calm inset space the same size. */}
+      {banner75.image ? (
+        banner75.link ? (
+          <a href={banner75.link} className="block h-[75vh] overflow-hidden">
+            <img src={banner75.image} alt="" loading="lazy" className="h-full w-full object-cover" />
+          </a>
+        ) : (
+          <div className="h-[75vh] overflow-hidden">
+            <img src={banner75.image} alt="" loading="lazy" className="h-full w-full object-cover" />
+          </div>
+        )
+      ) : (
+        <div className={`w-full ${SIDE_PAD}`}>
+          <div className="nu-in h-60" aria-hidden="true" />
+        </div>
+      )}
 
-        <div className="relative z-10 flex-1 flex flex-col items-center justify-center text-center px-6">
-          <div className="max-w-2xl">
-            <EditableText
-              settingKey="content_host_ribbon"
-              fallback="share & earn"
-              as="span"
-              className="inline-block font-morderline text-xs uppercase tracking-wide bg-accent text-accent-foreground px-5 py-2 rounded-full mb-10"
-            />
+      {/* Built like instruments, not brochures. */}
+      <section id="why" className="scroll-mt-24 py-20 md:py-24">
+        <div className={`w-full ${SIDE_PAD}`}>
+          <h2 className="rv mb-10 max-w-[18ch] text-[40px] font-light leading-none sm:text-6xl lg:text-7xl">
+            Built like <em className="text-text-secondary">instruments</em>, not brochures.
+          </h2>
+          <InstrumentsBento />
+        </div>
+      </section>
+
+      {/* Popular destinations - click one to filter the live results below. */}
+      {destinations.length > 0 && (
+        <section id="destinations" className="scroll-mt-24 pb-20 md:pb-24">
+          <div className={`w-full ${SIDE_PAD}`}>
+            <div className="rv mb-8 flex flex-wrap items-end justify-between gap-3">
+              <EditableText
+                settingKey="content_destinations_heading"
+                fallback="Popular destinations"
+                as="h2"
+                className="text-[40px] font-light leading-none sm:text-6xl lg:text-7xl"
+              />
+              <span className="text-sm text-text-secondary">Hover to explore · click to filter the map</span>
+            </div>
+            <div className="rv">
+              <DestinationPanels
+                destinations={destinations}
+                activeCity={search.location}
+                onSelect={(city) => {
+                  patchSearch({ location: city });
+                  if (city) document.getElementById('explore')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }}
+              />
+            </div>
+          </div>
+        </section>
+      )}
+
+      {/* Every stay, on the map - live results */}
+      <section id="explore" className="scroll-mt-24 pb-20 md:pb-24">
+        <div className={`w-full ${SIDE_PAD}`}>
+          <div className="rv mb-8 flex flex-wrap items-end justify-between gap-3">
+            <h2 className="text-[40px] font-light leading-none sm:text-6xl lg:text-7xl">
+              Every stay, <em className="text-text-secondary">on the map</em>
+            </h2>
+            <span className="text-sm text-text-secondary">
+              {resultTotal === null ? '…' : resultTotal} {resultTotal === 1 ? 'stay' : 'stays'}
+            </span>
+          </div>
+          <ExploreSection
+            state={search}
+            onChange={patchSearch}
+            listings={results}
+            total={resultTotal ?? 0}
+            loading={searchQuery.isPending}
+            searchQuery={resultsQueryString}
+          />
+        </div>
+      </section>
+
+      {/* Host CTA - full-bleed cinematic section with an accent slab. */}
+      <section className="relative flex min-h-[90vh] items-center overflow-hidden bg-black text-white">
+        <div className="scene-bg" style={{ backgroundImage: hostBackgroundImage }} />
+        <div className="absolute inset-0 bg-gradient-to-r from-black/75 to-black/5" />
+        <div className={`relative z-10 w-full ${SIDE_PAD}`}>
+          <div
+            className="rv max-w-[640px] rounded-[10px] bg-accent py-14 pl-[52px] pr-[60px] text-accent-foreground"
+            style={{ clipPath: 'polygon(0 6%, 100% 0, 100% 94%, 0 100%)' }}
+          >
             <EditableText
               settingKey="content_host_heading"
-              fallback="Share your space"
+              fallback="Your land. Your terms."
               as="h2"
-              className="text-4xl md:text-6xl font-display font-medium text-white mb-8"
+              className="mb-4 text-[clamp(2.75rem,6vw,5.75rem)] font-light leading-[0.92]"
             />
             <EditableText
               settingKey="content_host_subtitle"
-              fallback="Join hosts who earn by sharing their homes with travelers worldwide"
+              fallback="Tiered commission, per-date pricing, blackout dates and payouts you can follow."
               as="p"
-              className="text-white/70 mb-4 text-xl"
+              className="mb-6 max-w-[42ch] font-medium"
             />
-            <EditableText
-              settingKey="content_host_aside"
-              fallback="your home, your rules"
-              as="p"
-              className="font-bastliga italic text-3xl text-accent mb-12"
-            />
-            <Link to="/host">
-              <Button className="trivara-btn-primary rounded-full px-12 py-7 text-base uppercase tracking-wide font-bold">
-                <EditableText settingKey="content_host_button" fallback="Become a Host" as="span" />
-              </Button>
+            <Link
+              to="/host"
+              className="inline-flex rounded-full bg-accent-foreground px-8 py-4 font-ui text-sm font-bold text-accent transition-all duration-200 hover:-translate-y-0.5"
+            >
+              <EditableText settingKey="content_host_button" fallback="Start hosting →" as="span" />
             </Link>
           </div>
         </div>
@@ -290,18 +297,18 @@ export default function Index() {
           with no image renders nothing; the whole section is hidden if
           none of the three are set. */}
       {collectionSlots.some((slot) => slot.image) && (
-        <section className="pt-16 md:pt-20 pb-16 md:pb-20">
+        <section className="py-16 md:py-20">
           <div className={`w-full ${SIDE_PAD}`}>
-            <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 gap-4 sm:grid-cols-3">
               {collectionSlots
                 .filter((slot): slot is { image: string; link: string | null } => !!slot.image)
                 .map((slot, i) => {
                   const tile = (
-                    <div className="group relative aspect-[3/4] overflow-hidden bg-surface-2">
+                    <div className="nu group relative aspect-[3/4] overflow-hidden rounded-[30px] bg-surface-2">
                       <img
                         src={slot.image}
                         alt=""
-                        className="w-full h-full object-cover group-hover:scale-105 trivara-transition duration-500"
+                        className="h-full w-full object-cover duration-500 trivara-transition group-hover:scale-105"
                       />
                     </div>
                   );
@@ -323,11 +330,11 @@ export default function Index() {
       {bannerHero.image && (
         bannerHero.link ? (
           <a href={bannerHero.link} className="block h-screen overflow-hidden">
-            <img src={bannerHero.image} alt="" loading="lazy" className="w-full h-full object-cover" />
+            <img src={bannerHero.image} alt="" loading="lazy" className="h-full w-full object-cover" />
           </a>
         ) : (
           <div className="h-screen overflow-hidden">
-            <img src={bannerHero.image} alt="" loading="lazy" className="w-full h-full object-cover" />
+            <img src={bannerHero.image} alt="" loading="lazy" className="h-full w-full object-cover" />
           </div>
         )
       )}

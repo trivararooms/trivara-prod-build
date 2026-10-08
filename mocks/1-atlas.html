@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en" data-theme="paper">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trivara Stays — Mock 1 · Atlas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,300;9..144,400;9..144,600&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/shared.css">
+<style>
+/* MOCK 1 · ATLAS — synthesis: AP/Leica/Plum Guide restraint + Apple scale + Linear/Superhuman/Resend keyboard-first
+   + Framer bento/marquee + Impossible Bureau editorial type. Straight corners everywhere (per admin-colour search bar rule). */
+:root{--r:2px;--f-display:'Fraunces',Georgia,serif;--f-body:'Inter',system-ui,sans-serif;--f-mono:'JetBrains Mono',ui-monospace,monospace}
+.wrap{max-width:1360px;margin:0 auto;padding:0 32px}
+.mono{font:11px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink2)}
+nav.top{position:fixed;top:0;left:0;right:0;z-index:50;height:60px;display:flex;align-items:center;backdrop-filter:saturate(1.8) blur(20px);background:color-mix(in srgb,var(--bg) 72%,transparent);border-bottom:1px solid var(--line)}
+nav.top .wrap{display:flex;align-items:center;gap:28px;width:100%}
+.logo{font:600 15px var(--f-display);letter-spacing:.34em;display:flex;align-items:center;gap:10px}
+.logo i{width:9px;height:9px;border-radius:50%;background:var(--accent);box-shadow:0 0 14px var(--glow)}
+nav.top .links{display:flex;gap:22px;font-size:13px;color:var(--ink2);margin-left:12px}
+nav.top .links a:hover{color:var(--ink)}
+nav.top .sp{flex:1}
+.kbd{font:11px var(--f-mono);border:1px solid var(--line);padding:2px 6px;border-radius:3px;color:var(--ink2)}
+.cmdk{display:flex;align-items:center;gap:10px;border:1px solid var(--line);padding:7px 12px;font-size:12px;color:var(--ink2);min-width:210px;justify-content:space-between}
+.cmdk:hover{border-color:var(--ink)}
+.hostlink{font-size:13px;font-weight:500}
+/* HERO */
+.hero{position:relative;min-height:100vh;display:grid;align-items:end;padding:120px 0 64px;overflow:hidden;background:
+  radial-gradient(1000px 520px at 78% 28%,var(--glow),transparent 62%),var(--bg)}
+.dial{position:absolute;right:-8vw;top:50%;width:min(78vw,860px);aspect-ratio:1;transform:translateY(-54%);opacity:.9;pointer-events:none}
+.dial svg{width:100%;height:100%}
+.dial .tk{stroke:var(--ink);opacity:.5}
+.dial .ring{fill:none;stroke:var(--line)}
+.dial .hand{transform-origin:50% 50%;animation:spin 90s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+.dial .dot{fill:var(--accent)}
+.hero h1{font:300 clamp(54px,9.4vw,148px)/.94 var(--f-display);letter-spacing:-.035em;max-width:11ch;font-variation-settings:'opsz' 144}
+.hero h1 em{font-style:italic;font-weight:400;color:var(--ink2)}
+.hero h1 b{display:inline-block;width:.16em;height:.16em;background:var(--accent);border-radius:50%;margin-left:.06em;transform:translateY(-.02em);box-shadow:0 0 40px var(--glow)}
+.hero p.lede{max-width:46ch;margin:28px 0 40px;color:var(--ink2);font-size:18px}
+.hero .meta{position:absolute;top:96px;left:32px;display:flex;gap:28px}
+/* SEARCH — straight, no button, live */
+.search{position:relative;display:grid;grid-template-columns:1.4fr 1.5fr 1.2fr;background:var(--ink);color:var(--bg);max-width:960px;box-shadow:var(--shadow)}
+.search .f{padding:16px 22px;text-align:left;border-right:1px solid color-mix(in srgb,var(--bg) 18%,transparent);transition:background .2s;position:relative}
+.search .f:last-child{border:0}
+.search .f:hover,.search .f.act{background:color-mix(in srgb,var(--bg) 12%,transparent)}
+.search label{display:block;font:10px var(--f-mono);letter-spacing:.14em;text-transform:uppercase;opacity:.6;margin-bottom:3px}
+.search input{width:100%;background:none;border:0;color:inherit;font:500 15px var(--f-body);outline:0}
+.search input::placeholder{color:inherit;opacity:.5}
+.search .v{font-weight:500;font-size:15px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.pop{position:absolute;top:calc(100% + 8px);left:0;background:var(--surface);color:var(--ink);border:1px solid var(--line);box-shadow:var(--shadow);padding:22px;z-index:20;display:none;min-width:320px}
+.pop.open{display:block;animation:fadeIn .2s}
+.pop.dates{width:min(640px,92vw)}
+.pop.gp{right:0;left:auto}
+.live{display:flex;align-items:center;gap:14px;margin-top:18px}
+.live .pulse{width:7px;height:7px;border-radius:50%;background:var(--accent);animation:pl 1.8s infinite}
+@keyframes pl{50%{box-shadow:0 0 0 7px transparent;opacity:.5}}
+/* marquee */
+.mq{border-block:1px solid var(--line);overflow:hidden;background:var(--bg)}
+.mq div{display:flex;gap:56px;width:max-content;padding:22px 0;animation:mq 46s linear infinite}
+.mq:hover div{animation-play-state:paused}
+.mq span{font:italic 300 38px var(--f-display);white-space:nowrap;cursor:pointer;color:var(--ink2);transition:.2s}
+.mq span:hover{color:var(--ink)}
+.mq span small{font:11px var(--f-mono);font-style:normal;margin-left:10px;letter-spacing:.1em;color:var(--accent)}
+@keyframes mq{to{transform:translateX(-50%)}}
+section{padding:120px 0}
+.sh{display:flex;justify-content:space-between;align-items:end;margin-bottom:44px;gap:20px}
+.sh h2{font:300 clamp(36px,5vw,68px)/1 var(--f-display);letter-spacing:-.025em;max-width:16ch}
+.sh h2 em{font-style:italic;color:var(--ink2)}
+/* featured: 5 in a row */
+.feat{display:grid;grid-template-columns:repeat(5,1fr);gap:14px}
+.fc{position:relative;aspect-ratio:3/4.4;overflow:hidden;cursor:pointer;background:var(--bg2)}
+.fc .ph{position:absolute;inset:0;background-size:cover;background-position:center;transition:transform 1.2s cubic-bezier(.2,.7,.2,1)}
+.fc:hover .ph{transform:scale(1.07)}
+.fc .tx{position:absolute;left:0;right:0;bottom:0;padding:16px;color:#fff;background:linear-gradient(transparent,rgba(0,0,0,.62) 70%)}
+.fc .tx h3{font:400 22px/1.1 var(--f-display)}
+.fc .tx .mono{color:rgba(255,255,255,.75);margin-top:6px}
+.fc .no{position:absolute;top:14px;left:14px;font:11px var(--f-mono);color:#fff;mix-blend-mode:difference}
+.fc .heart{position:absolute;top:10px;right:10px}
+.band{height:260px;margin:0 -0px;background:var(--bg2);border-block:1px solid var(--line)}
+/* destinations */
+.dst{display:grid;grid-template-columns:repeat(7,1fr);gap:0;border:1px solid var(--line)}
+.dst button{padding:22px 16px 90px;text-align:left;border-right:1px solid var(--line);position:relative;overflow:hidden;transition:.3s}
+.dst button:last-child{border:0}
+.dst button b{font:400 24px var(--f-display);display:block}
+.dst button.on,.dst button:hover{background:var(--ink);color:var(--bg)}
+.dst button .mono{color:inherit;opacity:.65}
+.dst button i{position:absolute;left:16px;bottom:16px;font:300 44px var(--f-display);font-style:normal;opacity:.9}
+/* bento */
+.bento{display:grid;grid-template-columns:repeat(6,1fr);grid-auto-rows:210px;gap:14px}
+.bx{border:1px solid var(--line);background:var(--surface);padding:24px;position:relative;overflow:hidden;display:flex;flex-direction:column;justify-content:space-between}
+.bx h3{font:400 26px/1.1 var(--f-display)}
+.bx p{color:var(--ink2);font-size:14px;max-width:34ch}
+.bx.a{grid-column:span 3;grid-row:span 2}.bx.b{grid-column:span 3}.bx.c{grid-column:span 2}.bx.d{grid-column:span 1}
+.bx.dark{background:var(--ink);color:var(--bg)}.bx.dark p{color:color-mix(in srgb,var(--bg) 66%,transparent)}
+.bx .big{font:300 92px/.9 var(--f-display);letter-spacing:-.04em}
+.bx .glow{position:absolute;right:-60px;top:-60px;width:240px;height:240px;border-radius:50%;background:radial-gradient(var(--glow),transparent 68%)}
+.mini{font:12px var(--f-mono);display:grid;gap:8px;color:var(--ink2)}
+.mini div{display:flex;justify-content:space-between;border-bottom:1px dashed var(--line);padding-bottom:6px}
+.mini .t{color:var(--ink);font-weight:500}
+.tl{display:flex;gap:8px;flex-wrap:wrap}
+/* explore split */
+.xp{display:grid;grid-template-columns:minmax(0,1.08fr) minmax(0,.92fr);gap:0;border:1px solid var(--line)}
+.xl{padding:24px;max-height:900px;overflow:auto}
+.xm{position:sticky;top:60px;height:calc(100vh - 60px);border-left:1px solid var(--line)}
+.xm .map{height:100%}
+.tools{position:sticky;top:-24px;background:var(--bg);margin:-24px -24px 20px;padding:18px 24px;border-bottom:1px solid var(--line);z-index:5;display:grid;gap:14px}
+.tools .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.tools select{background:var(--bg);color:var(--ink);border:1px solid var(--line);padding:7px 10px;font:12px var(--f-mono)}
+.tools input[type=range]{accent-color:var(--accent);width:150px}
+.tools .chip{border-radius:2px}
+.lc{display:grid;grid-template-columns:1fr 1fr;gap:20px}
+.lcard{cursor:pointer;position:relative;padding:8px;border:1px solid transparent;transition:.2s}
+.lcard.hot{border-color:var(--ink);background:var(--surface)}
+.lcard .im{aspect-ratio:4/3;background-size:cover;background-position:center;position:relative}
+.lcard .heart{position:absolute;top:10px;right:10px}
+.lcard .tg{position:absolute;left:10px;bottom:10px;background:var(--bg);font:10px var(--f-mono);letter-spacing:.08em;text-transform:uppercase;padding:4px 8px}
+.lcard h4{font:400 21px var(--f-display);margin:12px 0 2px}
+.lcard .row2{display:flex;justify-content:space-between;font-size:13px;color:var(--ink2)}
+.lcard .row2 b{color:var(--ink);font-weight:600}
+.empty{padding:60px 20px;text-align:center;color:var(--ink2);grid-column:span 2}
+/* host */
+.host{position:relative;min-height:520px;display:grid;align-items:center;background:var(--ink);color:var(--bg);overflow:hidden}
+.host h2{font:300 clamp(40px,6vw,96px)/.98 var(--f-display);letter-spacing:-.03em;max-width:14ch}
+.host p{max-width:44ch;margin:20px 0 30px;opacity:.7}
+.host .btn{width:auto;padding:16px 28px;border-radius:0}
+.host .rings{position:absolute;right:-120px;top:50%;transform:translateY(-50%);width:640px;aspect-ratio:1;border-radius:50%;border:1px solid color-mix(in srgb,var(--bg) 22%,transparent);box-shadow:0 0 0 70px transparent,inset 0 0 0 70px transparent}
+.host .rings::before,.host .rings::after{content:"";position:absolute;inset:60px;border-radius:50%;border:1px solid color-mix(in srgb,var(--bg) 18%,transparent)}
+.host .rings::after{inset:140px;background:radial-gradient(var(--glow),transparent 70%)}
+footer{padding:70px 0 100px;border-top:1px solid var(--line)}
+footer .cols{display:grid;grid-template-columns:2fr repeat(3,1fr);gap:30px;font-size:14px;color:var(--ink2)}
+footer h5{font:11px var(--f-mono);letter-spacing:.1em;text-transform:uppercase;color:var(--ink);margin-bottom:12px}
+footer li{list-style:none;padding:3px 0}
+/* palette */
+.pal{position:fixed;inset:0;z-index:150;background:color-mix(in srgb,var(--bg) 55%,transparent);backdrop-filter:blur(10px);display:none;padding-top:14vh}
+.pal.open{display:block}
+.pal .bx2{width:min(620px,92vw);margin:0 auto;background:var(--surface);border:1px solid var(--line);box-shadow:var(--shadow)}
+.pal input{width:100%;padding:18px 22px;background:none;border:0;border-bottom:1px solid var(--line);color:var(--ink);font:16px var(--f-body);outline:0}
+.pal li{list-style:none;padding:11px 22px;display:flex;justify-content:space-between;font-size:14px;cursor:pointer}
+.pal li.sel{background:var(--bg2)}
+.pal li span:last-child{font:11px var(--f-mono);color:var(--ink2)}
+.pal .ft{padding:10px 22px;border-top:1px solid var(--line);display:flex;gap:16px}
+@media(max-width:1000px){.feat{grid-template-columns:repeat(2,1fr)}.xp{grid-template-columns:1fr}.xm{position:relative;height:420px;top:0;border-left:0;border-top:1px solid var(--line)}.dst{grid-template-columns:repeat(2,1fr)}.bento{grid-template-columns:1fr 1fr}.bx.a,.bx.b,.bx.c,.bx.d{grid-column:span 2;grid-row:auto}.search{grid-template-columns:1fr}.lc{grid-template-columns:1fr}nav.top .links,.cmdk span:first-child{display:none}.cmdk{min-width:0}.dial{opacity:.35}.hero .meta{display:none}}
+</style>
+</head>
+<body>
+<nav class="top"><div class="wrap">
+  <a class="logo" href="#"><i></i>TRIVARA</a>
+  <div class="links"><a href="#feat">Featured</a><a href="#dest">Destinations</a><a href="#xp">Explore</a><a href="#host">Host</a></div>
+  <div class="sp"></div>
+  <button class="cmdk" id="cmdk"><span>Search anything…</span><span class="kbd">⌘ K</span></button>
+  <div class="themes" id="th"></div>
+  <a class="hostlink" href="#host">Become a host</a>
+</div></nav>
+
+<header class="hero">
+  <div class="dial" aria-hidden="true"><svg viewBox="0 0 800 800" id="dialsvg"></svg></div>
+  <div class="meta mono"><span>Karnataka · IN</span><span>12.97°N 77.59°E</span><span>Vol. 01 / 2026</span></div>
+  <div class="wrap" style="width:100%">
+    <h1 class="rv">Stays that keep their time<b></b></h1>
+    <p class="lede rv">Verified homes across Karnataka — villas in the coffee hills, lofts among the boulders, a tent where the elephants drink. Instant Book where hosts allow it, honest pricing always.</p>
+    <div class="search rv" id="search">
+      <div class="f" data-p="where"><label>Where</label><input data-q placeholder="Coorg, Hampi, Gokarna…" autocomplete="off"></div>
+      <div class="f" data-p="dates"><label>Dates</label><div class="v" data-dates>Add dates</div><div class="pop dates" id="pdates"></div></div>
+      <div class="f" data-p="guests"><label>Guests &amp; pets</label><div class="v" data-gsum>2 guests</div><div class="pop gp" id="pguests"></div></div>
+    </div>
+    <div class="live mono"><span class="pulse"></span><span id="livecount">8 stays</span><span>· results update as you type — no search button</span></div>
+  </div>
+</header>
+
+<div class="mq" aria-label="Destinations"><div id="mq"></div></div>
+
+<section id="feat"><div class="wrap">
+  <div class="sh rv"><h2>Featured <em>stays</em>, hand-picked by the team.</h2><span class="mono">05 / curated</span></div>
+  <div class="feat" id="featrow"></div>
+</div></section>
+
+<div class="band" aria-hidden="true"></div>
+
+<section id="dest"><div class="wrap">
+  <div class="sh rv"><h2>Popular <em>destinations</em></h2><span class="mono">Tap to filter the map below</span></div>
+  <div class="dst rv" id="dst"></div>
+</div></section>
+
+<section style="padding-top:0"><div class="wrap">
+  <div class="sh rv"><h2>Built like <em>instruments</em>, not brochures.</h2></div>
+  <div class="bento">
+    <div class="bx a dark rv"><div class="glow"></div><div><span class="mono" style="color:inherit;opacity:.6">01 · Guests</span><h3 style="margin-top:12px">Adults, children, infants — and pets.</h3></div>
+      <div><p style="margin-bottom:18px">Infants never count against capacity. Bringing a dog? We only show homes that say yes.</p><div class="big"><span data-count="4.8" data-dec="1">0</span><span style="font-size:32px;opacity:.5"> / 5 avg</span></div></div></div>
+    <div class="bx b rv"><div><span class="mono">02 · Pricing</span><h3 style="margin-top:8px">Every rupee itemised.</h3></div>
+      <div class="mini"><div><span>₹8,400 × 3 nights</span><span>₹25,200</span></div><div><span>First-stay offer · 10%</span><span>−₹2,520</span></div><div class="t"><span>Total</span><span>₹24,235</span></div></div></div>
+    <div class="bx c rv"><span class="mono">03 · Booking</span><div><h3>Instant Book <em style="color:var(--ink2)">or</em> Request.</h3><p style="margin-top:8px">Hosts choose per listing. You always see which, before you pay.</p></div></div>
+    <div class="bx d rv"><span class="mono">04 · Trust</span><div class="big" style="font-size:64px">✓</div><p>Verified hosts</p></div>
+    <div class="bx b rv" style="grid-column:span 3"><span class="mono">05 · Reviews</span><div class="mini"><div><span>Cleanliness</span><span class="t">4.9</span></div><div><span>Accuracy</span><span class="t">4.8</span></div><div><span>Communication</span><span class="t">5.0</span></div><div><span>Value · Location</span><span class="t">4.6 · 4.9</span></div></div></div>
+    <div class="bx c rv" style="grid-column:span 3"><div style="display:flex;justify-content:space-between"><span class="mono">06 · Keyboard</span><span class="tl"><span class="kbd">⌘K</span><span class="kbd">Esc</span></span></div><h3>Press ⌘K. Go anywhere.</h3><p>Jump to a district, toggle filters, or switch theme without leaving the keyboard.</p></div>
+  </div>
+</div></section>
+
+<section id="xp" style="padding-top:0"><div class="wrap">
+  <div class="sh rv"><h2>All stays, <em>on the map.</em></h2><span class="mono" id="xcount">8 results</span></div>
+  <div class="xp rv">
+    <div class="xl"><div class="tools">
+      <div class="row" id="chips"></div>
+      <div class="row"><span class="mono">Max</span><input type="range" data-price min="2000" max="12000" step="500" value="12000"><span class="mono" data-price-out style="color:var(--ink)">₹12,000+</span>
+        <span style="flex:1"></span><select data-sort aria-label="Sort"><option value="rec">Recommended</option><option value="lo">Price ↑</option><option value="hi">Price ↓</option><option value="top">Top rated</option><option value="new">Newest</option></select></div>
+    </div><div class="lc" id="lc"></div></div>
+    <div class="xm"><div class="map" id="map"></div></div>
+  </div>
+</div></section>
+
+<section id="host" style="padding:0"><div class="host"><div class="rings"></div><div class="wrap" style="position:relative;width:100%">
+  <span class="mono" style="color:inherit;opacity:.6">For hosts</span>
+  <h2 style="margin-top:14px">Open the door. Keep more.</h2>
+  <p>Tiered commission, transparent payouts, a calendar with per-date pricing and blackout dates, and guests who message before they book.</p>
+  <button class="btn">Apply to host →</button>
+</div></div></section>
+
+<footer><div class="wrap"><div class="cols">
+  <div><div class="logo" style="color:var(--ink)"><i></i>TRIVARA</div><p style="margin-top:14px;max-width:32ch">Considered stays across Karnataka. Mock design — not live.</p></div>
+  <ul><h5>Stay</h5><li>Search</li><li>Saved <span data-saved-n>0</span></li><li>Trips</li></ul>
+  <ul><h5>Host</h5><li>Become a host</li><li>Earnings</li><li>Calendar</li></ul>
+  <ul><h5>Help</h5><li>Cancellation options</li><li>Safety</li><li>Contact</li></ul>
+</div></div></footer>
+
+<div class="pal" id="pal"><div class="bx2"><input id="pin" placeholder="Type a command or destination…" autocomplete="off"><ul id="plist"></ul><div class="ft mono"><span>↑↓ navigate</span><span>↵ run</span><span>esc close</span></div></div></div>
+
+<div class="mockbar"><a href="index.html">← All mocks</a><span>· 1 Atlas</span></div>
+
+<script src="shared/shared.js"></script>
+<script>
+const {$,$$,inr,L,DESTS,S,art,heart,filtered}=TV;
+TV.initThemes('atlas');
+
+/* watch-dial hero art */
+(()=>{let t='';for(let i=0;i<120;i++){const a=i*3*Math.PI/180,long=i%10==0,r1=long?330:350,r2=372;t+=`<line class="tk" x1="${400+Math.sin(a)*r1}" y1="${400-Math.cos(a)*r1}" x2="${400+Math.sin(a)*r2}" y2="${400-Math.cos(a)*r2}" stroke-width="${long?2:1}"/>`}
+$('#dialsvg').innerHTML=`<circle class="ring" cx="400" cy="400" r="392"/><circle class="ring" cx="400" cy="400" r="300"/><circle class="ring" cx="400" cy="400" r="210" stroke-dasharray="2 8"/>${t}<g class="hand"><line x1="400" y1="400" x2="400" y2="40" stroke="var(--ink)" stroke-width="1.5" opacity=".6"/><circle class="dot" cx="400" cy="36" r="9"/></g><circle cx="400" cy="400" r="5" fill="var(--ink)"/>`})();
+
+/* search popovers */
+TV.rangeCal($('#pdates'),2);TV.bindGuests($('#pguests'));
+const pops={dates:$('#pdates'),guests:$('#pguests')};
+$$('#search .f').forEach(f=>f.addEventListener('click',e=>{const k=f.dataset.p;if(e.target.closest('.pop'))return;Object.entries(pops).forEach(([n,p])=>p.classList.toggle('open',n===k&&!p.classList.contains('open')));$$('#search .f').forEach(x=>x.classList.toggle('act',x===f&&(pops[k]&&pops[k].classList.contains('open'))))}));
+document.addEventListener('click',e=>{if(!e.target.closest('#search')){Object.values(pops).forEach(p=>p.classList.remove('open'));$$('#search .f').forEach(x=>x.classList.remove('act'))}});
+
+/* marquee + featured + destinations */
+$('#mq').innerHTML=[...DESTS,...DESTS,...DESTS,...DESTS].map(d=>`<span data-dest="${d.id}">${d.id}<small>${d.n}</small></span>`).join('');
+$('#featrow').innerHTML=L.filter(l=>l.feat).slice(0,5).map((l,i)=>`<article class="fc rv" data-open="${l.id}" data-id="${l.id}" data-nohot="1"><div class="ph" style="background-image:${art(l)}"></div><span class="no">0${i+1}</span>${heart(l.id)}<div class="tx"><h3>${l.t}</h3><div class="mono">${l.city} · ${TV.inr(l.price)}</div></div></article>`).join('');
+$('#dst').innerHTML=DESTS.map((d,i)=>`<button data-dest="${d.id}"><span class="mono">0${i+1}</span><b>${d.id}</b><span class="mono">${d.tag}</span><i>${d.n}</i></button>`).join('');
+$('#chips').innerHTML=[['instant','⚡ Instant Book'],['pets','Pet-friendly'],['pool','Pool'],['wifi','Wifi'],['workspace','Workspace'],['stepfree','Step-free'],['beach','Beach']].map(([k,n])=>`<button class="chip" data-f="${k}">${n}</button>`).join('');
+
+/* list */
+function draw(){const r=filtered();$('#lc').innerHTML=r.length?r.map(l=>`<article class="lcard" data-id="${l.id}" data-open="${l.id}"><div class="im" style="background-image:${art(l)}">${heart(l.id)}<span class="tg">${l.instant?'⚡ Instant':'Request'}</span></div><h4>${l.t}</h4><div class="row2"><span>${l.loc}</span><span>★ ${l.r}</span></div><div class="row2"><span>${l.type} · ${l.g} guests${l.pets?' · 🐾':''}</span><b>${inr(l.price)}<small style="font-weight:400"> /night</small></b></div></article>`).join(''):'<div class="empty">No stays match. Loosen a filter or change dates.</div>';
+$('#xcount').textContent=r.length+' results';$('#livecount').textContent=r.length+' stay'+(r.length==1?'':'s')}
+TV.onChange(draw);TV.bindFilters();TV.mountMap($('#map'),id=>TV.detail(id));draw();TV.reveal();TV.count();
+
+/* command palette */
+const acts=[...DESTS.map(d=>({n:'Go to '+d.id,k:'destination',f:()=>{$$(`[data-dest="${d.id}"]`)[0].click();location.hash='xp'}})),
+ ...[['instant','Instant Book only'],['pets','Pet-friendly stays'],['pool','Stays with a pool']].map(([k,n])=>({n,k:'filter',f:()=>$(`[data-f="${k}"]`).click()})),
+ ...TV.THEMES.map(t=>({n:'Theme: '+t.name,k:'theme',f:()=>$$('.themes button').find(b=>b.dataset.id==t.id).click()})),
+ {n:'Become a host',k:'host',f:()=>location.hash='host'},{n:'Open first featured stay',k:'stay',f:()=>TV.detail('l1')}];
+let sel=0,cur=acts;const pal=$('#pal'),pin=$('#pin');
+const rp=()=>{$('#plist').innerHTML=cur.map((a,i)=>`<li class="${i==sel?'sel':''}" data-i="${i}"><span>${a.n}</span><span>${a.k}</span></li>`).join('')};
+const op=()=>{pal.classList.add('open');pin.value='';cur=acts;sel=0;rp();setTimeout(()=>pin.focus(),20)},cl=()=>pal.classList.remove('open');
+document.addEventListener('keydown',e=>{if((e.metaKey||e.ctrlKey)&&e.key.toLowerCase()=='k'){e.preventDefault();pal.classList.contains('open')?cl():op()}
+ if(!pal.classList.contains('open'))return;if(e.key=='Escape')cl();if(e.key=='ArrowDown'){sel=Math.min(cur.length-1,sel+1);rp()}if(e.key=='ArrowUp'){sel=Math.max(0,sel-1);rp()}if(e.key=='Enter'&&cur[sel]){const a=cur[sel];cl();a.f()}});
+pin.oninput=()=>{cur=acts.filter(a=>a.n.toLowerCase().includes(pin.value.toLowerCase()));sel=0;rp()};
+$('#plist').onclick=e=>{const li=e.target.closest('li');if(li){const a=cur[+li.dataset.i];cl();a.f()}};pal.onclick=e=>{if(e.target===pal)cl()};$('#cmdk').onclick=op;
+</script>
+</body>
+</html>

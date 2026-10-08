@@ -30,7 +30,7 @@ const totalGuests = (g: GuestCounts) => g.adults + g.children;
  * One implementation now, so both places behave identically.
  */
 export function DateGuestsFields({ checkIn, checkOut, guests, onCheckInChange, onCheckOutChange, onGuestsChange }: DateGuestsFieldsProps) {
-  const triggerClass = 'flex items-center gap-2 px-4 py-3 rounded-lg hover:bg-surface-3 trivara-transition cursor-pointer text-sm whitespace-nowrap';
+  const triggerClass = 'flex items-center gap-2 px-4 py-3 rounded-full hover:bg-foreground/5 trivara-transition cursor-pointer text-sm whitespace-nowrap';
 
   return (
     <>
@@ -43,7 +43,7 @@ export function DateGuestsFields({ checkIn, checkOut, guests, onCheckInChange, o
             </span>
           </button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0 bg-card border-border" align="start">
+        <PopoverContent className="glass w-auto rounded-[26px] p-3" align="start">
           <CalendarComponent
             mode="range"
             selected={{ from: checkIn, to: checkOut } as DateRange}
@@ -79,7 +79,7 @@ export function DateGuestsFields({ checkIn, checkOut, guests, onCheckInChange, o
             </span>
           </button>
         </PopoverTrigger>
-        <PopoverContent className="w-72 bg-card border-border space-y-4 p-4" align="start">
+        <PopoverContent className="glass w-80 space-y-3 rounded-[26px] p-5" align="start">
           <div className="flex items-center justify-between">
             <div>
               <p className="text-sm font-medium">Adults</p>

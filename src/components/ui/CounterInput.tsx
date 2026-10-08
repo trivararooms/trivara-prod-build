@@ -1,5 +1,4 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Button } from './button';
 
 interface CounterInputProps {
     value: number;
@@ -9,6 +8,9 @@ interface CounterInputProps {
     label?: string;
     className?: string;
 }
+
+const stepButtonClass =
+    'nu-chip grid h-10 w-10 place-items-center rounded-full text-xl leading-none transition-transform active:scale-90 disabled:cursor-not-allowed disabled:opacity-30';
 
 export function CounterInput({
     value,
@@ -68,22 +70,21 @@ export function CounterInput({
     return (
         <div className={`flex flex-col ${className}`}>
             {label && <label className="block text-sm text-text-secondary mb-2">{label}</label>}
-            <div className="flex items-center gap-2">
-                <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
+            <div className="flex items-center gap-3">
+                <button
+                    type="button"
+                    aria-label="Decrease"
+                    className={stepButtonClass}
                     onClick={handleDecrement}
                     disabled={value <= min}
-                    type="button"
                 >
-                    -
-                </Button>
+                    −
+                </button>
 
                 {isEditing ? (
                     <input
                         type="number"
-                        className="w-12 text-center text-sm font-medium bg-surface-2 rounded-md outline-none border-b-2 border-accent"
+                        className="w-12 text-center font-ui text-base font-extrabold bg-surface-2 rounded-full outline-none border-b-2 border-accent"
                         value={inputValue}
                         onChange={handleInputChange}
                         onBlur={handleBlur}
@@ -94,7 +95,7 @@ export function CounterInput({
                     />
                 ) : (
                     <span
-                        className="w-12 text-center cursor-pointer select-none"
+                        className="w-8 text-center font-ui text-base font-extrabold tabular-nums cursor-pointer select-none"
                         onDoubleClick={() => setIsEditing(true)}
                         onTouchStart={() => {
                             // Simple double tap detection for mobile
@@ -109,16 +110,15 @@ export function CounterInput({
                     </span>
                 )}
 
-                <Button
-                    variant="outline"
-                    size="icon"
-                    className="h-8 w-8"
+                <button
+                    type="button"
+                    aria-label="Increase"
+                    className={stepButtonClass}
                     onClick={handleIncrement}
                     disabled={value >= max}
-                    type="button"
                 >
                     +
-                </Button>
+                </button>
             </div>
         </div>
     );

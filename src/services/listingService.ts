@@ -99,6 +99,9 @@ class ListingService {
       if (filters.minRating !== undefined && filters.minRating > 0) {
         query = query.gte('rating', filters.minRating);
       }
+      if (filters.instantBook) {
+        query = query.eq('instant_book', true);
+      }
 
       switch (filters.sort) {
         case 'price_asc':

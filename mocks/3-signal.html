@@ -1,0 +1,243 @@
+<!doctype html>
+<html lang="en" data-theme="chalk">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Trivara Stays — Mock 3 · Signal</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="shared/shared.css">
+<style>
+/* MOCK 3 · SIGNAL — teenage engineering (hardware spec-sheet tiles, indexed codes, knobs & switches, orange-on-grey)
+   + op.al (huge letterspaced wordmark, hush, grayscale-until-hover) + evervault (spotlight dot-grid, scramble/"encrypted" text, dark glow). */
+:root{--r:0px;--f-display:'Archivo',Helvetica,sans-serif;--f-body:'Archivo',Helvetica,sans-serif;--f-mono:'IBM Plex Mono',ui-monospace,monospace;--mx:50%;--my:50%}
+body{font-size:14px;letter-spacing:.005em;overflow-x:hidden}
+.m{font:400 11px/1.4 var(--f-mono);letter-spacing:.08em;text-transform:uppercase}
+.dim{color:var(--ink2)}
+.wrap{padding:0 24px;max-width:1500px;margin:0 auto}
+/* ticker + nav */
+.tick{position:sticky;top:0;z-index:60;display:flex;justify-content:space-between;align-items:center;gap:20px;padding:8px 24px;background:var(--bg);border-bottom:1px solid var(--ink)}
+.tick nav{display:flex;gap:6px}
+.tick nav a{padding:3px 9px;border:1px solid var(--line)}
+.tick nav a:hover{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.tick .clk{font-variant-numeric:tabular-nums}
+.tick .themes button{border-radius:0;width:20px;height:20px}
+/* hero */
+.hero{position:relative;min-height:calc(100vh - 38px);border-bottom:1px solid var(--ink);display:grid;grid-template-rows:auto 1fr auto;overflow:hidden;background:var(--bg)}
+.hero canvas{position:absolute;inset:0;width:100%;height:100%;pointer-events:none}
+.hero .spot{position:absolute;inset:0;background:radial-gradient(520px circle at var(--mx) var(--my),var(--glow),transparent 60%);pointer-events:none;mix-blend-mode:normal}
+.hero .top{position:relative;display:flex;justify-content:space-between;padding:18px 24px}
+.word{position:relative;font:300 clamp(48px,11vw,190px)/.82 var(--f-display);letter-spacing:.1em;text-transform:uppercase;padding:0 24px;white-space:nowrap;align-self:center;font-stretch:110%}
+.word b{font-weight:800;color:var(--accent)}
+/* console */
+.con{position:relative;display:grid;grid-template-columns:1.2fr 1.6fr 1fr 1fr;border-top:1px solid var(--ink);background:var(--bg)}
+.con>div{padding:16px 20px;border-right:1px solid var(--ink);min-width:0}
+.con>div:last-child{border:0}
+.con label{display:block;margin-bottom:8px;color:var(--ink2)}
+.con input{width:100%;background:none;border:0;border-bottom:1px solid var(--ink);padding:6px 0;color:var(--ink);font:500 18px var(--f-display);outline:0}
+.con input:focus{border-color:var(--accent)}
+.led{font:500 34px/1 var(--f-mono);letter-spacing:.04em;background:var(--ink);color:var(--accent);padding:10px 12px;display:inline-block;min-width:3.2ch;text-align:right;text-shadow:0 0 14px var(--glow)}
+.knobwrap{display:flex;align-items:center;gap:16px}
+.knob{width:84px;height:84px;border-radius:50%;background:radial-gradient(circle at 30% 28%,var(--surface),var(--bg2));border:1px solid var(--ink);position:relative;cursor:grab;touch-action:none;box-shadow:0 8px 20px -8px rgba(0,0,0,.4),inset 0 -6px 10px rgba(0,0,0,.08);flex:0 0 auto}
+.knob i{position:absolute;left:50%;top:6px;width:3px;height:22px;margin-left:-1.5px;background:var(--accent);transform-origin:50% 36px}
+.knob::after{content:"";position:absolute;inset:-9px;border-radius:50%;border:1px dashed var(--line)}
+.knob:active{cursor:grabbing}
+.dp{position:absolute;left:0;right:0;top:100%;background:var(--surface);border:1px solid var(--ink);padding:18px;z-index:30;display:none;box-shadow:var(--shadow)}
+.dp.open{display:block}
+.con .cell{position:relative;cursor:pointer}
+.gsr{display:grid;grid-template-columns:1fr auto;gap:2px 10px;align-items:center}
+.stp{display:flex;gap:0}
+.stp button{width:30px;height:30px;border:1px solid var(--ink);font:500 16px var(--f-mono);display:grid;place-items:center}
+.stp button:hover:not(:disabled){background:var(--ink);color:var(--bg)}
+.stp button:disabled{opacity:.25}
+.stp output{min-width:34px;text-align:center;font:500 15px/28px var(--f-mono);border-block:1px solid var(--ink)}
+/* generic section */
+.sec{border-bottom:1px solid var(--ink)}
+.sh{display:grid;grid-template-columns:200px 1fr auto;gap:20px;padding:22px 24px;border-bottom:1px solid var(--ink);align-items:baseline}
+.sh h2{font:700 clamp(28px,4vw,56px)/1 var(--f-display);letter-spacing:-.03em;text-transform:uppercase;font-stretch:90%}
+/* product tiles (TE) */
+.tiles{display:grid;grid-template-columns:repeat(5,1fr)}
+.tile{border-right:1px solid var(--ink);padding:0 0 14px;position:relative;cursor:pointer;background:var(--bg);transition:background .2s;overflow:hidden}
+.tile:last-child{border:0}
+.tile .ph{aspect-ratio:1;background-size:cover;background-position:center;filter:grayscale(1) contrast(1.05);transition:filter .5s,transform .8s cubic-bezier(.2,.7,.2,1);margin:0 0 12px}
+.tile:hover .ph,.tile.hot .ph{filter:none;transform:scale(1.04)}
+.tile .ph-w{overflow:hidden;border-bottom:1px solid var(--ink);position:relative;margin-bottom:12px}
+.tile .ph-w .ph{margin:0}
+.tile .ph-w .heart{position:absolute;top:8px;right:8px;border-radius:0}
+.tile .cd{position:absolute;top:8px;left:8px;background:var(--bg);padding:2px 6px;border:1px solid var(--ink)}
+.tile h3{font:700 18px var(--f-display);text-transform:uppercase;letter-spacing:-.01em;padding:0 14px}
+.tile .sp{display:grid;grid-template-columns:auto 1fr;gap:2px 12px;padding:8px 14px 0;color:var(--ink2)}
+.tile .sp span:nth-child(even){color:var(--ink);text-align:right}
+.tile .pr{padding:10px 14px 0;font:700 20px var(--f-display)}
+.tile:hover{background:var(--surface)}
+.tile.hot{background:var(--surface);outline:2px solid var(--accent);outline-offset:-2px;z-index:2}
+.slot{height:220px;border-bottom:1px solid var(--ink);background:repeating-linear-gradient(45deg,transparent 0 11px,var(--line) 11px 12px)}
+/* destinations index (op.al hush) */
+.idx button{display:grid;grid-template-columns:70px 1fr 200px 90px;gap:20px;width:100%;text-align:left;padding:20px 24px;border-bottom:1px solid var(--line);align-items:baseline;transition:padding .35s cubic-bezier(.2,.7,.2,1),background .2s,color .2s}
+.idx button b{font:300 clamp(30px,5.5vw,84px)/1 var(--f-display);letter-spacing:.06em;text-transform:uppercase}
+.idx button:hover,.idx button.on{background:var(--ink);color:var(--bg);padding-left:44px}
+.idx button.on b{color:var(--accent)}
+.hov{position:fixed;width:260px;height:180px;background-size:cover;pointer-events:none;z-index:40;opacity:0;transform:translate(-50%,-50%) scale(.9);transition:opacity .25s,transform .25s;border:1px solid var(--ink)}
+.hov.show{opacity:1;transform:translate(-50%,-50%) scale(1)}
+/* explore */
+.xp{display:grid;grid-template-columns:minmax(0,1.15fr) minmax(0,.85fr)}
+.xl{border-right:1px solid var(--ink)}
+.ctrl{position:sticky;top:38px;z-index:20;background:var(--bg);display:flex;flex-wrap:wrap;gap:0;border-bottom:1px solid var(--ink)}
+.ctrl .sw{display:flex;align-items:center;gap:8px;padding:10px 14px;border-right:1px solid var(--line);font:400 11px var(--f-mono);letter-spacing:.08em;text-transform:uppercase}
+.sw i{width:26px;height:14px;border:1px solid var(--ink);position:relative;display:block}
+.sw i::after{content:"";position:absolute;top:1px;left:1px;width:10px;height:10px;background:var(--ink);transition:.2s}
+.sw.on i{background:var(--accent)}
+.sw.on i::after{left:13px;background:var(--accent-ink)}
+.ctrl select{margin-left:auto;background:var(--bg);color:var(--ink);border:0;border-left:1px solid var(--ink);padding:10px 14px;font:400 11px var(--f-mono);text-transform:uppercase;letter-spacing:.08em}
+.tb{display:grid}
+.tr{display:grid;grid-template-columns:54px 84px 1.5fr 1fr 70px 80px 90px;gap:14px;padding:12px 20px;border-bottom:1px solid var(--line);align-items:center;cursor:pointer;transition:background .15s;position:relative}
+.tr.hd{cursor:default;color:var(--ink2);position:sticky;top:78px;background:var(--bg);z-index:5;border-bottom:1px solid var(--ink)}
+.tr:not(.hd):hover,.tr.hot{background:var(--ink);color:var(--bg)}
+.tr .th{aspect-ratio:1;background-size:cover;filter:grayscale(1)}
+.tr:hover .th,.tr.hot .th{filter:none}
+.tr .n{font:600 16px var(--f-display);text-transform:uppercase}
+.tr .pr{font:600 16px var(--f-mono);text-align:right}
+.tr .heart{border-radius:0;width:28px;height:28px;background:transparent}
+.tr:hover .heart svg,.tr.hot .heart svg{stroke:var(--bg)}
+.tr .tg{border:1px solid currentColor;padding:1px 6px;font:400 10px var(--f-mono);text-transform:uppercase;letter-spacing:.06em;white-space:nowrap;justify-self:start}
+.tr .tg.i{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
+.xm{position:sticky;top:38px;height:calc(100vh - 38px)}
+.xm .map{height:100%}
+.xm .pin rect{rx:0;stroke-width:1}
+.empty{padding:60px 24px;text-align:center;color:var(--ink2)}
+/* host / encrypted */
+.hostg{display:grid;grid-template-columns:1fr 1fr}
+.hostg>div{padding:48px 24px;min-height:420px}
+.hostg h2{font:800 clamp(60px,11vw,190px)/.8 var(--f-display);text-transform:uppercase;letter-spacing:-.05em;font-stretch:80%;-webkit-text-stroke:2px var(--ink);color:transparent}
+.hostg>div:first-child{border-right:1px solid var(--ink);display:flex;flex-direction:column;justify-content:space-between}
+.term{background:var(--ink);color:var(--bg);font:400 13px/1.9 var(--f-mono);padding:26px;position:relative;overflow:hidden}
+.term .g{color:var(--accent)}
+.term::before{content:"";position:absolute;right:-80px;top:-80px;width:300px;height:300px;background:radial-gradient(var(--glow),transparent 70%)}
+.btn{border-radius:0;width:auto;text-transform:uppercase;font:600 12px var(--f-mono);letter-spacing:.1em;padding:14px 20px}
+.big{padding:30px 24px 10px;overflow:hidden}
+.big div{font:800 clamp(60px,21vw,380px)/.8 var(--f-display);letter-spacing:-.06em;text-transform:uppercase;font-stretch:80%;white-space:nowrap;margin-bottom:-.12em}
+.fine{display:flex;justify-content:space-between;padding:14px 24px 80px;color:var(--ink2);border-top:1px solid var(--ink)}
+.dlg-in{border-radius:0;border-color:var(--ink)}
+.d-gal div,.d-book,.d-badges span,.btn{border-radius:0}
+@media(max-width:1000px){.tiles{grid-template-columns:repeat(2,1fr)}.tile{border-bottom:1px solid var(--ink)}.con{grid-template-columns:1fr 1fr}.con>div{border-bottom:1px solid var(--ink)}.xp{grid-template-columns:1fr}.xm{position:relative;height:380px;top:0}.tr{grid-template-columns:54px 1fr 80px}.tr>*:nth-child(n+4):not(.pr){display:none}.tr.hd{display:none}.sh{grid-template-columns:1fr}.idx button{grid-template-columns:40px 1fr 60px}.idx button span:nth-child(3){display:none}.hostg{grid-template-columns:1fr}.tick nav{display:none}.word{letter-spacing:.04em}}
+</style>
+</head>
+<body>
+
+<div class="tick m">
+  <span><b>TRIVARA</b> / STAYS / KARNATAKA</span>
+  <nav><a href="#feat">01 Featured</a><a href="#dest">02 Index</a><a href="#xp">03 Map</a><a href="#host">04 Host</a></nav>
+  <span class="clk dim" id="clk">IST --:--:--</span>
+  <div class="themes" id="th"></div>
+</div>
+
+<header class="hero" id="hero">
+  <canvas id="dots"></canvas><div class="spot"></div>
+  <div class="top m dim"><span>MODEL TS-26 · SHORT-TERM STAYS</span><span>12.97°N 77.59°E</span></div>
+  <div class="word" aria-label="Trivara"><span id="scr">TRIVARA</span><b>.</b></div>
+  <div class="con">
+    <div><label class="m">01 · Where</label><input data-q placeholder="COORG, HAMPI…" autocomplete="off"></div>
+    <div class="cell" id="cdates"><label class="m">02 · Dates</label><div style="font:500 18px var(--f-display)" data-dates>Add dates</div><div class="dp" id="dpd"><div id="cal"></div></div></div>
+    <div class="cell" id="cg"><label class="m">03 · Guests / pets</label><div style="font:500 18px var(--f-display)" data-gsum>2 guests</div><div class="dp" id="dpg" style="min-width:300px;right:0;left:auto"><div id="gs"></div></div></div>
+    <div><label class="m">04 · Max / night</label>
+      <div class="knobwrap"><div class="knob" id="knob" role="slider" tabindex="0" aria-label="Maximum price per night" aria-valuemin="2000" aria-valuemax="12000"><i id="kn"></i></div>
+      <div><div class="led" id="led">12000</div><div class="m dim" style="margin-top:6px"><span id="units">08</span> units match</div></div></div></div>
+  </div>
+</header>
+
+<section class="sec" id="feat">
+  <div class="sh"><span class="m dim">01 / FEATURED</span><h2>Featured stays</h2><span class="m dim">05 UNITS</span></div>
+  <div class="tiles" id="featrow"></div>
+</section>
+<div class="slot" aria-hidden="true"></div>
+
+<section class="sec" id="dest">
+  <div class="sh"><span class="m dim">02 / INDEX</span><h2>Popular destinations</h2><span class="m dim">Click to filter</span></div>
+  <div class="idx" id="idx"></div>
+</section>
+<div class="hov" id="hov"></div>
+
+<section class="sec" id="xp">
+  <div class="sh"><span class="m dim">03 / MAP</span><h2>All units</h2><span class="m dim" id="xc">08 RESULTS</span></div>
+  <div class="xp">
+    <div class="xl">
+      <div class="ctrl" id="ctrl"></div>
+      <div class="tb"><div class="tr hd m"><span></span><span></span><span>Name</span><span>Location</span><span>Cap.</span><span>Book</span><span style="text-align:right">₹ / night</span></div><div id="rows"></div></div>
+    </div>
+    <div class="xm"><div class="map" id="map"></div></div>
+  </div>
+</section>
+
+<section class="sec" id="host">
+  <div class="hostg"><div><h2>Host</h2><div><p style="max-width:40ch;margin-bottom:18px">Tiered commission. Per-date pricing. Blackout dates. Payout requests with an audit trail. Guests who message before they book.</p><button class="btn">Apply to host →</button></div></div>
+  <div class="term"><div class="dim">$ trivara payouts --host verified</div><div>bank_account <span class="g" id="enc1">••••••••••••</span></div><div>commission_tier <span class="g">silver · 12%</span></div><div>next_payout <span class="g" id="enc2">₹ 84,200</span></div><div>status <span class="g">approved ✓</span></div><div class="dim" style="margin-top:14px">// account details are masked end-to-end.<br>// hover to decrypt (mock).</div></div></div>
+</section>
+
+<footer>
+  <div class="big"><div>Trivara</div></div>
+  <div class="fine m"><span>© 2026 TRIVARA STAYS — MOCK 3 / SIGNAL</span><span>SAVED <b data-saved-n>0</b></span></div>
+</footer>
+<div class="mockbar"><a href="index.html">← All mocks</a><span>· 3 Signal</span></div>
+
+<script src="shared/shared.js"></script>
+<script>
+const {$,$$,inr,L,DESTS,S,art,heart,filtered}=TV;
+TV.initThemes('signal');
+$$('[data-saved-n]').forEach(n=>n.textContent=TV.saved.size);
+const z=n=>String(n).padStart(2,'0');
+
+/* clock */
+setInterval(()=>{$('#clk').textContent='IST '+new Date().toLocaleTimeString('en-GB',{timeZone:'Asia/Kolkata'})},1000);
+
+/* evervault-ish: scramble wordmark + dot-grid spotlight */
+TV.scramble($('#scr'),'TRIVARA');
+const hero=$('#hero'),cv=$('#dots'),ctx=cv.getContext('2d');let mx=-999,my=-999,rgb='0,0,0';
+function fit(){const r=hero.getBoundingClientRect();cv.width=r.width;cv.height=r.height;paint()}
+function paint(){ctx.clearRect(0,0,cv.width,cv.height);const gap=26;for(let x=gap/2;x<cv.width;x+=gap)for(let y=gap/2;y<cv.height;y+=gap){const d=Math.hypot(x-mx,y-my),a=.14+Math.max(0,1-d/260)*.8;ctx.fillStyle=`rgba(${rgb},${a})`;ctx.fillRect(x,y,d<120?2.5:1.5,d<120?2.5:1.5)}}
+const col=()=>{const c=getComputedStyle(document.documentElement).getPropertyValue('--ink2').trim();const m=c.match(/#(..)(..)(..)/);rgb=m?[1,2,3].map(i=>parseInt(m[i],16)).join(','):'120,120,120';paint()};
+hero.addEventListener('pointermove',e=>{const r=hero.getBoundingClientRect();mx=e.clientX-r.left;my=e.clientY-r.top;hero.style.setProperty('--mx',mx+'px');hero.style.setProperty('--my',my+'px');paint()});
+addEventListener('resize',fit);document.addEventListener('themechange',col);fit();col();
+
+/* console popovers */
+TV.rangeCal($('#cal'),2);TV.bindGuests($('#gs'));$('#dpd').style.width='min(620px,92vw)';
+const P={cdates:$('#dpd'),cg:$('#dpg')};
+$$('.cell').forEach(c=>c.onclick=e=>{if(e.target.closest('.dp'))return;const p=P[c.id];Object.values(P).forEach(x=>x!==p&&x.classList.remove('open'));p.classList.toggle('open')});
+document.addEventListener('click',e=>{if(!e.target.closest('.cell'))Object.values(P).forEach(p=>p.classList.remove('open'))});
+$$('.stp').forEach(()=>{});
+
+/* price knob: drag / wheel / arrows, 2000–12000, ±135° */
+const knob=$('#knob'),kn=$('#kn');
+function setMax(v){v=Math.max(2000,Math.min(12000,Math.round(v/500)*500));S.max=v;const a=-135+((v-2000)/10000)*270;kn.style.transform=`rotate(${a}deg)`;$('#led').textContent=v;knob.setAttribute('aria-valuenow',v);TV.sync()}
+let drag=false;
+const ang=e=>{const r=knob.getBoundingClientRect();let a=Math.atan2(e.clientX-(r.left+r.width/2),-(e.clientY-(r.top+r.height/2)))*180/Math.PI;return Math.max(-135,Math.min(135,a))};
+knob.onpointerdown=e=>{drag=true;knob.setPointerCapture(e.pointerId);setMax(2000+((ang(e)+135)/270)*10000)};
+knob.onpointermove=e=>{if(drag)setMax(2000+((ang(e)+135)/270)*10000)};knob.onpointerup=()=>drag=false;
+knob.onwheel=e=>{e.preventDefault();setMax(S.max+(e.deltaY<0?500:-500))};
+knob.onkeydown=e=>{if(e.key=='ArrowRight'||e.key=='ArrowUp')setMax(S.max+500);if(e.key=='ArrowLeft'||e.key=='ArrowDown')setMax(S.max-500)};
+kn.style.transform='rotate(135deg)';
+
+/* featured tiles — TE product row, 5 across */
+const tile=(l,i)=>`<article class="tile" data-id="${l.id}" data-open="${l.id}"><div class="ph-w"><div class="ph" style="background-image:${art(l)}"></div><span class="cd m">TS-${z(i+1)}</span>${heart(l.id)}</div><h3>${l.t}</h3>
+<div class="sp m"><span>Loc</span><span>${l.city}</span><span>Cap</span><span>${l.g} guests</span><span>Book</span><span>${l.instant?'Instant':'Request'}</span><span>Rating</span><span>★ ${l.r}</span></div><div class="pr">${inr(l.price)}<span class="m dim"> /night</span></div></article>`;
+$('#featrow').innerHTML=L.filter(l=>l.feat).slice(0,5).map(tile).join('');
+
+/* destinations index + hover image */
+$('#idx').innerHTML=DESTS.map((d,i)=>`<button data-dest="${d.id}" data-img="${i}"><span class="m">${z(i+1)}</span><b>${d.id}</b><span class="m">${d.tag}</span><span class="m" style="text-align:right">${d.n} units</span></button>`).join('');
+const hov=$('#hov');
+$('#idx').onmousemove=e=>{const b=e.target.closest('[data-img]');if(!b){hov.classList.remove('show');return}const d=DESTS[b.dataset.img],l=L.find(x=>x.city==d.id)||L[0];hov.style.backgroundImage=art(l,3);hov.style.left=e.clientX+150+'px';hov.style.top=e.clientY+'px';hov.classList.add('show')};
+$('#idx').onmouseleave=()=>hov.classList.remove('show');
+
+/* controls as hardware switches */
+$('#ctrl').innerHTML=[['instant','Instant'],['pets','Pets'],['pool','Pool'],['wifi','Wifi'],['workspace','Desk'],['stepfree','Step-free'],['beach','Beach']].map(([k,n])=>`<button class="sw" data-f="${k}"><i></i>${n}</button>`).join('')+`<select data-sort aria-label="Sort"><option value="rec">Sort: Recommended</option><option value="lo">Price ↑</option><option value="hi">Price ↓</option><option value="top">Top rated</option><option value="new">Newest</option></select>`;
+
+function draw(){const r=filtered();
+$('#rows').innerHTML=r.length?r.map((l,i)=>`<div class="tr" data-id="${l.id}" data-open="${l.id}"><span class="th" style="background-image:${art(l)}"></span><span class="m">TS-${z(L.indexOf(l)+1)}</span><span class="n">${l.t}</span><span class="m">${l.loc.split(',')[0]}</span><span class="m">${l.g}P</span><span class="tg ${l.instant?'i':''}">${l.instant?'Instant':'Request'}</span><span class="pr">${inr(l.price)}</span></div>`).join(''):'<div class="empty m">No units match. Turn a switch off or rotate the knob up.</div>';
+$('#xc').textContent=z(r.length)+' RESULTS';$('#units').textContent=z(r.length)}
+TV.onChange(draw);TV.bindFilters();TV.mountMap($('#map'),id=>TV.detail(id));draw();
+
+/* decrypt-on-hover */
+const dec=(el,final)=>{el.onmouseenter=()=>TV.scramble(el,final)};
+dec($('#enc1'),'HDFC ••••• 4821');dec($('#enc2'),'₹ 84,200');$('#enc1').textContent='████████████';$('#enc2').textContent='████████';
+</script>
+</body>
+</html>
