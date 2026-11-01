@@ -5,14 +5,13 @@ import { useEffect, type RefObject } from 'react';
  *
  *   y(x) = A · sin(k·x − φ)
  *
- * shared by every wave seam on the page and printed live in the corner
- * readout. A (amplitude) falls to exactly 0 whenever a "calm anchor" (the
+ * shared by every wave seam on the page. A (amplitude) falls to exactly 0 whenever a "calm anchor" (the
  * featured-stays peak and the closing sunset) sits under the middle of the
  * viewport, so the sea visibly settles as the visitor gets close to choosing
  * a stay. φ (phase) advances with scroll plus a slow drift over time.
  *
  * Everything is written straight to the DOM (path `d` attributes, a
- * `--lp` custom property, the readout's text) from a single rAF loop, so
+ * `--lp` custom property) from a single rAF loop, so
  * React never re-renders on scroll. The loop only runs while something is
  * registered and the tab is visible.
  */
@@ -51,7 +50,6 @@ interface Seam extends SeamOptions {
 const seams = new Set<Seam>();
 const progressEls = new Set<{ el: HTMLElement; mode: ProgressMode }>();
 const calmAnchors = new Set<HTMLElement>();
-const readouts = new Set<HTMLElement>();
 
 let frame = 0;
 let started = 0;
@@ -93,15 +91,9 @@ function wavePath(seam: Seam, amplitude: number, phase: number) {
   return fill ? `${d}L${width},${height}L0,${height}Z` : d;
 }
 
-function formatReadout(amplitude: number, phase: number) {
-  if (amplitude < 0.01) return 'y = 0 · calm';
-  const wrapped = ((phase % TAU) + TAU) % TAU;
-  return `y = ${amplitude.toFixed(2)} · sin(x − ${wrapped.toFixed(2)})`;
-}
-
 function tick(now: number) {
   frame = 0;
-  if (seams.size + progressEls.size + readouts.size === 0) return;
+  if (seams.size + progressEls.size === 0) return;
 
   const vh = window.innerHeight || 1;
   const elapsed = started ? (now - started) / 1000 : 0;
@@ -124,11 +116,6 @@ function tick(now: number) {
   seams.forEach((seam) => {
     const amplitude = reducedMotion ? 0.35 : seam.amplitude ? seam.amplitude() : globalAmplitude;
     seam.path.setAttribute('d', wavePath(seam, amplitude, globalPhase));
-  });
-
-  const text = formatReadout(globalAmplitude, globalPhase);
-  readouts.forEach((el) => {
-    if (el.textContent !== text) el.textContent = text;
   });
 
   if (!document.hidden) frame = requestAnimationFrame(tick);
@@ -184,14 +171,6 @@ export function useCalmAnchor(ref: RefObject<HTMLElement>) {
   useEffect(() => {
     if (!ref.current) return;
     return register(calmAnchors, ref.current);
-  }, [ref]);
-}
-
-/** Print the live equation into an element. */
-export function useTideReadout(ref: RefObject<HTMLElement>) {
-  useEffect(() => {
-    if (!ref.current) return;
-    return register(readouts, ref.current);
   }, [ref]);
 }
 

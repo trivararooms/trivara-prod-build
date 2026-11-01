@@ -1,10 +1,11 @@
 import { useRef, type ReactNode } from 'react';
 import { Link } from 'react-router-dom';
+import { formatINR } from '@/lib/utils';
+import type { Listing } from '@/types';
 import {
   localCalm,
   useCalmAnchor,
   useScrollProgress,
-  useTideReadout,
   useTideSeam,
   type SeamOptions,
 } from '@/lib/tide';
@@ -52,27 +53,71 @@ export function TideSeam({ className = '', height = 72, options }: { className?:
   );
 }
 
-/** Fixed corner readout printing the live wave equation. Desktop only. */
-export function TideReadout() {
-  const ref = useRef<HTMLSpanElement>(null);
-  useTideReadout(ref);
-  return (
-    <div
-      aria-hidden="true"
-      className="pointer-events-none fixed bottom-6 left-6 z-30 hidden items-center gap-2.5 rounded-full border border-foreground/15 bg-card/85 px-3.5 py-2 backdrop-blur md:flex"
-    >
-      <span className="label-tech text-text-meta">Sea</span>
-      <span ref={ref} className="tide-readout text-[12px] font-semibold text-foreground">y = 1.00 · sin(x − 0.00)</span>
-    </div>
-  );
-}
-
 function SeaSurface({ base, amp, cycles, offset, color, stroke }: { base: number; amp: number; cycles: number; offset: number; color?: string; stroke?: string }) {
   const ref = useRef<SVGPathElement>(null);
   useTideSeam(ref, { width: 1440, height: 600, base, amp, cycles, offset, fill: !stroke });
   return stroke
     ? <path ref={ref} fill="none" stroke={stroke} strokeWidth={2} vectorEffect="non-scaling-stroke" />
     : <path ref={ref} fill={color} />;
+}
+
+/* Thin retro haze bands across the upper sky. */
+function SkyBands({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMin slice" className={className} style={style} aria-hidden="true">
+      {[120, 150, 176, 198, 216, 232].map((y, i) => (
+        <rect key={y} x="0" y={y} width="1440" height={2 + i * 0.6} fill="hsl(var(--card))" opacity={0.55 - i * 0.06} />
+      ))}
+    </svg>
+  );
+}
+
+/* Flat stacked-pill clouds, screen-print style. */
+// Kept to the open sky: the strip under the header and the gap between the
+// headline and the planner, so nothing sits on the copy.
+const CLOUDS = [
+  { x: 20, y: 80, w: 170 },
+  { x: 560, y: 96, w: 210 },
+  { x: 1300, y: 84, w: 150 },
+];
+
+function Clouds({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMin slice" className={className} style={style} aria-hidden="true">
+      {CLOUDS.map(({ x, y, w }) => (
+        <g key={`${x}-${y}`} fill="hsl(var(--card))">
+          <rect x={x + w * 0.18} y={y} width={w * 0.5} height="26" rx="13" opacity="0.92" />
+          <rect x={x} y={y + 22} width={w} height="30" rx="15" opacity="0.92" />
+          <rect x={x + w * 0.32} y={y + 48} width={w * 0.56} height="18" rx="9" opacity="0.75" />
+        </g>
+      ))}
+    </svg>
+  );
+}
+
+/* A few gulls, a nod to the bird in the logo. */
+const BIRDS = [
+  [722, 336, 1],
+  [756, 316, 0.8],
+  [784, 344, 0.65],
+];
+
+function Birds({ className, style }: { className?: string; style?: React.CSSProperties }) {
+  return (
+    <svg viewBox="0 0 1440 900" preserveAspectRatio="xMidYMin slice" className={className} style={style} aria-hidden="true">
+      {BIRDS.map(([x, y, k]) => (
+        <path
+          key={`${x}-${y}`}
+          d={`M${x - 16 * k} ${y - 6 * k} Q${x - 7 * k} ${y - 12 * k} ${x} ${y} Q${x + 7 * k} ${y - 12 * k} ${x + 16 * k} ${y - 6 * k}`}
+          fill="none"
+          stroke="hsl(var(--foreground))"
+          strokeWidth="2.6"
+          strokeLinecap="round"
+          strokeLinejoin="round"
+        />
+      ))}
+    </svg>
+  );
 }
 
 function Camper() {
@@ -110,7 +155,7 @@ function Camper() {
  * leads, so the scene separates as the visitor scrolls. The van shares the
  * road's plane (wheels stay on the road) and drives right as you leave.
  */
-export function HeroScene({ photo, photoOpacity = 0.9, children }: { photo?: string | null; photoOpacity?: number; children: ReactNode }) {
+export function HeroScene({ children }: { children: ReactNode }) {
   const ref = useRef<HTMLElement>(null);
   useScrollProgress(ref, 'exit');
   const plane = (vh: number): React.CSSProperties => ({ transform: `translate3d(0, calc(var(--lp, 0) * ${vh}vh), 0)` });
@@ -119,12 +164,12 @@ export function HeroScene({ photo, photoOpacity = 0.9, children }: { photo?: str
     <section
       ref={ref}
       className="relative -mt-20 overflow-hidden pb-[34vh] pt-28 md:min-h-[100svh] md:pb-0"
-      style={{ background: 'linear-gradient(180deg, hsl(var(--sky-top)) 0%, hsl(var(--sky-low)) 62%)' }}
+      style={{ background: 'linear-gradient(180deg, hsl(40 92% 84%) 0%, hsl(var(--sky-top)) 30%, hsl(var(--sky-low)) 68%)' }}
     >
-      {/* sky / photo plane */}
-      {photo && (
-        <img src={photo} alt="" className="tide-layer inset-0 h-full object-cover" style={{ ...plane(40), opacity: photoOpacity }} />
-      )}
+      {/* sky: haze bands, then clouds and birds, each on its own plane */}
+      <SkyBands className="tide-layer inset-0 h-full" style={plane(56)} />
+      <Clouds className="tide-layer inset-0 h-full" style={plane(44)} />
+      <Birds className="tide-layer inset-0 h-full" style={plane(30)} />
       <StripedSun id="hero-sun" className="tide-layer !right-auto bottom-[26%] left-[40%] w-[30vw] max-w-[400px] md:left-[38%] md:bottom-[22%]" style={plane(50)} />
       {/* far hills */}
       <svg viewBox="0 0 1440 600" preserveAspectRatio="xMidYMax slice" className="tide-layer h-[46%]" style={plane(36)} aria-hidden="true">
@@ -170,9 +215,9 @@ export function HeroScene({ photo, photoOpacity = 0.9, children }: { photo?: str
 }
 
 const STOPS = [
-  { title: 'Pick a place', body: 'Coffee estates in Coorg, boulders in Hampi, a beach shack in Gokarna. Wander first, decide later.', at: 0.18 },
-  { title: 'Pick your dates', body: 'Every fee shows up before you pay. Instant Book where the host allows it.', at: 0.3 },
-  { title: 'Pack a bag', body: 'Message your host if you like. Then the only plan is getting there.', at: 0.42 },
+  { title: 'Choose a place', body: 'Search by town, or tap a destination below to see it on the map.', at: 0.18 },
+  { title: 'Check the total', body: 'Cleaning and service fees are in the price before you pay. Some hosts allow Instant Book.', at: 0.3 },
+  { title: 'Talk to your host', body: 'Ask about directions, food or the weather in Messages once you have booked.', at: 0.42 },
 ];
 
 /** Three small moves on one wave: the line draws itself, stops light up crest, trough, crest. */
@@ -191,7 +236,7 @@ export function EaseLine() {
     <section ref={ref} className="relative py-24 md:py-32">
       <div className="px-[clamp(20px,4vw,48px)]">
         <h2 className="rv max-w-[16ch] text-[clamp(2.4rem,5.4vw,4.75rem)] font-semibold leading-[0.95]">
-          Three small moves. <span className="text-text-secondary">That's the whole trip.</span>
+          Booking takes a couple of minutes.
         </h2>
 
         <div className="relative mt-14 hidden md:block">
@@ -246,12 +291,124 @@ function CalmSea({ stageRef }: { stageRef: React.RefObject<HTMLElement> }) {
   return <path ref={ref} fill="hsl(var(--sea-deep))" />;
 }
 
+
+/* Illustrated fallbacks, used when no stays are featured yet. */
+const PLACE_CARDS = [
+  {
+    city: 'Coorg',
+    line: 'Coffee hills and mist',
+    art: (
+      <>
+        <rect width="200" height="150" fill="hsl(var(--sky-low))" />
+        <path d="M0 90 C50 50 110 60 200 80 V150 H0Z" fill="hsl(var(--hill))" />
+        <path d="M0 120 C60 90 130 100 200 110 V150 H0Z" fill="hsl(var(--land))" />
+        {[96, 106, 116, 126].map((y) => (
+          <path key={y} d={`M0 ${y + 14} C60 ${y - 14} 130 ${y - 4} 200 ${y + 6}`} stroke="hsl(var(--hill))" strokeWidth="2" fill="none" />
+        ))}
+      </>
+    ),
+  },
+  {
+    city: 'Hampi',
+    line: 'Boulders at golden hour',
+    art: (
+      <>
+        <rect width="200" height="150" fill="hsl(var(--sky-top))" />
+        <circle cx="150" cy="52" r="22" fill="hsl(var(--accent))" />
+        <ellipse cx="60" cy="116" rx="54" ry="34" fill="hsl(28 30% 52%)" />
+        <ellipse cx="128" cy="124" rx="40" ry="26" fill="hsl(28 26% 42%)" />
+        <ellipse cx="96" cy="84" rx="26" ry="20" fill="hsl(28 30% 58%)" />
+        <rect y="138" width="200" height="12" fill="hsl(var(--land))" />
+      </>
+    ),
+  },
+  {
+    city: 'Gokarna',
+    line: 'Quiet beaches, long walks',
+    art: (
+      <>
+        <rect width="200" height="150" fill="hsl(var(--sky-low))" />
+        <rect y="78" width="200" height="40" fill="hsl(var(--sea))" />
+        <path d="M0 112 C70 100 140 108 200 98 V150 H0Z" fill="hsl(42 60% 78%)" />
+        <path d="M150 128 Q146 92 156 64" stroke="hsl(var(--foreground))" strokeWidth="4" fill="none" strokeLinecap="round" />
+        <path d="M156 64 q-22 -4 -34 8 M156 64 q20 -10 34 0 M156 64 q-6 -18 -22 -22 M156 64 q12 -14 28 -12" stroke="hsl(var(--land))" strokeWidth="5" fill="none" strokeLinecap="round" />
+      </>
+    ),
+  },
+];
+
+const CARD_TILTS = ['-rotate-[4deg]', 'rotate-[2deg]', '-rotate-[1deg]'];
+
+function Postcard({ to, image, art, kicker, title, price, tilt }: { to: string; image?: string; art?: ReactNode; kicker: string; title: string; price?: string; tilt: string }) {
+  return (
+    <Link
+      to={to}
+      className={`group block w-[min(13rem,44vw)] shrink-0 rounded-[12px] border-2 border-foreground bg-card p-2.5 pb-3 shadow-[var(--hard)] transition-[transform,box-shadow] duration-150 hover:-translate-y-1 hover:shadow-[var(--hard-lg)] lg:w-[clamp(10rem,13vw,13.5rem)] ${tilt}`}
+    >
+      <div className="relative aspect-[4/3] overflow-hidden rounded-[6px] border-2 border-foreground bg-surface-2">
+        {image ? (
+          <img src={image} alt="" loading="lazy" className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105" />
+        ) : (
+          <svg viewBox="0 0 200 150" className="h-full w-full" aria-hidden="true">{art}</svg>
+        )}
+        {price && (
+          <span className="absolute bottom-1.5 left-1.5 rounded-full border border-foreground bg-accent px-2 py-0.5 font-ui text-[11px] font-bold text-accent-foreground">
+            {price}
+          </span>
+        )}
+      </div>
+      <span className="label-tech mt-2.5 block truncate text-text-meta">{kicker}</span>
+      <span className="mt-1 block truncate font-ui text-[15px] font-semibold leading-tight" style={{ fontStretch: '108%' }}>{title}</span>
+    </Link>
+  );
+}
+
+/**
+ * Three postcards that drift in and settle on the horizon once the sea is
+ * calm: the featured stays when there are any, otherwise three places.
+ */
+function PeakPostcards({ listings, from }: { listings: Listing[]; from: number }) {
+  const cards = listings.length > 0
+    ? listings.slice(0, 3).map((l) => ({
+        key: l.id,
+        to: `/listing/${l.id}`,
+        image: l.photos[0],
+        kicker: l.location.city,
+        title: l.title,
+        price: `${formatINR(l.pricePerNight)} / night`,
+      }))
+    : PLACE_CARDS.map((p) => ({
+        key: p.city,
+        to: `/search?location=${encodeURIComponent(p.city)}`,
+        art: p.art,
+        kicker: p.city,
+        title: p.line,
+      }));
+
+  return (
+    <div className="relative z-20 mt-8 flex gap-3 overflow-x-auto px-[clamp(20px,4vw,48px)] pb-4 pt-2 scrollbar-hide lg:absolute lg:bottom-[33%] lg:right-[clamp(20px,4vw,48px)] lg:mt-0 lg:items-end lg:gap-0 lg:overflow-visible lg:p-0">
+      {cards.map((c, i) => (
+        <div
+          key={c.key}
+          className={`tide-fade ${i > 0 ? 'lg:-ml-6' : ''} ${i === 1 ? 'lg:mb-10' : ''}`}
+          style={{
+            opacity: `calc((var(--lp, 0) - ${from + i * 0.06}) * 6)`,
+            transform: `translate3d(0, calc(max(0, ${from + i * 0.06 + 0.16} - var(--lp, 0)) * 160px), 0)`,
+          }}
+        >
+          <Postcard {...c} tilt={CARD_TILTS[i % CARD_TILTS.length]} />
+        </div>
+      ))}
+    </div>
+  );
+}
+
 /**
  * The peak. The only pinned stage on the page. The swell settles over the
  * first ~45% of its scroll room with nothing else on screen (authored
  * silence), then the sun's reflection and the line arrive on a flat sea.
  */
-export function CalmPeak({ title, children }: { title: ReactNode; children?: ReactNode }) {
+export function CalmPeak({ title, subtitle, postcards = [], children }: { title: ReactNode; subtitle?: ReactNode; postcards?: Listing[]; children?: ReactNode }) {
   const ref = useRef<HTMLElement>(null);
   const calmRef = useRef<HTMLDivElement>(null);
   useScrollProgress(ref, 'pin');
@@ -288,12 +445,16 @@ export function CalmPeak({ title, children }: { title: ReactNode; children?: Rea
         </div>
         <div className="tide-grain" />
 
-        <div className="relative z-10 mt-[18vh] px-[clamp(20px,4vw,48px)]">
-          <h2 className="tide-fade max-w-[14ch] text-[clamp(2.8rem,7vw,6.5rem)] font-semibold leading-[0.92]" style={late(0.45)}>
+        <div className="relative z-10 mt-[16vh] px-[clamp(20px,4vw,48px)] lg:max-w-[58%]">
+          <h2 className="tide-fade max-w-[19ch] text-[clamp(2.4rem,4.6vw,4.5rem)] font-semibold leading-[0.95]" style={late(0.45)}>
             {title}
           </h2>
-          <div className="tide-fade mt-6" style={late(0.55)}>{children}</div>
+          {subtitle && (
+            <p className="tide-fade mt-5 max-w-[38ch] text-lg text-text-secondary" style={late(0.5)}>{subtitle}</p>
+          )}
+          {children && <div className="tide-fade mt-6" style={late(0.55)}>{children}</div>}
         </div>
+        <PeakPostcards listings={postcards} from={0.52} />
       </div>
     </section>
   );
@@ -302,10 +463,10 @@ export function CalmPeak({ title, children }: { title: ReactNode; children?: Rea
 /** Host: a lit window on a hill. Replaced by the admin's host photo when one is set. */
 export function HostScene({ photo }: { photo?: string | null }) {
   if (photo) {
-    return <img src={photo} alt="" loading="lazy" className="aspect-[4/3] w-full rounded-[var(--radius)] border border-foreground/10 object-cover" />;
+    return <img src={photo} alt="" loading="lazy" className="aspect-[4/3] w-full rounded-[var(--radius)] border-2 border-foreground object-cover shadow-[var(--hard-lg)]" />;
   }
   return (
-    <svg viewBox="0 0 480 360" className="w-full rounded-[var(--radius)] border border-foreground/10" aria-hidden="true">
+    <svg viewBox="0 0 480 360" className="w-full rounded-[var(--radius)] border-2 border-foreground shadow-[var(--hard-lg)]" aria-hidden="true">
       <rect width="480" height="360" fill="hsl(var(--sea-deep))" />
       <circle cx="380" cy="80" r="34" fill="hsl(var(--card))" />
       {[[60, 50], [130, 96], [220, 40], [300, 120], [440, 170], [40, 150]].map(([x, y]) => (

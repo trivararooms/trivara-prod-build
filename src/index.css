@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&family=Schibsted+Grotesk:ital,wght@0,400..700;1,400..700&display=swap');
 
 @tailwind base;
 @tailwind components;
@@ -8,7 +8,7 @@
   TRIVARA DESIGN SYSTEM - "Tide"
   Retro-techno, premium-minimal. Paper-white canvas with a faint sea-glass
   cast, near-black ink, one sunshine-yellow accent. Expanded Archivo for
-  display and UI (instrument-panel feel), DM Sans for reading. Surfaces are
+  display and UI (instrument-panel feel), Schibsted Grotesk for reading. Surfaces are
   flat with hairline rules instead of soft neumorphic bevels; depth comes
   from layered illustration on the homepage, not from shadows on cards.
   Six roles drive every shadcn token below: canvas, surface, ink, ink-soft,
@@ -59,6 +59,11 @@
     --nu-hi: rgba(255,255,255,.9);
     --nu-lo: rgba(20,24,32,.12);
     --glow: rgba(255,203,46,.45);
+    /* Neo-brutalist hint: solid ink outlines and hard offset shadows, no blur. */
+    --ink-line: 2px solid hsl(222 14% 10%);
+    --hard-sm: 2px 2px 0 hsl(222 14% 10%);
+    --hard: 4px 4px 0 hsl(222 14% 10%);
+    --hard-lg: 6px 6px 0 hsl(222 14% 10%);
     /* Illustration palette (homepage scenes). */
     --sea: 203 50% 37%;
     --sea-deep: 210 45% 24%;
@@ -96,7 +101,7 @@
     color: hsl(var(--accent-foreground));
   }
 
-  /* Typography scale - expanded Archivo display, DM Sans body. Tracking
+  /* Typography scale - expanded Archivo display, Schibsted Grotesk body. Tracking
      tightens as size grows. */
   h1, h2, h3, h4, h5, h6 {
     @apply font-display;
@@ -139,35 +144,60 @@
   .nu {
     background: hsl(var(--card));
     border-radius: var(--radius);
-    border: 1px solid hsl(var(--foreground) / 0.1);
-    box-shadow: 0 1px 0 hsl(var(--foreground) / 0.04), 0 18px 40px -28px hsl(var(--foreground) / 0.35);
+    border: var(--ink-line);
+    box-shadow: var(--hard);
   }
 
   .nu-in {
     background: hsl(var(--surface-2) / 0.7);
     border-radius: calc(var(--radius) * 0.75);
-    border: 1px solid hsl(var(--foreground) / 0.08);
+    border: 1.5px solid hsl(var(--foreground) / 0.55);
   }
 
   .nu-chip {
     background: hsl(var(--card));
-    border: 1px solid hsl(var(--foreground) / 0.16);
+    border: var(--ink-line);
+    box-shadow: var(--hard-sm);
+    transition: transform 120ms var(--ease-out-expo), box-shadow 120ms var(--ease-out-expo);
+  }
+
+  .nu-chip:active {
+    transform: translate(2px, 2px);
+    box-shadow: none;
   }
 
   .nu-chip[data-active='true'],
   .nu-chip.is-active {
     background: hsl(var(--accent));
     color: hsl(var(--accent-foreground));
-    border-color: hsl(var(--foreground) / 0.9);
+    transform: translate(2px, 2px);
+    box-shadow: none;
   }
 
   .glass {
-    background: hsl(var(--card) / 0.86);
-    backdrop-filter: blur(16px) saturate(1.2);
-    -webkit-backdrop-filter: blur(16px) saturate(1.2);
-    border: 1px solid hsl(var(--foreground) / 0.12);
+    background: hsl(var(--card) / 0.94);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: var(--ink-line);
     border-radius: var(--radius);
-    box-shadow: 0 24px 60px -32px hsl(var(--foreground) / 0.45);
+    box-shadow: var(--hard-lg);
+  }
+
+  /* Solid button with a hard shadow that presses in. */
+  .btn-hard {
+    border: var(--ink-line);
+    box-shadow: var(--hard-sm);
+    transition: transform 120ms var(--ease-out-expo), box-shadow 120ms var(--ease-out-expo);
+  }
+
+  .btn-hard:hover {
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0 hsl(var(--foreground));
+  }
+
+  .btn-hard:active {
+    transform: translate(2px, 2px);
+    box-shadow: none;
   }
 
   /* Small instrument label: expanded caps, wide tracking. */
@@ -186,13 +216,13 @@
      whose own base classes are plain Tailwind utilities, which otherwise
      always win over @layer components regardless of source order. */
   .trivara-card {
-    @apply !bg-card rounded-lg !border !border-border;
-    box-shadow: 0 18px 40px -30px hsl(var(--foreground) / 0.35);
+    @apply !bg-card rounded-lg !border-2 !border-foreground;
+    box-shadow: var(--hard);
   }
 
   .trivara-card-elevated {
-    @apply !bg-surface-2 rounded-lg !border !border-border;
-    box-shadow: 0 18px 40px -30px hsl(var(--foreground) / 0.35);
+    @apply !bg-surface-2 rounded-lg !border-2 !border-foreground;
+    box-shadow: var(--hard);
   }
 
   /* Button variants - pills. !important because these are almost always
@@ -200,17 +230,24 @@
      as a utility class; utilities always win over @layer components
      regardless of source order. */
   .trivara-btn-primary {
-    @apply !bg-accent !text-accent-foreground !border !border-foreground rounded-full font-ui font-bold;
-    transition: transform 160ms var(--ease-out-expo), box-shadow 160ms var(--ease-out-expo);
+    @apply !bg-accent !text-accent-foreground !border-2 !border-foreground rounded-full font-ui font-bold;
+    box-shadow: var(--hard-sm);
+    transition: transform 120ms var(--ease-out-expo), box-shadow 120ms var(--ease-out-expo);
   }
 
   .trivara-btn-primary:hover {
-    transform: translateY(-1px);
-    box-shadow: 0 3px 0 hsl(var(--foreground));
+    transform: translate(-1px, -1px);
+    box-shadow: 3px 3px 0 hsl(var(--foreground));
+  }
+
+  .trivara-btn-primary:active {
+    transform: translate(2px, 2px);
+    box-shadow: none;
   }
 
   .trivara-btn-secondary {
-    @apply !bg-surface-3 !text-foreground hover:!bg-surface-4 transition-colors duration-200 !border !border-border rounded-full;
+    @apply !bg-card !text-foreground hover:!bg-surface-2 transition-colors duration-200 !border-2 !border-foreground rounded-full;
+    box-shadow: var(--hard-sm);
   }
 
   .trivara-btn-ghost {
@@ -232,7 +269,7 @@
 
   /* Input styling - inset, like the mock's planner fields */
   .trivara-input {
-    @apply !bg-surface-2 !border !border-border !text-foreground placeholder:!text-text-secondary focus:ring-1 focus:ring-accent;
+    @apply !bg-card !border-2 !border-foreground/70 !text-foreground placeholder:!text-text-secondary focus:ring-1 focus:ring-accent;
   }
 
   /* Text styles */
@@ -339,7 +376,7 @@
 
 /* Leaflet popups use the card tokens. */
 .leaflet-container {
-  font-family: 'DM Sans', system-ui, sans-serif;
+  font-family: 'Schibsted Grotesk', system-ui, sans-serif;
   background: hsl(var(--surface-2));
 }
 

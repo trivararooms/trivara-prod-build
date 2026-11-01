@@ -20,10 +20,10 @@ export default {
     },
     extend: {
       fontFamily: {
-        // Two families only: DM Sans reads, Archivo (expanded) speaks.
+        // Two families only: Schibsted Grotesk reads, Archivo (expanded) speaks.
         // The legacy aliases (pillar, script, bastliga, morderline) are kept
         // so existing pages re-skin without edits.
-        sans: ["DM Sans", "system-ui", "sans-serif"],
+        sans: ["Schibsted Grotesk", "system-ui", "sans-serif"],
         ui: ["Archivo", "system-ui", "sans-serif"],
         display: ["Archivo", "system-ui", "sans-serif"],
         script: ["Archivo", "system-ui", "sans-serif"],

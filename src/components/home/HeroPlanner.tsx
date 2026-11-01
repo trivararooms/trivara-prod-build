@@ -43,7 +43,7 @@ export function HeroPlanner({ state, onChange, resultCount }: HeroPlannerProps) 
 
   const tabClass = (active: boolean) =>
     `flex-1 rounded-full px-3 py-3 font-ui text-[13px] font-bold transition-all duration-200 ${
-      active ? 'bg-accent text-accent-foreground shadow-[0_8px_24px_-8px_var(--glow)]' : 'text-text-secondary hover:text-foreground'
+      active ? 'bg-accent text-accent-foreground ring-2 ring-foreground' : 'text-text-secondary hover:text-foreground'
     }`;
 
   return (
@@ -114,10 +114,9 @@ export function HeroPlanner({ state, onChange, resultCount }: HeroPlannerProps) 
         <span className="flex items-center gap-1.5">
           <Users className="h-3.5 w-3.5" /> <b className="font-semibold text-foreground">{guestLabel(state)}</b>
         </span>
-        <a href="#explore" className="group font-semibold text-foreground">
+        <span className="font-semibold text-foreground">
           <b>{resultCount ?? '…'}</b> {resultCount === 1 ? 'stay' : 'stays'}
-          <span className="ml-1 inline-block transition-transform group-hover:translate-y-0.5">↓</span>
-        </a>
+        </span>
       </div>
     </div>
   );
@@ -127,7 +126,7 @@ export function SeeAllResultsLink({ query }: { query: string }) {
   return (
     <Link
       to={`/search${query ? `?${query}` : ''}`}
-      className="inline-flex items-center gap-2 rounded-full bg-accent px-7 py-3.5 font-ui text-sm font-bold text-accent-foreground transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_14px_34px_-8px_var(--glow)]"
+      className="btn-hard inline-flex items-center gap-2 rounded-full bg-accent px-7 py-3.5 font-ui text-sm font-bold text-accent-foreground"
     >
       See all results →
     </Link>

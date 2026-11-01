@@ -5,13 +5,13 @@ import { SEO } from '@/components/SEO';
 import { HeroPlanner } from '@/components/home/HeroPlanner';
 import { ExploreSection } from '@/components/home/ExploreSection';
 import { DestinationPanels } from '@/components/home/DestinationPanels';
-import { CalmPeak, EaseLine, HeroScene, HostScene, SunsetClose, TideReadout, TideSeam } from '@/components/home/Tide';
-import { FeaturedListingCard } from '@/components/listings/FeaturedListingCard';
+import { CalmPeak, EaseLine, HeroScene, HostScene, SunsetClose, TideSeam } from '@/components/home/Tide';
 import { EditableText } from '@/components/content/EditableText';
 import { listingService } from '@/services/listingService';
 import { siteSettingsService } from '@/services/siteSettingsService';
 import { INITIAL_HOME_SEARCH, HomeSearchState, buildSearchFilters, buildSearchParams } from '@/lib/homeSearch';
 import { useReveal } from '@/hooks/useReveal';
+import { formatINR } from '@/lib/utils';
 import { Listing } from '@/types';
 
 type Destination = Awaited<ReturnType<typeof listingService.getPopularDestinations>>[number];
@@ -28,10 +28,7 @@ const EXPLORE_PAGE_SIZE = 20;
 export default function Index() {
   const [featuredListings, setFeaturedListings] = useState<Listing[]>([]);
   const [destinations, setDestinations] = useState<Destination[]>([]);
-  const [heroImage, setHeroImage] = useState<string | null>(null);
-  const [heroOverlay, setHeroOverlay] = useState(35);
   const [hostCtaImage, setHostCtaImage] = useState<string | null>(null);
-  const [hostCtaOverlay, setHostCtaOverlay] = useState(40);
   const [collectionSlots, setCollectionSlots] = useState<{ image: string | null; link: string | null }[]>([]);
   const [banner75, setBanner75] = useState<{ image: string | null; link: string | null }>({ image: null, link: null });
   const [bannerHero, setBannerHero] = useState<{ image: string | null; link: string | null }>({ image: null, link: null });
@@ -45,13 +42,12 @@ export default function Index() {
   useEffect(() => {
     const fetchData = async () => {
       try {
-        const [featured, popularDestinations, heroBackground, hostBackground, heroOverlaySetting, hostCtaOverlaySetting, collections, banner75Data, bannerHeroData] = await Promise.all([
+        // The hero is fully illustrated now, so the admin hero photo and the
+        // two overlay settings are no longer read here.
+        const [featured, popularDestinations, hostBackground, collections, banner75Data, bannerHeroData] = await Promise.all([
           listingService.getFeatured(FEATURED_COUNT),
           listingService.getPopularDestinations(),
-          siteSettingsService.getHeroBackgroundImageUrl(),
           siteSettingsService.getHostCtaBackgroundImageUrl(),
-          siteSettingsService.getAppSetting('hero_overlay_opacity'),
-          siteSettingsService.getAppSetting('host_cta_overlay_opacity'),
           Promise.all([1, 2, 3].map(async (slot) => ({
             image: await siteSettingsService.getHomepageCollectionImageUrl(slot),
             link: await siteSettingsService.getHomepageCollectionLinkUrl(slot),
@@ -61,10 +57,7 @@ export default function Index() {
         ]);
         setFeaturedListings(featured);
         setDestinations(popularDestinations);
-        setHeroImage(heroBackground);
         setHostCtaImage(hostBackground);
-        if (heroOverlaySetting) setHeroOverlay(parseInt(heroOverlaySetting, 10));
-        if (hostCtaOverlaySetting) setHostCtaOverlay(parseInt(hostCtaOverlaySetting, 10));
         setCollectionSlots(collections);
         setBanner75({ image: banner75Data[0], link: banner75Data[1] });
         setBannerHero({ image: bannerHeroData[0], link: bannerHeroData[1] });
@@ -93,9 +86,8 @@ export default function Index() {
 
   useReveal([dataReady, featuredListings.length, destinations.length, results.length]);
 
-  // Admin overlay settings (0-100, "how much to darken") now read as how far
-  // to fade an uploaded photo into the illustrated scene.
-  const heroPhotoOpacity = Math.max(0.2, 1 - heroOverlay / 100);
+
+  const moreFeatured = featuredListings.slice(3);
 
   return (
     <div className="min-h-screen bg-background">
@@ -111,26 +103,19 @@ export default function Index() {
         }}
       />
 
-      <TideReadout />
-
       {/* 1. Ease: a coast road, the van idling, the planner already open.
           The common <Header /> reserves 5rem above; the scene pulls itself
           up under it (-mt-20 inside HeroScene). */}
-      <HeroScene photo={heroImage} photoOpacity={heroPhotoOpacity}>
+      <HeroScene>
         <div className={`grid w-full items-start gap-10 ${SIDE_PAD} lg:grid-cols-[1.1fr_.9fr] lg:gap-14`}>
           <div className="pt-4 lg:pt-10">
-            <span className="label-tech text-text-secondary">Short stays · Karnataka</span>
-            <h1 className="mt-4 animate-fade-in text-[clamp(3rem,7.6vw,7.25rem)] font-semibold leading-[0.9]">
-              <EditableText settingKey="content_hero_title_a" fallback="Somewhere" as="span" />{' '}
-              <span className="relative isolate inline-block px-[0.12em]">
-                <span aria-hidden="true" className="absolute inset-x-0 bottom-[0.06em] top-[0.14em] -z-10 -rotate-[1.2deg] rounded-[0.14em] border-2 border-foreground bg-accent" />
-                <EditableText settingKey="content_hero_title_b" fallback="easy" as="span" />
-              </span>{' '}
-              <EditableText settingKey="content_hero_title_c" fallback="is waiting." as="span" />
+            <h1 className="animate-fade-in text-[clamp(3rem,7.2vw,6.75rem)] font-semibold leading-[0.92]">
+              <EditableText settingKey="content_hero_title_a" fallback="Get away" as="span" />{' '}
+              <EditableText settingKey="content_hero_title_b" fallback="this weekend." as="span" />
             </h1>
             <EditableText
               settingKey="content_hero_subtitle"
-              fallback="Coffee hills, river camps and quiet beaches. Look around as long as you like. Every price shows its working before you pay."
+              fallback="Homestays, river camps and beach huts across Karnataka, run by people who live there. The price you see includes every fee."
               as="p"
               className="mt-6 max-w-[40ch] animate-fade-in text-lg text-text-secondary"
               style={{ animationDelay: '0.1s' }}
@@ -152,43 +137,58 @@ export default function Index() {
 
       {/* 3. Peak: the sea goes still. The only pinned stage on the page. */}
       <CalmPeak
-        title={<EditableText settingKey="content_peak_title" fallback="Breathe. Here's somewhere good." as="span" />}
-      >
-        <a href="#featured" className="tide-cta font-ui text-lg font-semibold" style={{ fontStretch: '112%' }}>
-          Find a stay
-        </a>
-      </CalmPeak>
+        title={<EditableText settingKey="content_peak_title" fallback="A few of our favourites right now" as="span" />}
+        postcards={featuredListings}
+      />
 
       <TideSeam className="-mt-[72px] text-background" options={{ offset: 3.2, cycles: 3 }} />
 
       {/* Featured stays - admin-curated (is_featured, capped by
-          featured_stays_max_slots), five across. */}
-      <section id="featured" className="scroll-mt-24 pb-20 pt-12 md:pb-28">
+          featured_stays_max_slots). The first three are the postcards in
+          the calm section above; this grid holds the rest, if any. */}
+      <section id="featured" className={`scroll-mt-24 pt-12 ${moreFeatured.length ? 'pb-20 md:pb-28' : 'pb-4'}`}>
         <div className={`w-full ${SIDE_PAD}`}>
-          <div className="rv mb-10 flex items-end justify-between gap-4">
+          {moreFeatured.length > 0 && (
             <EditableText
               settingKey="content_featured_heading"
-              fallback="Stays worth the drive"
+              fallback="More stays we like"
               as="h2"
-              className="text-[clamp(2.4rem,5.4vw,4.75rem)] font-semibold leading-[0.95]"
+              className="rv mb-10 text-[clamp(2rem,4.2vw,3.5rem)] font-semibold leading-[0.95]"
             />
-            <Link to="/search" className="tide-cta hidden font-ui text-sm font-semibold sm:inline" style={{ fontStretch: '112%' }}>
-              Find a stay
-            </Link>
-          </div>
+          )}
 
-          {featuredListings.length === 0 ? (
-            <p className="py-12 text-text-secondary">
-              {dataReady ? 'No featured stays yet. The map below has every one.' : ' '}
-            </p>
-          ) : (
-            <div className="grid grid-cols-2 gap-4 md:grid-cols-3 xl:grid-cols-5">
-              {featuredListings.map((listing, i) => (
-                <div key={listing.id} className="rv" style={{ transitionDelay: `${i * 60}ms` }}>
-                  <FeaturedListingCard listing={listing} />
-                </div>
+          {moreFeatured.length > 0 && (
+            <ul className="border-t border-foreground/15">
+              {moreFeatured.map((listing) => (
+                <li key={listing.id} className="rv border-b border-foreground/15">
+                  <Link
+                    to={`/listing/${listing.id}`}
+                    className="group grid grid-cols-[72px_1fr_auto] items-center gap-4 py-4 sm:grid-cols-[120px_1.4fr_1fr_auto] sm:gap-8 sm:py-5"
+                  >
+                    <img
+                      src={listing.photos[0]}
+                      alt=""
+                      loading="lazy"
+                      className="aspect-[4/3] w-full rounded-[6px] border-2 border-foreground object-cover"
+                    />
+                    <span className="min-w-0">
+                      <span className="block truncate font-display text-xl font-semibold leading-tight transition-colors group-hover:text-text-secondary sm:text-[1.75rem]">
+                        {listing.title}
+                      </span>
+                      <span className="mt-1 block text-sm text-text-secondary sm:hidden">{listing.location.city}</span>
+                    </span>
+                    <span className="hidden text-text-secondary sm:block">
+                      {listing.location.city}
+                      {listing.rating > 0 && <> · ★ {listing.rating.toFixed(1)}</>}
+                    </span>
+                    <span className="text-right font-ui font-semibold tabular-nums">
+                      {formatINR(listing.pricePerNight)}
+                      <span className="block text-xs font-normal text-text-meta">a night</span>
+                    </span>
+                  </Link>
+                </li>
               ))}
-            </div>
+            </ul>
           )}
         </div>
       </section>
@@ -197,15 +197,12 @@ export default function Index() {
       {destinations.length > 0 && (
         <section id="destinations" className="scroll-mt-24 pb-20 md:pb-28">
           <div className={`w-full ${SIDE_PAD}`}>
-            <div className="rv mb-8 flex flex-wrap items-end justify-between gap-3">
-              <EditableText
-                settingKey="content_destinations_heading"
-                fallback="Places to wander"
-                as="h2"
-                className="text-[clamp(2.4rem,5.4vw,4.75rem)] font-semibold leading-[0.95]"
-              />
-              <span className="label-tech text-text-meta">Tap one to filter the map</span>
-            </div>
+            <EditableText
+              settingKey="content_destinations_heading"
+              fallback="Where people are going"
+              as="h2"
+              className="rv mb-8 text-[clamp(2.4rem,5.4vw,4.75rem)] font-semibold leading-[0.95]"
+            />
             <div className="rv">
               <DestinationPanels
                 destinations={destinations}
@@ -249,12 +246,11 @@ export default function Index() {
             <HostScene photo={hostCtaImage} />
           </div>
           <div className="rv md:order-1">
-            <span className="label-tech text-text-meta">For hosts</span>
             <EditableText
               settingKey="content_host_heading"
               fallback="Got a spare room and a good view?"
               as="h2"
-              className="mt-4 text-[clamp(2.2rem,4.6vw,4rem)] font-semibold leading-[0.95]"
+              className="text-[clamp(2.2rem,4.6vw,4rem)] font-semibold leading-[0.95]"
             />
             <EditableText
               settingKey="content_host_subtitle"
@@ -264,7 +260,7 @@ export default function Index() {
             />
             <Link
               to="/host"
-              className="mt-8 inline-flex rounded-full border border-foreground bg-card px-7 py-3.5 font-ui text-sm font-bold text-foreground transition-[transform,box-shadow] duration-150 hover:-translate-y-px hover:shadow-[0_3px_0_hsl(var(--foreground))]"
+              className="btn-hard mt-8 inline-flex rounded-full bg-card px-7 py-3.5 font-ui text-sm font-bold text-foreground"
             >
               <EditableText settingKey="content_host_button" fallback="Start hosting" as="span" />
             </Link>
@@ -277,11 +273,11 @@ export default function Index() {
       {banner75.image && (
         <div className={`w-full pb-20 ${SIDE_PAD}`}>
           {banner75.link ? (
-            <a href={banner75.link} className="block h-[60vh] overflow-hidden rounded-[var(--radius)] border border-foreground/10">
+            <a href={banner75.link} className="block h-[60vh] overflow-hidden rounded-[var(--radius)] border-2 border-foreground">
               <img src={banner75.image} alt="" loading="lazy" className="h-full w-full object-cover" />
             </a>
           ) : (
-            <div className="h-[60vh] overflow-hidden rounded-[var(--radius)] border border-foreground/10">
+            <div className="h-[60vh] overflow-hidden rounded-[var(--radius)] border-2 border-foreground">
               <img src={banner75.image} alt="" loading="lazy" className="h-full w-full object-cover" />
             </div>
           )}
@@ -314,11 +310,11 @@ export default function Index() {
       {bannerHero.image && (
         <div className={`w-full pb-20 ${SIDE_PAD}`}>
           {bannerHero.link ? (
-            <a href={bannerHero.link} className="block h-[80vh] overflow-hidden rounded-[var(--radius)] border border-foreground/10">
+            <a href={bannerHero.link} className="block h-[80vh] overflow-hidden rounded-[var(--radius)] border-2 border-foreground">
               <img src={bannerHero.image} alt="" loading="lazy" className="h-full w-full object-cover" />
             </a>
           ) : (
-            <div className="h-[80vh] overflow-hidden rounded-[var(--radius)] border border-foreground/10">
+            <div className="h-[80vh] overflow-hidden rounded-[var(--radius)] border-2 border-foreground">
               <img src={bannerHero.image} alt="" loading="lazy" className="h-full w-full object-cover" />
             </div>
           )}
@@ -329,8 +325,8 @@ export default function Index() {
 
       {/* 7. Resolve: the sea is still again. One line, one link. */}
       <SunsetClose
-        line={<EditableText settingKey="content_close_line" fallback="Whenever you're ready." as="span" />}
-        cta={{ to: '/search', label: 'Find a stay' }}
+        line={<EditableText settingKey="content_close_line" fallback="Still deciding? Have a look around." as="span" />}
+        cta={{ to: '/search', label: 'Browse all stays' }}
       />
     </div>
   );
