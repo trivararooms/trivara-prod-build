@@ -31,7 +31,7 @@ export function Dock() {
           to={to}
           aria-current={active ? 'page' : undefined}
           className={`relative flex flex-col items-center gap-0.5 rounded-full px-[18px] py-2 font-ui text-[11px] font-bold transition-all duration-200 ${
-            active ? 'bg-accent text-accent-foreground' : 'text-text-secondary hover:bg-accent hover:text-accent-foreground'
+            active ? 'bg-accent text-accent-foreground ring-2 ring-foreground' : 'text-text-secondary hover:bg-accent hover:text-accent-foreground'
           }`}
         >
           <Icon className="h-5 w-5" strokeWidth={2} />

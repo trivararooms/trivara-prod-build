@@ -464,8 +464,7 @@ export default function Search() {
           <div className="space-y-12">
             {/* Section A: Featured Stays */}
             <section>
-              <h2 className="text-3xl font-display font-medium mb-2">Featured Stays</h2>
-              <p className="text-text-secondary mb-8">Handpicked premium properties with exceptional ratings.</p>
+              <h2 className="text-3xl font-display font-medium mb-8">Featured Stays</h2>
 
               {loadingCarousels ? (
                 <CarouselSkeleton />
@@ -482,8 +481,7 @@ export default function Search() {
 
             {/* Section B: Popular Stays */}
             <section>
-              <h2 className="text-3xl font-display font-medium mb-2">Popular right now</h2>
-              <p className="text-text-secondary mb-8">The most booked and reviewed destinations this week.</p>
+              <h2 className="text-3xl font-display font-medium mb-8">Popular right now</h2>
 
               {loadingCarousels ? (
                 <CarouselSkeleton />

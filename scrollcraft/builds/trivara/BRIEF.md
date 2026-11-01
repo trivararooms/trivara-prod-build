@@ -95,3 +95,15 @@ Why the eight defined grammars lost:
 y(x) = A(p) · sin(k·x − φ(p)), where A(p) = A₀ · (1 − smoothstep(p)) and φ = 6·p.
 
 A is the amplitude, p is the scroll progress, and φ is the phase. Amplitude falls as you approach the stays and is exactly 0 at the peak. The readout prints the live equation in mono: `y = 0.84·sin(x − 1.92)`, falling to `y = 0 · calm`. Below the peak the amplitude rises gently again, so the sea breathes, then settles to calm at the close.
+
+## Revisions (2026-11-01, round 2)
+
+User feedback: hide the equation readout; fill the empty calm section; remove the hero photo and give the hero its own background; drop links that only jump down the page; avoid AI-looking patterns; add a neo-brutalist hint everywhere.
+
+- The corner readout was removed. The settling sea still drives every wave seam, but the equation is no longer printed.
+- The calm section now holds three postcards on the horizon: the first three featured stays, or illustrated Coorg/Hampi/Gokarna cards when none are featured. The rest of the featured stays show as an editorial list, not a card grid.
+- The hero ignores the admin hero photo and overlay settings and draws its own sky: haze bands, flat clouds and gulls, each on its own parallax plane.
+- In-page jump links were removed: the peak's "Find a stay" link, the planner's "N stays ↓" link, and the header's "Featured"/"Explore" anchors (Explore now always opens /search).
+- Copy rewritten in plain language. Eyebrow labels, the highlighter box and redundant subheadings were removed, including the search page subtitles.
+- Body font changed from DM Sans to Schibsted Grotesk; Archivo stays for display.
+- Neo-brutalist hint: 2px ink outlines and hard 2/4/6px offset shadows on cards, the header, dock, planner, chips, buttons and postcards. Buttons press in on click.

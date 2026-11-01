@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Link, useNavigate, useLocation } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import { Menu, Home, MessageCircle, ChevronDown } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Sheet, SheetContent, SheetTrigger, SheetClose } from '@/components/ui/sheet';
@@ -18,8 +18,6 @@ const linkClass = 'rounded-full px-4 py-2 font-ui text-[13px] font-semibold text
 
 export function Header() {
   const navigate = useNavigate();
-  const location = useLocation();
-  const isHome = location.pathname === '/';
   // AuthContext already fetches this user's own profile row (role, is_host)
   // once on login - reading it here instead of doing a second, separate
   // profileService.getByUserId() fetch on every single page (Header renders
@@ -61,8 +59,7 @@ export function Header() {
 
         {/* Desktop links */}
         <div className="hidden items-center gap-0.5 md:flex">
-          {isHome && <a href="#featured" className={linkClass}>Featured</a>}
-          {isHome ? <a href="#explore" className={linkClass}>Explore</a> : <Link to="/search" className={linkClass}>Explore</Link>}
+          <Link to="/search" className={linkClass}>Explore</Link>
           {user && <Link to="/trips" className={linkClass}>Trips</Link>}
           {user && <Link to="/saved" className={linkClass}>Saved</Link>}
 
@@ -112,7 +109,7 @@ export function Header() {
         {!isHost && (
           <Link
             to="/host"
-            className="ml-2 hidden rounded-full bg-accent px-5 py-2.5 font-ui text-[13px] font-bold text-accent-foreground transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_28px_-8px_var(--glow)] sm:inline-flex"
+            className="btn-hard ml-2 hidden rounded-full bg-accent px-5 py-2 font-ui text-[13px] font-bold text-accent-foreground sm:inline-flex"
           >
             Host
           </Link>

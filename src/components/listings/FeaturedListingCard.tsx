@@ -23,7 +23,7 @@ export function FeaturedListingCard({ listing }: FeaturedListingCardProps) {
           className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
         />
         <SaveButton listingId={listing.id} className="absolute right-3 top-3" />
-        <span className="absolute bottom-3 left-3 -rotate-3 rounded-full bg-accent px-3.5 py-1.5 font-ui text-sm font-extrabold text-accent-foreground">
+        <span className="absolute bottom-3 left-3 -rotate-3 rounded-full border-2 border-foreground bg-accent px-3.5 py-1.5 font-ui text-sm font-extrabold text-accent-foreground">
           {formatINR(listing.pricePerNight)}
         </span>
       </div>
