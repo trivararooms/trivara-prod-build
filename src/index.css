@@ -1,65 +1,77 @@
-@import url('https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,300;0,400;0,500;0,600;1,300;1,400;1,500&family=Sora:wght@400;600;700;800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&family=Fraunces:opsz,wght@9..144,300;9..144,500;9..144,600;9..144,700&family=Big+Shoulders+Display:wght@600;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Archivo:wdth,wght@62..125,300..800&family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,700;1,9..40,400&display=swap');
 
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
 /*
-  TRIVARA DESIGN SYSTEM - "Voyage"
-  Cinematic full-bleed scenes (serif italics, slow-drifting skies) wrapped in
-  soft tactile cards (neumorphic raised/inset surfaces), pill controls and a
-  floating dock. One colour scheme (paper: warm canvas, gold accent) drives
-  every shadcn token below. Primary (ink) = structural/interactive;
-  accent = the one highlight colour per scheme (CTAs, ratings, active states).
+  TRIVARA DESIGN SYSTEM - "Tide"
+  Retro-techno, premium-minimal. Paper-white canvas with a faint sea-glass
+  cast, near-black ink, one sunshine-yellow accent. Expanded Archivo for
+  display and UI (instrument-panel feel), DM Sans for reading. Surfaces are
+  flat with hairline rules instead of soft neumorphic bevels; depth comes
+  from layered illustration on the homepage, not from shadows on cards.
+  Six roles drive every shadcn token below: canvas, surface, ink, ink-soft,
+  accent, accent-ink.
 */
 
 @layer base {
   :root {
-    --background: 40 45% 94%;
-    --foreground: 40 8% 8%;
-    --card: 42 56% 96%;
-    --card-foreground: 40 8% 8%;
-    --popover: 42 56% 96%;
-    --popover-foreground: 40 8% 8%;
-    --primary: 40 8% 8%;
-    --primary-foreground: 40 45% 94%;
-    --secondary: 42 41% 87%;
-    --secondary-foreground: 40 8% 8%;
-    --muted: 42 41% 87%;
-    --muted-foreground: 41 9% 33%;
-    --accent: 42 95% 52%;
-    --accent-foreground: 40 8% 8%;
-    --accent-hover: 42 86% 43%;
-    --destructive: 0 65% 50%;
+    --background: 90 12% 94%;
+    --foreground: 222 14% 10%;
+    --card: 75 20% 98%;
+    --card-foreground: 222 14% 10%;
+    --popover: 75 20% 98%;
+    --popover-foreground: 222 14% 10%;
+    --primary: 222 14% 10%;
+    --primary-foreground: 75 20% 98%;
+    --secondary: 100 10% 89%;
+    --secondary-foreground: 222 14% 10%;
+    --muted: 100 10% 89%;
+    --muted-foreground: 220 9% 34%;
+    --accent: 44 100% 59%;
+    --accent-foreground: 222 14% 10%;
+    --accent-hover: 42 100% 50%;
+    --destructive: 4 70% 48%;
     --destructive-foreground: 0 0% 98%;
-    --border: 42 14% 81%;
-    --input: 42 14% 81%;
-    --ring: 42 95% 52%;
-    --limited: 40 8% 72%;
-    --text-primary: 40 8% 8%;
-    --text-secondary: 41 9% 33%;
-    --text-meta: 41 6% 51%;
-    --surface-0: 40 45% 94%;
-    --surface-1: 42 56% 96%;
-    --surface-2: 42 41% 87%;
-    --surface-3: 43 28% 83%;
-    --surface-4: 42 20% 78%;
-    --sidebar-background: 40 45% 94%;
-    --sidebar-foreground: 40 8% 8%;
-    --sidebar-primary: 40 8% 8%;
-    --sidebar-primary-foreground: 40 45% 94%;
-    --sidebar-accent: 42 41% 87%;
-    --sidebar-accent-foreground: 40 8% 8%;
-    --sidebar-border: 42 14% 81%;
-    --sidebar-ring: 42 95% 52%;
-    --nu-hi: rgba(255,255,255,.95);
-    --nu-lo: rgba(60,50,30,.2);
-    --glow: rgba(249,179,18,.35);
+    --border: 100 6% 80%;
+    --input: 100 6% 80%;
+    --ring: 222 14% 10%;
+    --limited: 220 6% 70%;
+    --text-primary: 222 14% 10%;
+    --text-secondary: 220 9% 34%;
+    --text-meta: 220 6% 46%;
+    --surface-0: 90 12% 94%;
+    --surface-1: 75 20% 98%;
+    --surface-2: 100 10% 89%;
+    --surface-3: 100 8% 85%;
+    --surface-4: 100 6% 80%;
+    --sidebar-background: 90 12% 94%;
+    --sidebar-foreground: 222 14% 10%;
+    --sidebar-primary: 222 14% 10%;
+    --sidebar-primary-foreground: 75 20% 98%;
+    --sidebar-accent: 100 10% 89%;
+    --sidebar-accent-foreground: 222 14% 10%;
+    --sidebar-border: 100 6% 80%;
+    --sidebar-ring: 222 14% 10%;
+    /* Kept for components that still reference them: now a hairline and a
+       soft drop rather than a neumorphic highlight/lowlight pair. */
+    --nu-hi: rgba(255,255,255,.9);
+    --nu-lo: rgba(20,24,32,.12);
+    --glow: rgba(255,203,46,.45);
+    /* Illustration palette (homepage scenes). */
+    --sea: 203 50% 37%;
+    --sea-deep: 210 45% 24%;
+    --hill: 160 22% 62%;
+    --hill-far: 165 20% 76%;
+    --land: 150 22% 22%;
+    --sky-top: 46 90% 86%;
+    --sky-low: 160 24% 90%;
     color-scheme: light;
   }
 
   :root {
-    --radius: 1.5rem;
+    --radius: 1rem;
     --ease-out-expo: cubic-bezier(0.2, 0.7, 0.2, 1);
   }
 }
@@ -84,9 +96,12 @@
     color: hsl(var(--accent-foreground));
   }
 
-  /* Typography scale - Cormorant Garamond display, DM Sans body, Sora UI. */
+  /* Typography scale - expanded Archivo display, DM Sans body. Tracking
+     tightens as size grows. */
   h1, h2, h3, h4, h5, h6 {
-    @apply font-display tracking-tight;
+    @apply font-display;
+    font-stretch: 112%;
+    letter-spacing: -0.03em;
   }
 
   h1 {
@@ -120,38 +135,50 @@
 }
 
 @layer components {
-  /* ---- Tactile surfaces ---------------------------------------------- */
+  /* ---- Surfaces: flat paper, hairline rule, a soft drop ------------- */
   .nu {
     background: hsl(var(--card));
     border-radius: var(--radius);
-    box-shadow: 8px 10px 24px var(--nu-lo), -6px -6px 18px var(--nu-hi), inset 0 1px 0 var(--nu-hi);
+    border: 1px solid hsl(var(--foreground) / 0.1);
+    box-shadow: 0 1px 0 hsl(var(--foreground) / 0.04), 0 18px 40px -28px hsl(var(--foreground) / 0.35);
   }
 
   .nu-in {
-    background: hsl(var(--background));
-    border-radius: calc(var(--radius) * 0.7);
-    box-shadow: inset 4px 5px 12px var(--nu-lo), inset -3px -3px 10px var(--nu-hi);
+    background: hsl(var(--surface-2) / 0.7);
+    border-radius: calc(var(--radius) * 0.75);
+    border: 1px solid hsl(var(--foreground) / 0.08);
   }
 
   .nu-chip {
-    background: hsl(var(--background));
-    box-shadow: 3px 4px 10px var(--nu-lo), -2px -2px 8px var(--nu-hi);
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--foreground) / 0.16);
   }
 
   .nu-chip[data-active='true'],
   .nu-chip.is-active {
     background: hsl(var(--accent));
     color: hsl(var(--accent-foreground));
-    box-shadow: inset 2px 3px 8px rgba(0, 0, 0, 0.25);
+    border-color: hsl(var(--foreground) / 0.9);
   }
 
   .glass {
-    background: hsl(var(--card) / 0.62);
-    backdrop-filter: blur(22px) saturate(1.4);
-    -webkit-backdrop-filter: blur(22px) saturate(1.4);
-    border: 1px solid hsl(var(--foreground) / 0.14);
+    background: hsl(var(--card) / 0.86);
+    backdrop-filter: blur(16px) saturate(1.2);
+    -webkit-backdrop-filter: blur(16px) saturate(1.2);
+    border: 1px solid hsl(var(--foreground) / 0.12);
     border-radius: var(--radius);
-    box-shadow: 0 30px 70px -24px rgba(0, 0, 0, 0.55);
+    box-shadow: 0 24px 60px -32px hsl(var(--foreground) / 0.45);
+  }
+
+  /* Small instrument label: expanded caps, wide tracking. */
+  .label-tech {
+    font-family: 'Archivo', system-ui, sans-serif;
+    font-stretch: 118%;
+    font-weight: 600;
+    font-size: 0.6875rem;
+    letter-spacing: 0.14em;
+    text-transform: uppercase;
+    font-variant-numeric: tabular-nums;
   }
 
   /* Card with raised tactile depth - the old flat bordered card, upgraded.
@@ -159,13 +186,13 @@
      whose own base classes are plain Tailwind utilities, which otherwise
      always win over @layer components regardless of source order. */
   .trivara-card {
-    @apply !bg-card rounded-lg !border !border-border/60;
-    box-shadow: 8px 10px 24px var(--nu-lo), -6px -6px 18px var(--nu-hi);
+    @apply !bg-card rounded-lg !border !border-border;
+    box-shadow: 0 18px 40px -30px hsl(var(--foreground) / 0.35);
   }
 
   .trivara-card-elevated {
-    @apply !bg-surface-3 rounded-lg !border !border-border/60;
-    box-shadow: 8px 10px 24px var(--nu-lo), -6px -6px 18px var(--nu-hi);
+    @apply !bg-surface-2 rounded-lg !border !border-border;
+    box-shadow: 0 18px 40px -30px hsl(var(--foreground) / 0.35);
   }
 
   /* Button variants - pills. !important because these are almost always
@@ -173,12 +200,13 @@
      as a utility class; utilities always win over @layer components
      regardless of source order. */
   .trivara-btn-primary {
-    @apply !bg-accent !text-accent-foreground !border-0 rounded-full font-ui font-bold transition-all duration-200;
+    @apply !bg-accent !text-accent-foreground !border !border-foreground rounded-full font-ui font-bold;
+    transition: transform 160ms var(--ease-out-expo), box-shadow 160ms var(--ease-out-expo);
   }
 
   .trivara-btn-primary:hover {
-    transform: translateY(-2px);
-    box-shadow: 0 14px 34px -8px var(--glow);
+    transform: translateY(-1px);
+    box-shadow: 0 3px 0 hsl(var(--foreground));
   }
 
   .trivara-btn-secondary {
@@ -192,8 +220,8 @@
   /* Ghost-on-photo pill (hero / scene CTAs) */
   .pill-ghost {
     @apply inline-flex items-center justify-center rounded-full px-8 py-4 font-ui text-sm font-bold text-white transition-all duration-200;
-    background: rgba(255, 255, 255, 0.1);
-    border: 1px solid rgba(255, 255, 255, 0.45);
+    background: rgba(255, 255, 255, 0.14);
+    border: 1px solid rgba(255, 255, 255, 0.55);
     backdrop-filter: blur(10px);
   }
 
@@ -295,7 +323,7 @@
     border: 1.2px solid hsl(var(--foreground));
     background: hsl(var(--card));
     color: hsl(var(--foreground));
-    font: 600 11px 'DM Sans', system-ui, sans-serif;
+    font: 600 11px 'Archivo', system-ui, sans-serif;
     white-space: nowrap;
     transition: transform 0.2s, background 0.2s;
   }
@@ -382,5 +410,62 @@
 
   .scene-bg {
     animation: none;
+  }
+}
+
+/* ---- Tide homepage -------------------------------------------------- */
+/* Every value that moves is driven from a scroll-progress custom property
+   (--lp, 0..1 across an element's own travel) written by src/lib/tide.ts,
+   so React never re-renders on scroll. Only transform and opacity animate. */
+.tide-layer {
+  position: absolute;
+  inset: auto 0 0 0;
+  width: 100%;
+  will-change: transform;
+  pointer-events: none;
+}
+
+.tide-grain {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  opacity: 0.16;
+  mix-blend-mode: multiply;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='160' height='160'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix values='0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 0 .55 0'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
+}
+
+.tide-readout {
+  font-family: 'Archivo', system-ui, sans-serif;
+  font-stretch: 112%;
+  font-variant-numeric: tabular-nums;
+}
+
+.tide-cta {
+  text-decoration: underline;
+  text-decoration-thickness: 2px;
+  text-underline-offset: 0.3em;
+  text-decoration-color: hsl(var(--accent));
+  transition: text-decoration-color 160ms var(--ease-out-expo), text-underline-offset 160ms var(--ease-out-expo);
+}
+
+.tide-cta:hover {
+  text-decoration-color: hsl(var(--foreground));
+  text-underline-offset: 0.4em;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tide-layer {
+    transform: none !important;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tide-fade {
+    opacity: 1 !important;
+    transform: none !important;
+  }
+
+  .tide-draw {
+    stroke-dashoffset: 0 !important;
   }
 }
