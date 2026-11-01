@@ -34,8 +34,8 @@ export function Logo({ markClassName = 'h-8 w-8', nameClassName = 'text-lg', col
     <span className="flex items-center gap-3">
       <LogoMark className={markClassName} color={color} />
       <span
-        className={`font-sans font-bold tracking-[0.1em] leading-none ${color ? '' : 'text-foreground'} ${nameClassName}`}
-        style={color ? { color } : undefined}
+        className={`font-ui font-bold tracking-[0.1em] leading-none ${color ? '' : 'text-foreground'} ${nameClassName}`}
+        style={{ fontStretch: '118%', ...(color ? { color } : {}) }}
       >
         TRIVARASTAYS
       </span>

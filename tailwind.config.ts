@@ -20,13 +20,16 @@ export default {
     },
     extend: {
       fontFamily: {
+        // Two families only: DM Sans reads, Archivo (expanded) speaks.
+        // The legacy aliases (pillar, script, bastliga, morderline) are kept
+        // so existing pages re-skin without edits.
         sans: ["DM Sans", "system-ui", "sans-serif"],
-        ui: ["Sora", "system-ui", "sans-serif"],
-        display: ["Cormorant Garamond", "Georgia", "serif"],
-        script: ["Fraunces", "Georgia", "serif"],
-        pillar: ["Big Shoulders Display", "system-ui", "sans-serif"],
-        bastliga: ["Fraunces", "Georgia", "serif"],
-        morderline: ["Inter", "system-ui", "sans-serif"],
+        ui: ["Archivo", "system-ui", "sans-serif"],
+        display: ["Archivo", "system-ui", "sans-serif"],
+        script: ["Archivo", "system-ui", "sans-serif"],
+        pillar: ["Archivo", "system-ui", "sans-serif"],
+        bastliga: ["Archivo", "system-ui", "sans-serif"],
+        morderline: ["Archivo", "system-ui", "sans-serif"],
       },
       colors: {
         border: "hsl(var(--border))",
@@ -83,6 +86,10 @@ export default {
         "surface-2": "hsl(var(--surface-2))",
         "surface-3": "hsl(var(--surface-3))",
         "surface-4": "hsl(var(--surface-4))",
+        sea: "hsl(var(--sea))",
+        "sea-deep": "hsl(var(--sea-deep))",
+        hill: "hsl(var(--hill))",
+        land: "hsl(var(--land))",
       },
       borderRadius: {
         lg: "var(--radius)",
