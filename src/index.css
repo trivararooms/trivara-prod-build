@@ -506,3 +506,58 @@
     stroke-dashoffset: 0 !important;
   }
 }
+
+/* ---- The tern (src/components/layout/FlyingTern.tsx) ----------------- */
+/* White bird on a light page: a hairline ink outline and a hard offset
+   shadow keep it readable without changing the bird itself. */
+.tern {
+  position: fixed;
+  left: 0;
+  top: 0;
+  z-index: 45;
+  width: 84px;
+  aspect-ratio: 1241 / 756;
+  pointer-events: none;
+  transform-origin: center;
+  will-change: transform;
+  filter: drop-shadow(0 0 0.6px rgba(22, 24, 29, 0.85)) drop-shadow(2px 3px 0 rgba(22, 24, 29, 0.2));
+}
+
+.tern > img,
+.tern > svg {
+  position: absolute;
+  left: 0;
+  bottom: 0;
+  display: block;
+  width: 100%;
+  height: auto;
+  transition: opacity 140ms ease-out;
+}
+
+.tern .tern-perched { opacity: 0; }
+.tern .tern-flying { opacity: 1; }
+.tern[data-mode='perched'] .tern-perched { opacity: 1; }
+.tern[data-mode='perched'] .tern-flying { opacity: 0; }
+
+.tern-wing {
+  transform-box: view-box;
+  transform-origin: 64px 39px;
+  animation: tern-flap 240ms ease-in-out infinite alternate;
+}
+
+.tern-wing-back { animation-delay: -40ms; }
+
+/* Gliding in to land: wings held half open. */
+.tern[data-mode='glide'] .tern-wing {
+  animation: none;
+  transform: scaleY(0.35);
+}
+
+@keyframes tern-flap {
+  from { transform: scaleY(1); }
+  to { transform: scaleY(-0.6); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .tern { display: none; }
+}

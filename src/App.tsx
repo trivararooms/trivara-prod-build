@@ -8,6 +8,7 @@ import ProtectedRoute from "@/components/ProtectedRoute";
 import { Header } from "@/components/layout/Header";
 import { Footer } from "@/components/layout/Footer";
 import { Dock } from "@/components/layout/Dock";
+import { FlyingTern } from "@/components/layout/FlyingTern";
 import { SiteBackground } from "@/components/layout/SiteBackground";
 import { ThemeColor } from "@/components/layout/ThemeColor";
 import { Loader2 } from "lucide-react";
@@ -168,6 +169,7 @@ const App = () => (
         <Footer />
         {/* Floating bottom dock - Home / Explore / Trips / Saved. */}
         <Dock />
+        <FlyingTern />
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
