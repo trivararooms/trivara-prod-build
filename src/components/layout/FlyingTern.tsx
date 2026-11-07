@@ -52,35 +52,73 @@ const TURN_MIN_SPEED = 0.06; // ignore drift slower than this when deciding to t
 const TILT_EASE_MS = 260;
 
 type Mode = 'flying' | 'landing' | 'perched';
+type Lane = 'left' | 'right';
 
-function visiblePerches(exclude: Element | null): HTMLElement[] {
+// The middle 40% of the screen width is a no-fly zone, so the bird never
+// crosses the content people are reading. It lives in the left or right
+// lane, and changes sides by flying up off the top and back down.
+const NO_FLY_FROM = 0.3;
+const NO_FLY_TO = 0.7;
+const BODY_REACH = FEET_X; // how far the body extends either side of the feet, in widths
+const EDGE = 8;
+
+function laneRange(lane: Lane, w: number): [number, number] {
+  const vw = window.innerWidth;
+  const reach = w * BODY_REACH;
+  return lane === 'left'
+    ? [reach + EDGE, vw * NO_FLY_FROM - reach]
+    : [vw * NO_FLY_TO + reach, vw - reach - EDGE];
+}
+
+const laneOf = (x: number): Lane => (x < window.innerWidth / 2 ? 'left' : 'right');
+
+// Where on this element the bird can stand without its body entering the
+// no-fly zone, per lane. Null when there is no room on either side.
+function perchSpots(r: DOMRect, w: number): { lane: Lane; from: number; to: number }[] {
+  const spots: { lane: Lane; from: number; to: number }[] = [];
+  for (const lane of ['left', 'right'] as Lane[]) {
+    const [lo, hi] = laneRange(lane, w);
+    const from = Math.max(lo, r.left + 10);
+    const to = Math.min(hi, r.right - 10);
+    if (to > from) spots.push({ lane, from, to });
+  }
+  return spots;
+}
+
+function visiblePerches(exclude: Element | null, w: number): HTMLElement[] {
   const vw = window.innerWidth;
   const vh = window.innerHeight;
   return Array.from(document.querySelectorAll<HTMLElement>(PERCH_SELECTOR)).filter((el) => {
     if (el === exclude || el.closest('[role="dialog"]') || el.closest('header')) return false;
     const r = el.getBoundingClientRect();
     if (r.width < 36 || r.height < 18) return false;
-    return r.top > HEADER_BAND + 30 && r.top < vh - 24 && r.left > 8 && r.right < vw - 8 && getComputedStyle(el).visibility !== 'hidden';
+    if (!(r.top > HEADER_BAND + 30 && r.top < vh - 24 && r.left > -1 && r.right < vw + 1)) return false;
+    if (getComputedStyle(el).visibility === 'hidden') return false;
+    return perchSpots(r, w).length > 0;
   });
 }
 
-function pickPerch(exclude: Element | null, from: { x: number; y: number }): HTMLElement | null {
-  const options = visiblePerches(exclude);
+function pickPerch(exclude: Element | null, from: { x: number; y: number }, w: number): { el: HTMLElement; x: number; lane: Lane } | null {
+  const options = visiblePerches(exclude, w);
   if (!options.length) return null;
-  // Prefer something mid-screen and not right next to where it is now,
-  // with a little randomness so it doesn't always pick the same button.
   const vh = window.innerHeight;
+  const here = laneOf(from.x);
   const scored = options.map((el) => {
     const r = el.getBoundingClientRect();
+    const spots = perchSpots(r, w);
+    // Prefer a spot in the lane it's already in.
+    const spot = spots.find((sp) => sp.lane === here) || spots[0];
+    const x = spot.from + Math.random() * (spot.to - spot.from);
     const midPull = Math.abs(r.top - vh * 0.5) / vh;
-    const dist = Math.hypot(r.left + r.width / 2 - from.x, r.top - from.y) / Math.max(window.innerWidth, vh);
-    const nearPenalty = dist < 0.08 ? 1 : 0;
-    // The dock is always on screen; prefer buttons in the page itself.
+    const dist = Math.hypot(x - from.x, r.top - from.y) / Math.max(window.innerWidth, vh);
+    const nearPenalty = dist < 0.06 ? 1 : 0;
     const dockPenalty = el.closest(DOCK) ? 0.45 : 0;
-    return { el, score: midPull + nearPenalty + dockPenalty + Math.random() * 0.35 };
+    const crossPenalty = spot.lane !== here ? 0.5 : 0;
+    return { el, x, lane: spot.lane, score: midPull + nearPenalty + dockPenalty + crossPenalty + Math.random() * 0.35 };
   });
   scored.sort((a, b) => a.score - b.score);
-  return scored[0].el;
+  const best = scored[0];
+  return { el: best.el, x: best.x, lane: best.lane };
 }
 
 export function FlyingTern() {
@@ -96,11 +134,14 @@ export function FlyingTern() {
 
     const size = () => (window.innerWidth < 640 ? 58 : 84);
     let w = size();
-    const pos = { x: -80, y: window.innerHeight * 0.3 };
+    const pos = { x: -90, y: window.innerHeight * 0.3 };
     const vel = { x: 0, y: 0 };
     let mode: Mode = 'flying';
     let perch: HTMLElement | null = null;
     let perchFrac = FEET_X;
+    let lane: Lane = 'left';
+    let crossing = false; // flying up and over to the other lane
+    let nextPerchSearch = 0; // throttles searching when nothing is perchable
     let lastScroll = performance.now();
     let perchedAt = 0;
     let facing = 1; // where it wants to face
@@ -119,14 +160,23 @@ export function FlyingTern() {
     };
 
     // A slow wave across the screen that the bird follows while scrolling.
+    // A slow wave inside the current side lane, following the scroll.
     const wavePoint = () => {
-      const vw = window.innerWidth;
       const vh = window.innerHeight;
       const t = window.scrollY / vh;
+      const [lo, hi] = laneRange(lane, w);
+      const mid = (lo + hi) / 2;
+      const half = Math.max(0, (hi - lo) / 2);
       return {
-        x: vw * (0.5 + 0.3 * Math.sin(t * 0.55 + 0.6)),
+        x: mid + half * 0.9 * Math.sin(t * 0.55 + 0.6),
         y: HEADER_BAND + 60 + (vh * 0.34) * (0.5 + 0.5 * Math.cos(t * 0.42)),
       };
+    };
+
+    // Up and off the top of the screen, still inside the lane.
+    const exitPoint = () => {
+      const [lo, hi] = laneRange(lane, w);
+      return { x: Math.min(hi, Math.max(lo, pos.x)), y: -w * CUTOUT_RATIO - 90 };
     };
 
     const takeOff = () => {
@@ -137,11 +187,13 @@ export function FlyingTern() {
     };
 
     const land = (exclude: Element | null) => {
-      const next = pickPerch(exclude, pos);
+      const next = pickPerch(exclude, pos, w);
       if (!next) return false;
-      perch = next;
-      perchFrac = 0.28 + Math.random() * 0.5;
+      perch = next.el;
+      const r = next.el.getBoundingClientRect();
+      perchFrac = (next.x - r.left) / r.width;
       mode = 'landing';
+      if (next.lane !== lane) crossing = true;
       return true;
     };
 
@@ -170,12 +222,26 @@ export function FlyingTern() {
       last = now;
 
       let raw: { x: number; y: number } | null = null;
-      if (mode === 'flying') {
+      if (crossing) {
+        raw = exitPoint();
+        // Out of sight above the page: switch lanes, then come back down.
+        if (pos.y < -w * CUTOUT_RATIO - 40) {
+          lane = lane === 'left' ? 'right' : 'left';
+          const [lo, hi] = laneRange(lane, w);
+          pos.x = lane === 'left' ? hi : lo;
+          tgt.x = pos.x;
+          vel.x = 0;
+          crossing = false;
+        }
+      } else if (mode === 'flying') {
         raw = wavePoint();
         // Settle once scrolling stops (and after the opening fly-in).
-        if (now - lastScroll > SETTLE_MS && now - startedAt > 2200) land(null);
+        // If nothing is perchable it keeps flying its lane and looks again shortly.
+        if (now - lastScroll > SETTLE_MS && now - startedAt > 2200 && now > nextPerchSearch && !land(null)) {
+          nextPerchSearch = now + 700;
+        }
       }
-      if (mode === 'landing' || mode === 'perched') {
+      if (!crossing && (mode === 'landing' || mode === 'perched')) {
         raw = perchPoint();
         if (!raw || !perch?.isConnected) {
           takeOff();
@@ -183,6 +249,13 @@ export function FlyingTern() {
         }
       }
 
+      if (mode === 'perched' && raw) {
+        const [plo, phi] = laneRange(lane, w);
+        if (raw.x < plo || raw.x > phi) {
+          takeOff();
+          raw = wavePoint();
+        }
+      }
       if (mode === 'perched' && raw) {
         pos.x = raw.x;
         pos.y = raw.y;
@@ -213,6 +286,13 @@ export function FlyingTern() {
         }
         pos.x += vel.x * dt;
         pos.y += vel.y * dt;
+        // Hard wall: the body never enters the middle band.
+        const [lo, hi] = laneRange(lane, w);
+        if (pos.x < lo || pos.x > hi) {
+          pos.x = Math.min(hi, Math.max(lo, pos.x));
+          tgt.x = Math.min(hi, Math.max(lo, tgt.x));
+          vel.x = 0;
+        }
         const gap = Math.hypot(raw.x - pos.x, raw.y - pos.y);
         if (mode === 'landing' && gap < 2.5 && Math.hypot(vel.x, vel.y) < 0.05) {
           mode = 'perched';
@@ -249,8 +329,9 @@ export function FlyingTern() {
       const top = pos.y - h;
       root.style.transform = `translate3d(${left.toFixed(1)}px, ${top.toFixed(1)}px, 0) scaleX(${sx.toFixed(3)}) rotate(${(tilt * Math.sign(sx)).toFixed(2)}deg)`;
       const speedNow = Math.hypot(vel.x, vel.y);
-      // Flap when climbing or moving briskly; otherwise glide.
-      root.dataset.mode = mode === 'perched' ? 'perched' : vel.y < -0.06 || speedNow > 0.3 ? 'flying' : 'glide';
+      // Always flapping in the air: full beats when climbing or moving
+      // briskly, slower beats when easing in.
+      root.dataset.mode = mode === 'perched' ? 'perched' : vel.y < -0.04 || speedNow > 0.18 ? 'flying' : 'glide';
 
       frame = requestAnimationFrame(tick);
     };
