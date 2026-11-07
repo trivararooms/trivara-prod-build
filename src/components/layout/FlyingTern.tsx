@@ -32,13 +32,24 @@ const PERCH_SELECTOR = [
 const DOCK = 'nav[aria-label="Quick navigation"]';
 
 const HEADER_BAND = 76; // px reserved by the sticky header
-const SETTLE_MS = 380; // no scroll for this long: go and land
-const IDLE_HOP_MS = 18000; // perched this long: hop to another perch
-const SCARE_RADIUS = 70; // cursor this close: take off
+const SETTLE_MS = 700; // no scroll for this long: drift down and land
+const IDLE_HOP_MS = 32000; // perched this long: hop to another perch
+const SCARE_RADIUS = 64; // cursor this close: take off
 const CUTOUT_RATIO = 756 / 1241; // tern-cutout height / width
 const FEET_X = 0.72; // feet position across the perched image
-const SPRING = 0.0032; // per ms^2
-const DAMPING = 0.0062; // per ms
+
+// Motion. A critically damped spring never overshoots, so the bird eases
+// into place instead of swinging past it and back (the old left-right
+// jitter). The target itself is low-pass filtered so a flick of the scroll
+// wheel bends the flight path gently instead of yanking it.
+const SPRING = 0.00045; // per ms^2
+const DAMPING = 2 * Math.sqrt(SPRING); // critical
+const MAX_SPEED = 0.42; // px per ms (~25 px per frame at 60fps)
+const TARGET_EASE_MS = 900; // how slowly the flight target follows the scroll
+const TURN_MS = 520; // a full left/right turn takes this long
+const TURN_HOLD_MS = 450; // must head the other way this long before turning
+const TURN_MIN_SPEED = 0.06; // ignore drift slower than this when deciding to turn
+const TILT_EASE_MS = 260;
 
 type Mode = 'flying' | 'landing' | 'perched';
 
@@ -92,7 +103,11 @@ export function FlyingTern() {
     let perchFrac = FEET_X;
     let lastScroll = performance.now();
     let perchedAt = 0;
-    let facing = 1;
+    let facing = 1; // where it wants to face
+    let facingVis = 1; // what is drawn: eases between -1 and 1 so turns are visible
+    let otherWaySince = 0;
+    let tilt = 0;
+    const tgt = { x: pos.x + 120, y: pos.y };
     let last = performance.now();
     let frame = 0;
     const startedAt = performance.now();
@@ -109,8 +124,8 @@ export function FlyingTern() {
       const vh = window.innerHeight;
       const t = window.scrollY / vh;
       return {
-        x: vw * (0.5 + 0.34 * Math.sin(t * 1.15 + 0.6)),
-        y: HEADER_BAND + 40 + (vh * 0.42) * (0.5 + 0.5 * Math.cos(t * 0.8)),
+        x: vw * (0.5 + 0.3 * Math.sin(t * 0.55 + 0.6)),
+        y: HEADER_BAND + 60 + (vh * 0.34) * (0.5 + 0.5 * Math.cos(t * 0.42)),
       };
     };
 
@@ -118,7 +133,7 @@ export function FlyingTern() {
       if (mode === 'perched' && perch) perch.removeAttribute('data-tern-perched');
       mode = 'flying';
       perch = null;
-      vel.y -= 0.35; // a little hop up
+      vel.y -= 0.12; // a small lift off the perch
     };
 
     const land = (exclude: Element | null) => {
@@ -140,7 +155,7 @@ export function FlyingTern() {
       if (Math.hypot(e.clientX - pos.x, e.clientY - (pos.y - w * CUTOUT_RATIO * 0.5)) < SCARE_RADIUS) {
         const from = perch;
         takeOff();
-        vel.x += (pos.x > e.clientX ? 1 : -1) * 0.5;
+        vel.x += (pos.x > e.clientX ? 1 : -1) * 0.15;
         land(from);
       }
     };
@@ -154,23 +169,25 @@ export function FlyingTern() {
       const dt = Math.min(48, now - last);
       last = now;
 
-      let target: { x: number; y: number } | null = null;
+      let raw: { x: number; y: number } | null = null;
       if (mode === 'flying') {
-        target = wavePoint();
+        raw = wavePoint();
         // Settle once scrolling stops (and after the opening fly-in).
-        if (now - lastScroll > SETTLE_MS && now - startedAt > 1400) land(null);
+        if (now - lastScroll > SETTLE_MS && now - startedAt > 2200) land(null);
       }
       if (mode === 'landing' || mode === 'perched') {
-        target = perchPoint();
-        if (!target || !perch?.isConnected) {
+        raw = perchPoint();
+        if (!raw || !perch?.isConnected) {
           takeOff();
-          target = wavePoint();
+          raw = wavePoint();
         }
       }
 
-      if (mode === 'perched' && target) {
-        pos.x = target.x;
-        pos.y = target.y;
+      if (mode === 'perched' && raw) {
+        pos.x = raw.x;
+        pos.y = raw.y;
+        tgt.x = raw.x;
+        tgt.y = raw.y;
         vel.x = 0;
         vel.y = 0;
         if (now - perchedAt > IDLE_HOP_MS) {
@@ -178,35 +195,62 @@ export function FlyingTern() {
           takeOff();
           land(from);
         }
-      } else if (target) {
-        // Damped spring toward the target.
-        const ax = (target.x - pos.x) * SPRING - vel.x * DAMPING;
-        const ay = (target.y - pos.y) * SPRING - vel.y * DAMPING;
+      } else if (raw) {
+        // Ease the target toward where it should be; while landing, follow
+        // the perch more closely so the bird actually arrives.
+        const ease = 1 - Math.exp(-dt / (mode === 'landing' ? TARGET_EASE_MS * 0.45 : TARGET_EASE_MS));
+        tgt.x += (raw.x - tgt.x) * ease;
+        tgt.y += (raw.y - tgt.y) * ease;
+
+        const ax = (tgt.x - pos.x) * SPRING - vel.x * DAMPING;
+        const ay = (tgt.y - pos.y) * SPRING - vel.y * DAMPING;
         vel.x += ax * dt;
         vel.y += ay * dt;
         const speed = Math.hypot(vel.x, vel.y);
-        const max = 1.25;
-        if (speed > max) {
-          vel.x = (vel.x / speed) * max;
-          vel.y = (vel.y / speed) * max;
+        if (speed > MAX_SPEED) {
+          vel.x = (vel.x / speed) * MAX_SPEED;
+          vel.y = (vel.y / speed) * MAX_SPEED;
         }
         pos.x += vel.x * dt;
         pos.y += vel.y * dt;
-        if (mode === 'landing' && Math.hypot(target.x - pos.x, target.y - pos.y) < 4 && speed < 0.12) {
+        const gap = Math.hypot(raw.x - pos.x, raw.y - pos.y);
+        if (mode === 'landing' && gap < 2.5 && Math.hypot(vel.x, vel.y) < 0.05) {
           mode = 'perched';
           perchedAt = now;
           perch?.setAttribute('data-tern-perched', '');
         }
       }
 
-      if (Math.abs(vel.x) > 0.05) facing = vel.x >= 0 ? 1 : -1;
-      const tilt = mode === 'perched' ? 0 : Math.max(-22, Math.min(22, vel.y * 26));
+      // Turning: only when it has clearly been heading the other way for a
+      // moment, then the flip itself is eased (it narrows and widens).
+      const wantsOtherWay = Math.abs(vel.x) > TURN_MIN_SPEED && Math.sign(vel.x) !== facing;
+      if (mode !== 'perched' && wantsOtherWay) {
+        if (!otherWaySince) otherWaySince = now;
+        if (now - otherWaySince > TURN_HOLD_MS) {
+          facing = -facing;
+          otherWaySince = 0;
+        }
+      } else {
+        otherWaySince = 0;
+      }
+      const turnStep = (2 * dt) / TURN_MS;
+      facingVis += Math.max(-turnStep, Math.min(turnStep, facing - facingVis));
+      // Keep a sliver of width mid-turn so it never vanishes.
+      const sx = Math.sign(facingVis || facing) * Math.max(0.18, Math.abs(facingVis));
+
+      const wantTilt = mode === 'perched' ? 0 : Math.max(-12, Math.min(12, vel.y * 30));
+      tilt += (wantTilt - tilt) * (1 - Math.exp(-dt / TILT_EASE_MS));
+
       const h = w * CUTOUT_RATIO;
       // Anchor = feet. The perched image's feet sit at FEET_X across, bottom.
-      const left = pos.x - (facing === 1 ? w * FEET_X : w * (1 - FEET_X));
+      // The anchor slides with the turn, so turning doesn't jolt the bird sideways.
+      const feetFrac = 0.5 + (FEET_X - 0.5) * Math.max(-1, Math.min(1, facingVis));
+      const left = pos.x - w * feetFrac;
       const top = pos.y - h;
-      root.style.transform = `translate3d(${left.toFixed(1)}px, ${top.toFixed(1)}px, 0) scaleX(${facing}) rotate(${(tilt * facing).toFixed(1)}deg)`;
-      root.dataset.mode = mode === 'perched' ? 'perched' : Math.abs(vel.y) < 0.08 && mode === 'landing' ? 'glide' : 'flying';
+      root.style.transform = `translate3d(${left.toFixed(1)}px, ${top.toFixed(1)}px, 0) scaleX(${sx.toFixed(3)}) rotate(${(tilt * Math.sign(sx)).toFixed(2)}deg)`;
+      const speedNow = Math.hypot(vel.x, vel.y);
+      // Flap when climbing or moving briskly; otherwise glide.
+      root.dataset.mode = mode === 'perched' ? 'perched' : vel.y < -0.06 || speedNow > 0.3 ? 'flying' : 'glide';
 
       frame = requestAnimationFrame(tick);
     };
